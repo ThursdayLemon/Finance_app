@@ -244,11 +244,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 左滑删除：红底垫在下面，内容层往左推 */
 /* 红底放在删除面板上，不要放在容器上 —— 容器铺红色会在行与行之间透出红缝 */
 /* 跟着里面卡片的圆角裁 —— 否则四个圆角处会透出底下的红色删除面板 */
-/* 外壳的圆角必须 >= 里面卡片的，否则卡片四角外会露出底下那层红 */
-.sw{position:relative;overflow:hidden;border-radius:var(--r-lg)}
+/* 外壳裹卡片时要和卡片一样圆（否则四角露出底下那层红）；
+   裹通栏行时必须是直角 —— 行的文字从最左边起，圆角会把首字啃掉。 */
+.sw{position:relative;overflow:hidden;border-radius:0}
+.sw.boxed{border-radius:var(--r-lg)}
 /* 自己也圆一下：不然它的直角顶在卡片圆角的抗锯齿边上，会透出一条红发丝 */
 .sw-del{position:absolute;top:0;right:0;bottom:0;width:76px;color:#fff;
- border-radius:var(--r-lg);display:flex;
+ border-radius:inherit;display:flex;
  align-items:center;justify-content:center;cursor:pointer;background:var(--bad)}
 /* 跟外壳一样圆：卡片圆角外那一圈才不会露出底下的红 */
 .sw-body{position:relative;background:var(--paper);border-radius:inherit;
@@ -1887,7 +1889,8 @@ function donut(cats, size, thick) {
 }
 /* 任何一行都能包成可左滑删除的 */
 /* sort = [组名, 这一项的 id]：带上就能长按拖动排序 */
-const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") + '"' +
+const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") +
+  (/^\s*<div class="card/.test(inner) ? " boxed" : "") + '"' +
   (sort ? ' data-sg="' + sort[0] + '" data-si="' + esc(String(sort[1])) + '"' : "") +
   '><div class="sw-del" data-a="' + delAct +
   '">' + ic("trash", 19) + '</div><div class="sw-body">' + inner + "</div></div>";
