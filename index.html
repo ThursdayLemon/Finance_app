@@ -155,7 +155,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .wave{display:flex;gap:4px;align-items:center;justify-content:center;height:44px}
-.wave>span{width:3px;background:#22201c;border-radius:2px;animation:w .9s ease-in-out infinite}
+.wave>span{width:3px;background:#cfc9bd;border-radius:2px;height:9px}
+.wave.on>span{background:#22201c;animation:w .9s ease-in-out infinite}
 @keyframes w{0%,100%{height:9px}50%{height:34px}}
 textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
  align-items:flex-start;display:block}
@@ -480,6 +481,12 @@ zh: {
   "sa.intoJar": (v) => "进「" + v.jar + "」· 还差 " + v.amt,
   "sa.note": "不写进账本 —— 卖旧东西不是挣钱，是把东西换成钱。",
   "as.say": "说点什么",
+  "as.listen": "按住说话", "as.listening": "在听…", "as.stop": "说完了",
+  "as.noMic": "这个浏览器不支持语音输入 —— 直接打字也一样。",
+  "as.micDenied": "没拿到麦克风权限。到系统设置里允许一下，或者直接打字。",
+  "as.micNothing": "没听清，再说一次？",
+  "as.micHttp": "语音输入需要 https —— 在正式网址上打开就能用。",
+  "as.enParser": "英文的语音解析还没做 —— 现在只有中文能识别得准。",
   "as.placeholder": "比如：我今天吃饭花了10元，打车花了9元",
   "as.parse": "解析", "as.parseHint": "解析只是给你看 —— 确认之后才写进去。",
   "as.foundN": (v) => "识别到 " + v.n + " 笔",
@@ -893,6 +900,13 @@ en: {
   "sa.note": "This never enters your ledger — selling something isn't earning, " +
     "it's turning a thing back into money.",
   "as.say": "Say it out loud",
+  "as.listen": "Hold to talk", "as.listening": "Listening…", "as.stop": "Done",
+  "as.noMic": "This browser can't do speech input — typing works just as well.",
+  "as.micDenied": "No microphone permission. Allow it in Settings, or just type.",
+  "as.micNothing": "Didn't catch that — try again?",
+  "as.micHttp": "Speech input needs https — it works on the real address.",
+  "as.enParser": "English speech isn't understood yet — only Chinese parses properly " +
+    "for now. Type it and edit the preview.",
   "as.placeholder": "e.g. lunch was 10 and the taxi was 9",
   "as.parse": "Read it back", "as.parseHint": "This is only a preview — nothing is saved " +
     "until you confirm.",
@@ -1586,7 +1600,11 @@ function push(s) { ui.stack.push(s); ui.sheet = null; ui.f = {}; ui.fStack = [];
 function pop() { if (ui.stack.length > 1) ui.stack.pop(); ui.f = {}; ui.sheet = null; render(); }
 function go(tab) { ui.stack = [tab]; ui.sheet = null; ui.f = {}; render(); }
 function sheet(name, init) { ui.sheet = name; ui.f = init || {}; ui.anim = true; render(); }
-function close() { ui.sheet = null; ui.f = {}; ui.fStack = []; render(); }
+function close() {
+  /* 抽屉关了麦克风也得关，不然它在后台一直听着 */
+  if (typeof micStop === "function") micStop();
+  ui.sheet = null; ui.f = {}; ui.fStack = []; render();
+}
 /* 抽屉里再开抽屉（比如新建分类）—— 回来时要把原来填的东西还回去 */
 function pushSheet(name, init) {
   (ui.fStack = ui.fStack || []).push({ sheet: ui.sheet, f: ui.f });
@@ -2533,15 +2551,62 @@ const jarLine = (n) => { const j = jar(n); return j ? t("f.balance", { amt: yuan
 
 const SHEETS = {};
 
+/* 语音输入：用浏览器自带的识别（iOS Safari / Chrome 都有）。
+   拿不到就退回打字 —— 解析本来就是对文本做的，说和打进来是同一条路。
+   注意要 https，file:// 和局域网 http 上浏览器直接不给权限。 */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const micOK = () => !!SR && (location.protocol === "https:" ||
+  ["localhost", "127.0.0.1"].indexOf(location.hostname) >= 0);
+let rec = null;
+
+function micStop() {
+  if (rec) { try { rec.stop(); } catch (err) { /* 已经停了 */ } rec = null; }
+  ui.listening = false;
+}
+function micStart() {
+  if (rec) return micStop();
+  if (!SR) { ui.f.err = t("as.noMic"); return render(); }
+  if (!micOK()) { ui.f.err = t("as.micHttp"); return render(); }
+  rec = new SR();
+  rec.lang = isEn() ? "en-GB" : "zh-CN";
+  rec.interimResults = true;
+  rec.continuous = false;
+  const base = ui.f.text || "";
+  rec.onresult = (ev) => {
+    let out = "";
+    for (let i = 0; i < ev.results.length; i++) out += ev.results[i][0].transcript;
+    ui.f.text = (base ? base + " " : "") + out;
+    /* 不整页重绘 —— 那会把抽屉重建一遍，动画也重放 */
+    const ta = document.querySelector('.sheet [data-f="text"]');
+    if (ta) ta.value = ui.f.text;
+  };
+  rec.onerror = (ev) => {
+    ui.f.err = ev.error === "not-allowed" || ev.error === "service-not-allowed"
+      ? t("as.micDenied") : ev.error === "no-speech" ? t("as.micNothing") : t("as.noMic");
+    rec = null; ui.listening = false; render();
+  };
+  rec.onend = () => { rec = null; ui.listening = false; render(); };
+  try { rec.start(); ui.listening = true; ui.f.err = null; render(); }
+  catch (err) { rec = null; ui.f.err = t("as.noMic"); render(); }
+}
+
 SHEETS.assistant = () => {
   const p = ui.f.parsed;
+  const listening = !!ui.listening;
   if (!p) return grab + head(t("as.say")) +
     '<textarea class="fldbox" data-f="text" placeholder="' + esc(t("as.placeholder")) + '">' +
     esc(ui.f.text || "") + "</textarea>" +
-    '<div class="wave">' + [9, 17, 28, 14, 34, 22, 40, 25, 13, 30, 19, 9].map((h, i) =>
-      '<span style="height:' + h + "px;animation-delay:" + (i * 0.07).toFixed(2) + 's"></span>').join("") +
-    "</div>" + errline() + btn(t("as.parse"), "parse", "pri") +
-    '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
+    '<div class="wave' + (listening ? " on" : "") + '">' +
+    [9, 17, 28, 14, 34, 22, 40, 25, 13, 30, 19, 9].map((h, i) =>
+      '<span style="' + (listening ? "height:" + h + "px;" : "") + "animation-delay:" +
+      (i * 0.07).toFixed(2) + 's"></span>').join("") + "</div>" +
+    (SR
+      ? '<div class="mbtn' + (listening ? "" : " sm") + '" data-a="mic">' +
+        ic("mic", 17) + " " + t(listening ? "as.stop" : "as.listen") + "</div>"
+      : '<div class="sub" style="text-align:center">' + t("as.noMic") + "</div>") +
+    errline() + btn(t("as.parse"), "parse", "pri") +
+    '<div class="sub" style="text-align:center">' + t("as.parseHint") +
+    (isEn() ? "<br/>" + t("as.enParser") : "") + "</div>";
 
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
     'background:#efece5;border-style:dashed">' + p.intent + "</div>";
@@ -3049,7 +3114,8 @@ const ACT = {
   tooSoon: () => toast(t("k.tooSoon")),
 
   /* 助手 */
-  assistant: () => sheet("assistant", { text: "" }),
+  assistant: () => { micStop(); sheet("assistant", { text: "" }); },
+  mic: () => micStart(),
   editDraft: (i) => { const d = ui.f.parsed.drafts[+i];
     pushSheet("editDraft", { i: +i, type: d.type, amount: (d.amount / 100).toFixed(2),
       category: d.category, description: d.description, date: d.date }); },
