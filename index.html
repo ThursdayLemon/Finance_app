@@ -596,6 +596,18 @@ zh: {
   "set.newCat": "新建",
   "set.cooldown": "默认冷静时长",
   "set.hours": (v) => v.h + " 小时", "set.days": (v) => v.d + " 天",
+  "fab.addTx": "记一笔",
+  "data.cashWallet": "现金钱包",
+  "lg.set": "设个大目标",
+  "wi.clearedDesc": (v) => "愿望清账: " + v.name,
+  "k.catDeletedKept": (v) => "已删除 —— " + v.n + " 笔旧账目仍写着「" + v.name + "」",
+  "k.goalDeletedFreed": (v) => "已删除 · 「" + v.account + "」里那 " + v.amt + " 不再被预留",
+  "k.goalDeleted": "已删除这笔储蓄",
+  "k.parked": (v) => "已移入清单 · 冷静 " + v.h + " 小时",
+  "k.wishUpdated": (v) => "已更新「" + v.name + "」",
+  "k.planFull": "攒够了！", "k.planLeft": (v) => "还差 " + v.amt,
+  "k.planToSavings": (v) => "卖掉的东西变成了 " + v.amt + " 存款",
+  "k.planDropped": "计划已放弃",
   "set.data": "你的数据",
   "wipe.title": "清空所有数据？",
   "wipe.body": "这台设备上记的账、账户、储蓄、清单会全部删掉，撤不回来。" +
@@ -1017,6 +1029,20 @@ en: {
   "set.newCat": "New",
   "set.cooldown": "Default cooling-off time",
   "set.hours": (v) => plural(v.h, "hour", "hours"), "set.days": (v) => plural(v.d, "day", "days"),
+  "fab.addTx": "Add",
+  "data.cashWallet": "Cash",
+  "lg.set": "Set a big goal",
+  "wi.clearedDesc": (v) => "Wishlist: " + v.name,
+  "k.catDeletedKept": (v) => "Deleted — " + plural(v.n, "entry", "entries") +
+    " still filed under " + v.name,
+  "k.goalDeletedFreed": (v) => "Deleted · the " + v.amt + " in " + v.account +
+    " is no longer set aside",
+  "k.goalDeleted": "Goal deleted",
+  "k.parked": (v) => "On the list · cooling off for " + plural(v.h, "hour", "hours"),
+  "k.wishUpdated": (v) => v.name + " updated",
+  "k.planFull": "You made it!", "k.planLeft": (v) => v.amt + " to go",
+  "k.planToSavings": (v) => "What you sold became " + v.amt + " of savings",
+  "k.planDropped": "Plan dropped",
   "set.data": "Your data",
   "wipe.title": "Clear everything?",
   "wipe.body": "Every entry, account, savings goal and wishlist item on this device " +
@@ -1549,7 +1575,8 @@ let ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, se
 const screen = () => ui.stack[ui.stack.length - 1];
 const jar = (n) => S.accounts.find((a) => a.name === n);
 const biggestJar = () => (S.accounts.length
-  ? S.accounts.reduce((a, b) => (b.balance > a.balance ? b : a)).name : "现金钱包");
+  ? S.accounts.reduce((a, b) => (b.balance > a.balance ? b : a)).name
+  : t("data.cashWallet"));
 const planOf = (wishId) => S.plans.find((p) => p.wishId === wishId && p.status === "active");
 const curWish = () => S.wishlist.find((x) => x.id === ui.wishId);
 const curPlan = () => { const w = curWish(); return w ? planOf(w.id) : null; };
@@ -1923,7 +1950,7 @@ function monthView() {
 function lifeBar() {
   const lg = S.lifeGoal;
   if (!lg) return '<div class="chip" data-a="lifeGoal" style="border-style:dashed">' +
-    "设个大目标</div>";
+    t("lg.set") + "</div>";
   const pct = lifePct();
   return '<div data-a="lifeGoal" style="cursor:pointer;display:flex;align-items:center;' +
     'gap:8px"><div class="barh" style="width:58px"><i style="width:' + pct + '%"></i></div>' +
@@ -3248,7 +3275,7 @@ const ACT = {
   delCat: (name) => {
     const used = S.tx.filter((t) => t.category === name).length;
     S.customCats = S.customCats.filter((c) => c !== name);
-    toast(used ? "已删除 —— " + used + " 笔旧账目仍写着「" + name + "」" : "已删除");
+    toast(used ? t("k.catDeletedKept", { n: used, name }) : t("k.deleted"));
     render(); },
   addFixedIn: () => sheet("addFixed", { kind: "in" }),
   addFixedOut: () => sheet("addFixed", { kind: "out" }),
@@ -3330,8 +3357,8 @@ addDebt: () => sheet("addDebt", {}),
     S.goals = S.goals.filter((x) => x.id !== gid);
     ui.sheet = null; ui.f = {};
     toast(g && g.saved > 0
-      ? "已删除 · 「" + g.account + "」里那 " + yuan(g.saved) + " 不再被预留"
-      : "已删除这笔储蓄");
+      ? t("k.goalDeletedFreed", { account: g.account, amt: yuan(g.saved) })
+      : t("k.goalDeleted"));
     render(); },
 
   /* 种草 */
@@ -3352,7 +3379,8 @@ addDebt: () => sheet("addDebt", {}),
     w.snap = makeSnap(w);
     ui.wishId = w.id; ui.seg.wish = "active"; ui.sheet = null; ui.f = {};
     ui.stack = ["decisions", "wishlist", "wishItem"];
-    toast(fresh ? "已移入清单 · 冷静 " + S.cooldownHours + " 小时" : "已更新「" + w.name + "」"); },
+    toast(fresh ? t("k.parked", { h: S.cooldownHours })
+      : t("k.wishUpdated", { name: w.name })); },
   retest: () => { const w = curWish();
     ui.quiz = { name: w.name, price: w.price, necessity: w.necessity, dup: !!w.dup };
     ui.editWishId = w.id; ui.stack = ["decisions", "wishlist", "wishItem", "decisions"];
@@ -3370,7 +3398,7 @@ addDebt: () => sheet("addDebt", {}),
       t("sc.pointsN", { n: w.snap.score.toFixed(1) }) })); },
   buyWish: (wid) => { const w = S.wishlist.find((x) => x.id === wid);
     S.tx.push({ id: id(), type: "out", amount: w.price, category: "shopping",
-      description: "愿望清账: " + w.name, date: today() });
+      description: t("wi.clearedDesc", { name: w.name }), date: today() });
     S.archive.unshift({ name: w.name, price: w.price, outcome: "bought", date: today(),
       note: "ar.boughtAfterCool" });
     removeWish(wid); ui.seg.wish = "done"; ui.stack = ["decisions", "wishlist"];
@@ -3417,7 +3445,8 @@ addDebt: () => sheet("addDebt", {}),
     pl.sales.push({ name: ui.f.name.trim(), amount: amt, date: today() });
     pl.raised += amt; jar(pl.jar).balance += amt;
     ui.wishId = pl.wishId; close();
-    toast(pl.raised >= pl.target ? "攒够了！" : "还差 " + yuan(pl.target - pl.raised)); },
+    toast(pl.raised >= pl.target ? t("k.planFull")
+      : t("k.planLeft", { amt: yuan(pl.target - pl.raised) })); },
   planBuy: () => { const pl = curPlan(), sp = pl.raised - pl.target;
     if (sp > 0) sheet("surplus", { amount: sp, to: jarOpts()[0] });
     else { finalizeBuy(pl); render(); } },
@@ -3435,7 +3464,7 @@ addDebt: () => sheet("addDebt", {}),
       noteArgs: { amt: yuan(amt) } });
     removeWish(pl.wishId);
     ui.seg.wish = "done"; ui.stack = ["decisions", "wishlist"]; ui.sheet = null; ui.f = {};
-    toast(amt > 0 ? "卖掉的东西变成了 " + yuan(amt) + " 存款" : "计划已放弃"); },
+    toast(amt > 0 ? t("k.planToSavings", { amt: yuan(amt) }) : t("k.planDropped")); },
   /* 计划还在跑，但现在就想掏钱买 */
   buyDuringPlan: () => { const pl = curPlan();
     if (pl.raised > 0) sheet("cashBuy", { amount: pl.raised, to: jarOpts()[0] });
@@ -3446,7 +3475,7 @@ addDebt: () => sheet("addDebt", {}),
   doCashBuy: () => { const w = curWish(), pl = curPlan();
     if (pl) { dropJar(pl.jar); pl.status = "abandoned"; }
     S.tx.push({ id: id(), type: "out", amount: w.price, category: "shopping",
-      description: "愿望清账: " + w.name, date: today() });
+      description: t("wi.clearedDesc", { name: w.name }), date: today() });
     S.archive.unshift({ name: w.name, price: w.price, outcome: "bought", date: today(),
       note: pl && pl.raised > 0 ? "ar.boughtEarly" : "ar.boughtOutright",
       noteArgs: pl ? { amt: yuan(pl.raised) } : null });
@@ -3570,7 +3599,8 @@ function render() {
     (v.fab && !ui.sheet
       ? (v.fab === "both"
         ? '<div class="fabrow"><div class="fabpill" data-a="addTx">' + ic("plus", 18) +
-          ' 记一笔</div><div class="fab" data-a="assistant">' + ic("mic", 24) + "</div></div>"
+          " " + t("fab.addTx") + '</div><div class="fab" data-a="assistant">' +
+          ic("mic", 24) + "</div></div>"
         : '<div class="fab" data-a="assistant">' + ic("mic", 24) + "</div>")
       : "") +
     (ui.sheet ? '<div class="dim' + (ui.anim ? " anim" : "") + '" data-a="close"></div>' +
@@ -3803,11 +3833,11 @@ document.querySelector(".side").addEventListener("click", (e) => {
   if (b.dataset.side === "reset") {
     S = seed(); clockOffset = 0;
     ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {},
-      quiz: { name: "无线机械键盘", price: 29800, necessity: 8, dup: false } };
+      quiz: { name: "", price: 0, necessity: 5, dup: false } };
     updateClock(); render();
   }
 });
-ui.quiz = { name: "无线机械键盘", price: 29800, necessity: 8, dup: false };
+ui.quiz = { name: "", price: 0, necessity: 5, dup: false };
 updateClock();
 render();
 
