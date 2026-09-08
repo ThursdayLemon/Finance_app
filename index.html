@@ -6,40 +6,137 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#fffdf8">
+<meta name="theme-color" content="#fdfcfe">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
 <title>储蓄教练 · 可点击原型</title>
 <style>
+/* ==========================================================================
+   Token 层 —— 全站唯一的取色处。换肤和深色模式都只动这一块。
+   语义命名，不是「灰1灰2」：以后换一套视觉，对着角色填就行。
+   ========================================================================== */
+:root{
+  /* Phantom：单色紫 + 近白纸面。结构色只有一个 aubergine。
+     判定色的黄和红是往紫里调过的 —— 直接上鲜艳橙红会打破这套的克制。 */
+  --aubergine:#3c315b; --ghost:#e2dffe; --peri:#ab9ff2;
+  --ink:#1c1c1c;          /* 正文墨色 */
+  --ink-2:#3c315b;        /* 次级正文 —— 用品牌紫，标题和导航靠它 */
+  --muted:#86848d;        /* 说明小字 */
+  --faint:#9a97a2;        /* 更弱的字、图标 */
+  --ghosted:#bbb8c4;      /* 禁用态 */
+  --paper:#fdfcfe;        /* 页面底 */
+  --surface:#fdfcfe;      /* 卡片底 */
+  --surface-2:#f4f2f4;    /* 次级面：按下、条带 */
+  --surface-3:#3c315b;    /* 三级面：底部 tab 栏走深紫 */
+  --line:#f0eef2;         /* 分隔线 */
+  --line-2:#e9e8ea;       /* 卡片描边 */
+  --edge:#e0dee4;         /* 控件描边 */
+  --edge-2:#dcdae1;       /* 输入框描边 */
+  --track:#e9e8ea;        /* 进度条底槽 */
+  --press:#eceaf0;        /* 按下反馈 */
+  --chev:#bbb8c4;         /* 右侧箭头 */
+  /* 深紫 tab 栏上的字：不能跟着 --paper 走，深色下 --paper 也是暗的，
+     选中那一项会变成深字压深底，直接看不见 */
+  --nav-ink:#9a92b4; --nav-on:#fdfcfe;
+  --link:#7a6bc4;         /* 文字链 */
+  --good:#2ec08b;
+  --warn:oklch(0.66 0.11 66);
+  --bad:oklch(0.60 0.14 6);
+  --good-bg:oklch(0.96 0.03 165);
+  --warn-bg:oklch(0.96 0.03 66);
+  --bad-bg:oklch(0.96 0.025 6);
+  --ramp-1:#3c315b; --ramp-2:#6a5d90; --ramp-3:#9a8fbb;
+  --ramp-4:#bdb4d6; --ramp-5:#d6d0e8; --ramp-6:#e9e6f2;
+  --stage:#eae8ee;        /* 桌面上手机外面那片底 */
+  --note:#fffec4;         /* 桌面说明栏里的便签 */
+  --note-line:#d8d4a0;
+  --note-ink:#6b6730;
+  /* 「一切都是胶囊」是这套的签名，圆角整体推大一档 */
+  --r-sm:10px; --r:16px; --r-md:20px; --r-lg:28px; --r-pill:100px;
+  /* 这套只允许一处阴影：主按钮那圈淡紫光晕 */
+  --shadow-fab:none;
+  --shadow-pill:rgb(226,223,254) 0 0 4px 0;
+  --shadow-sheet:0 -12px 40px -24px rgba(60,49,91,.45);
+  --font:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",
+    -apple-system,"Helvetica Neue",Helvetica,sans-serif;
+  /* 350 是这套的声音。金额破例走 500 —— 记账 app 里数字就是内容，
+     350 的数字在手机上扫不出层级。这是唯一一处故意违反它的 Don't。 */
+  --w-body:350; --w-mid:400; --w-bold:500;
+}
+
+/* ---- 深色 ---------------------------------------------------------------
+   不是把浅色反过来 —— 纸墨互换之后对比度和判定色都得重新挑。
+   三种状态：跟随系统（不带 data-theme）、明确选浅色、明确选深色。 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark;
+  --aubergine:#e2dffe; --ghost:#4a3f6b; --peri:#ab9ff2;
+    --ink:#f3f1fa; --ink-2:#d8d3ee; --muted:#948fa8; --faint:#807b94; --ghosted:#5d5875;
+    --paper:#1a1626; --surface:#221d33; --surface-2:#2b2540; --surface-3:#120f1c;
+    --line:#2e2842; --line-2:#3b3455; --edge:#463e63; --edge-2:#524974;
+    --track:#332c4a; --press:#332c4a; --chev:#6b6389; --link:#ab9ff2;
+    --nav-ink:#6b6389; --nav-on:#e2dffe;
+    --good:#3ad79f; --warn:oklch(0.78 0.11 66); --bad:oklch(0.72 0.14 6);
+    --good-bg:oklch(0.30 0.06 165); --warn-bg:oklch(0.31 0.06 66);
+    --bad-bg:oklch(0.31 0.07 6);
+    --ramp-1:#e2dffe; --ramp-2:#bdb4d6; --ramp-3:#9a8fbb;
+    --ramp-4:#7a6ea0; --ramp-5:#584e7c; --ramp-6:#3b3455;
+    --stage:#100d19; --note:#332c14; --note-line:#6b5a24; --note-ink:#e0cd8c;
+    --shadow-fab:none;
+    --shadow-pill:rgba(171,159,242,.45) 0 0 6px 0;
+    --shadow-sheet:0 -12px 40px -24px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] { color-scheme: dark;
+  --aubergine:#e2dffe; --ghost:#4a3f6b; --peri:#ab9ff2;
+  --ink:#f3f1fa; --ink-2:#d8d3ee; --muted:#948fa8; --faint:#807b94; --ghosted:#5d5875;
+  --paper:#1a1626; --surface:#221d33; --surface-2:#2b2540; --surface-3:#120f1c;
+  --line:#2e2842; --line-2:#3b3455; --edge:#463e63; --edge-2:#524974;
+  --track:#332c4a; --press:#332c4a; --chev:#6b6389; --link:#ab9ff2;
+  --nav-ink:#6b6389; --nav-on:#e2dffe;
+  --good:#3ad79f; --warn:oklch(0.78 0.11 66); --bad:oklch(0.72 0.14 6);
+  --good-bg:oklch(0.30 0.06 165); --warn-bg:oklch(0.31 0.06 66);
+  --bad-bg:oklch(0.31 0.07 6);
+  --ramp-1:#e2dffe; --ramp-2:#bdb4d6; --ramp-3:#9a8fbb;
+  --ramp-4:#7a6ea0; --ramp-5:#584e7c; --ramp-6:#3b3455;
+  --stage:#100d19; --note:#332c14; --note-line:#6b5a24; --note-ink:#e0cd8c;
+  --shadow-fab:none;
+  --shadow-pill:rgba(171,159,242,.45) 0 0 6px 0;
+  --shadow-sheet:0 -12px 40px -24px rgba(0,0,0,.9);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:#e9e6de;color:#22201c;line-height:1.5;font-size:14px;
- font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Helvetica,sans-serif;
+body{margin:0;background:var(--stage);color:var(--ink);line-height:1.5;font-size:14px;
+ font-weight:var(--w-body);
+ font-family:var(--font);
  -webkit-font-smoothing:antialiased}
 .stage{display:flex;gap:40px;justify-content:center;align-items:flex-start;
  padding:40px 28px 80px;flex-wrap:wrap}
 .side{width:300px;padding-top:6px}
 .side h1{font-size:22px;font-weight:600;margin:0 0 8px}
-.side p{font-size:13px;color:#5c564c;margin:0 0 14px;line-height:1.65}
-.side h2{font-size:12px;font-weight:600;letter-spacing:.08em;color:#736c60;
- margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid #cfc9bd}
+.side p{font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.65}
+.side h2{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted);
+ margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--chev)}
 .side .k{display:flex;flex-wrap:wrap;gap:7px}
-.side button{font:inherit;font-size:12px;border:1px solid #22201c;background:#fffdf8;
- border-radius:999px;padding:6px 12px;cursor:pointer}
-.side button:hover{background:#22201c;color:#fffdf8}
-.side .hint{font-family:"Caveat",cursive;font-size:16px;color:#6f5710;background:#fbf3d5;
- border:1px dashed #d6bf72;border-radius:2px;padding:8px 11px;line-height:1.35}
-.side .ex{font-size:12px;color:#5c564c;line-height:1.9;margin:0;padding-left:16px}
-.side .clock{font-variant-numeric:tabular-nums;font-size:12px;color:#736c60;margin:8px 0 0}
+.side button{font:inherit;font-size:12px;border:1px solid var(--ink);background:var(--paper);
+ border-radius:var(--r-pill);padding:6px 12px;cursor:pointer}
+.side button:hover{background:var(--ink);color:var(--paper)}
+.side .hint{font-family:"Caveat",cursive;font-size:16px;color:var(--note-ink);background:var(--note);
+ border:1px dashed var(--note-line);border-radius:var(--r-sm);padding:8px 11px;line-height:1.35}
+.side .ex{font-size:12px;color:var(--ink-2);line-height:1.9;margin:0;padding-left:16px}
+.side .clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);margin:8px 0 0}
 
-.phone{width:390px;height:844px;border:1.5px solid #22201c;border-radius:14px;background:#fffdf8;
+.phone{width:390px;height:844px;border:1px solid var(--line-2);border-radius:var(--r-lg);
+ background:var(--paper);
  overflow:hidden;display:flex;flex-direction:column;position:relative;flex-shrink:0;
- box-shadow:0 18px 40px -24px rgba(34,32,28,.5)}
+ box-shadow:var(--shadow-sheet)}
 .inset{height:40px;flex-shrink:0}
 .nav{min-height:50px;display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;
- border-bottom:1px solid #eeeae1}
-.navt{font-size:17px;font-weight:600}
+ border-bottom:1px solid var(--line)}
+.navt{font-size:20px;font-weight:var(--w-mid);color:var(--ink-2);letter-spacing:-.025em}
 .body{flex:1;padding:14px 16px 20px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
@@ -48,115 +145,131 @@ body{margin:0;background:#e9e6de;color:#22201c;line-height:1.5;font-size:14px;
 /* 悬浮按钮浮在正文之上（bottom:78 + 56 高 = 盖住标签栏往上 72px），
    所以有它的页面要把这块高度垫出来，不然年视图这种长页面最后一张卡会被压住 */
 .body.hasfab{padding-bottom:88px}
-.tabs{height:62px;border-top:1px solid #22201c;display:flex;flex-shrink:0;background:#f6f4ef}
+.tabs{height:66px;border-top:0;display:flex;flex-shrink:0;background:var(--surface-3)}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
- font-size:10px;color:#8b857a;cursor:pointer}
-.tab.on{color:#22201c;font-weight:600}
-.tab:active{background:#eae5da}
+ font-size:10px;color:var(--nav-ink);cursor:pointer}
+.tab.on{color:var(--nav-on);font-weight:var(--w-mid)}
+.tab:active{background:rgba(255,255,255,.07)}
 .fab{position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:50%;
- background:#22201c;color:#fffdf8;display:flex;align-items:center;justify-content:center;
- cursor:pointer;box-shadow:0 6px 16px -6px rgba(34,32,28,.7)}
+ background:var(--ink-2);color:var(--paper);display:flex;align-items:center;
+ justify-content:center;cursor:pointer;box-shadow:var(--shadow-fab)}
 .fab:active{transform:scale(.94)}
 .fabrow{position:absolute;right:16px;bottom:78px;display:flex;align-items:center;gap:10px}
 .fabrow .fab{position:static}
-.fabpill{height:56px;border-radius:999px;background:#fffdf8;border:1.5px solid #22201c;
+.fabpill{height:56px;border-radius:var(--r-pill);background:var(--ghost);border:0;
+ color:var(--aubergine);
  display:flex;align-items:center;gap:7px;padding:0 20px;font-size:15px;font-weight:500;
- cursor:pointer;box-shadow:0 6px 16px -8px rgba(34,32,28,.45);white-space:nowrap}
+ cursor:pointer;box-shadow:var(--shadow-pill);white-space:nowrap}
 .fabpill:active{transform:scale(.97)}
 
-.card{border:1px solid #c8c2b6;border-radius:4px;background:#fff;padding:13px 14px}
+.card{border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--surface);
+ padding:17px 17px}
 .card.tap{cursor:pointer}
-.card.tap:active{background:#faf8f3}
-.lbl,.sub{font-size:12px;color:#736c60}
-.h2{font-size:15px;font-weight:600}
-.big{font-size:31px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.num{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
-.money{font-variant-numeric:tabular-nums}
+.card.tap:active{background:var(--surface-2)}
+.lbl,.sub{font-size:12px;color:var(--muted)}
+.h2{font-size:15px;font-weight:var(--w-mid);color:var(--ink-2)}
+.big{font-size:34px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
+ letter-spacing:-.025em}
+.num{font-size:17px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
+ letter-spacing:-.025em}
+/* 金额破例走 500；负字距只给数字，压中文会让字挤在一起 */
+.money{font-variant-numeric:tabular-nums;font-weight:var(--w-bold);letter-spacing:-.025em}
 .row{min-height:56px;display:flex;align-items:center;gap:11px;padding:7px 0;
- border-bottom:1px solid #eeeae1}
-.chip{border:1px solid #b9b3a7;border-radius:999px;padding:4px 11px;font-size:12px;background:#fff;
+ border-bottom:1px solid var(--line)}
+.chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:5px 13px;
+ font-size:12px;background:var(--surface-2);color:var(--ink-2);
  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
-.chip.on{border-color:#22201c;font-weight:600}
+.chip.on{background:var(--ghost);border-color:var(--ghost);color:var(--aubergine);
+ font-weight:var(--w-mid);box-shadow:var(--shadow-pill)}
 .chip.flat{cursor:default}
 /* 自定义分类就是普通标签，只是右边多一个 ×；「新建」是同一个壳子，描边改虚线 */
-.chip.newcat{border-style:dashed;color:#736c60}
+.chip.newcat{border-style:dashed;color:var(--muted)}
 .chip .tag-x{margin:-4px -8px -4px -1px;padding:4px 8px;display:inline-flex;align-items:center;
- color:#a8a196}
-.chip .tag-x:active{color:#22201c}
-.mbtn{min-height:48px;border:1.5px solid #22201c;border-radius:4px;display:flex;align-items:center;
- justify-content:center;gap:7px;font-size:15px;font-weight:500;background:#fff;padding:0 14px;
+ color:var(--ghosted)}
+.chip .tag-x:active{color:var(--ink)}
+.mbtn{min-height:50px;border:1px solid var(--line-2);border-radius:var(--r-pill);
+ display:flex;align-items:center;
+ justify-content:center;gap:7px;font-size:15px;font-weight:500;background:var(--surface);padding:0 14px;
  cursor:pointer;text-align:center}
 .mbtn:active{transform:translateY(1px)}
-.mbtn.pri{background:#22201c;color:#fffdf8}
-.mbtn.off{color:#a39c90;border-color:#cfc9bd;background:#faf8f3;cursor:not-allowed}
+.mbtn.pri{background:var(--ghost);border-color:var(--ghost);color:var(--aubergine);
+ box-shadow:var(--shadow-pill)}
+.mbtn.off{color:var(--ghosted);border-color:var(--chev);background:var(--surface-2);cursor:not-allowed}
 .mbtn.sm{min-height:40px;font-size:13px}
-.barh{height:8px;background:#e6e1d7;border-radius:999px;overflow:hidden}
-.barh>i{display:block;height:100%;background:#5c564c;transition:width .35s ease}
+.barh{height:8px;background:var(--track);border-radius:var(--r-pill);overflow:hidden}
+.barh>i{display:block;height:100%;background:var(--peri);transition:width .35s ease}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.banner{border:1px solid;border-radius:4px;padding:10px 12px;font-size:13px;display:flex;gap:9px;
+.banner{border:1px solid;border-radius:var(--r-md);padding:12px 14px;font-size:13px;
+ display:flex;gap:9px;
  align-items:flex-start;line-height:1.45}
 .banner.tap{cursor:pointer}
-.dash{border:1px dashed #b9b3a7;border-radius:4px;background:#fbfaf6;min-height:52px;
- display:flex;align-items:center;justify-content:center;gap:7px;color:#8b857a;font-size:14px;
+.dash{border:1px dashed var(--peri);border-radius:var(--r-pill);background:transparent;
+ min-height:54px;
+ display:flex;align-items:center;justify-content:center;gap:7px;color:var(--faint);font-size:14px;
  cursor:pointer}
-.dash:active{background:#f2efe8}
+.dash:active{background:var(--press)}
 .fld{display:flex;flex-direction:column;gap:5px}
-.fldbox,input.fldbox,select.fldbox{min-height:46px;border:1px solid #a8a29a;border-radius:4px;
- background:#fff;display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
+.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--edge-2);
+ background:var(--surface-2);border-radius:var(--r);
+ background:var(--surface);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
  font-family:inherit;color:inherit;width:100%}
 input.fldbox,select.fldbox{-webkit-appearance:none;appearance:none}
-input.fldbox:focus,select.fldbox:focus{outline:none;border-color:#22201c;border-width:1.5px}
-select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 49%,#8b857a 51%),
- linear-gradient(135deg,#8b857a 49%,transparent 51%);
+input.fldbox:focus,select.fldbox:focus{outline:none;border-color:var(--ink);border-width:1.5px}
+select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 49%,var(--faint) 51%),
+ linear-gradient(135deg,var(--faint) 49%,transparent 51%);
  background-position:calc(100% - 17px) 21px,calc(100% - 12px) 21px;
  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
-.fldbox.err{border-color:oklch(0.56 0.16 27);border-width:1.5px}
-.errline{display:flex;gap:7px;font-size:13px;color:oklch(0.56 0.16 27);align-items:flex-start}
-.seg{display:flex;border:1.5px solid #22201c;border-radius:4px;overflow:hidden}
-.seg>span{flex:1;padding:11px 0;text-align:center;font-size:14px;cursor:pointer}
-.seg>span.on{background:#22201c;color:#fffdf8;font-weight:500}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:999px;
- background:#e6e1d7;margin:16px 0 6px}
+.fldbox.err{border-color:var(--bad);border-width:1.5px}
+.errline{display:flex;gap:7px;font-size:13px;color:var(--bad);align-items:flex-start}
+.seg{display:flex;border:0;border-radius:var(--r-pill);overflow:hidden;
+ background:var(--surface-2);padding:3px}
+.seg>span{flex:1;padding:9px 0;text-align:center;font-size:14px;cursor:pointer;
+ border-radius:var(--r-pill);color:var(--ink-2)}
+.seg>span.on{background:var(--surface);color:var(--ink-2);font-weight:var(--w-mid)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:var(--r-pill);
+ background:var(--track);margin:16px 0 6px}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;
- border-radius:50%;background:#fffdf8;border:1.5px solid #22201c;cursor:pointer}
-.toggle{width:44px;height:26px;border-radius:999px;border:1.5px solid #22201c;background:#fff;
+ border-radius:50%;background:var(--paper);border:1.5px solid var(--ink);cursor:pointer}
+.toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--edge);
+ background:var(--surface-2);
  position:relative;flex-shrink:0;cursor:pointer;transition:background .2s}
 .toggle>i{position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;
- background:#c8c2b6;transition:left .2s,background .2s}
-.toggle.on{background:#22201c}
-.toggle.on>i{left:21px;background:#fffdf8}
+ background:var(--line-2);transition:left .2s,background .2s}
+.toggle.on{background:var(--peri);border-color:var(--peri)}
+.toggle.on>i{left:21px;background:var(--paper)}
 /* 左滑删除：红底垫在下面，内容层往左推 */
 /* 红底放在删除面板上，不要放在容器上 —— 容器铺红色会在行与行之间透出红缝 */
 /* 跟着里面卡片的圆角裁 —— 否则四个圆角处会透出底下的红色删除面板 */
-.sw{position:relative;overflow:hidden;border-radius:4px}
-.sw-del{position:absolute;top:0;right:0;bottom:0;width:76px;color:#fffdf8;display:flex;
- align-items:center;justify-content:center;cursor:pointer;background:oklch(0.56 0.16 27)}
-.sw-body{position:relative;background:#fffdf8;transition:transform .18s ease;touch-action:pan-y}
+.sw{position:relative;overflow:hidden;border-radius:var(--r)}
+.sw-del{position:absolute;top:0;right:0;bottom:0;width:76px;color:var(--paper);display:flex;
+ align-items:center;justify-content:center;cursor:pointer;background:var(--bad)}
+.sw-body{position:relative;background:var(--paper);transition:transform .18s ease;touch-action:pan-y}
 /* 长按拿起来排序：不加把手，不改版式 —— 点还是进详情，左滑还是删除 */
 .srt{transition:transform .16s ease}
 .srt.lift{position:relative;z-index:6;transition:none;
- box-shadow:0 10px 24px -10px rgba(34,32,28,.55);border-radius:6px}
-.srt.lift .sw-body,.srt.lift.card{background:#fffdf8}
+ box-shadow:0 10px 24px -10px rgba(34,32,28,.55);border-radius:var(--r-md)}
+.srt.lift .sw-body,.srt.lift.card{background:var(--paper)}
 .dragging{touch-action:none;user-select:none}
-.card .sw-body{background:#fff}
+.card .sw-body{background:var(--surface)}
 .sw.open .sw-body{transform:translateX(-76px)}
 .dim{position:absolute;inset:0;background:rgba(34,32,28,.36)}
 .dim.anim{animation:fade .18s ease}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:#fffdf8;border-top:1.5px solid #22201c;
- border-radius:14px 14px 0 0;padding:10px 16px 20px;display:flex;flex-direction:column;gap:11px;
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-top:0;
+ border-radius:var(--r-lg) var(--r-lg) 0 0;padding:10px 16px 20px;display:flex;flex-direction:column;gap:11px;
  max-height:88%;overflow-y:auto}
 .sheet.anim{animation:up .24s cubic-bezier(.2,.8,.3,1)}
-.grab{width:38px;height:4px;border-radius:999px;background:#cfc9bd;align-self:center;
+.grab{width:38px;height:4px;border-radius:var(--r-pill);background:var(--chev);align-self:center;
  margin-bottom:5px;flex-shrink:0}
 .toast.high{bottom:auto;top:52px}
-.toast{position:absolute;left:16px;right:16px;bottom:78px;background:#22201c;color:#fffdf8;
- border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;
+.toast{position:absolute;left:16px;right:16px;bottom:78px;background:var(--ink-2);
+ color:var(--paper);border-radius:var(--r-pill);
+ border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;
  animation:up .2s ease;z-index:5}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .wave{display:flex;gap:4px;align-items:center;justify-content:center;height:44px}
-.wave>span{width:3px;background:#cfc9bd;border-radius:2px;height:9px}
-.wave.on>span{background:#22201c;animation:w .9s ease-in-out infinite}
+.wave>span{width:3px;background:var(--chev);border-radius:var(--r-sm);height:9px}
+.wave.on>span{background:var(--ink);animation:w .9s ease-in-out infinite}
 @keyframes w{0%,100%{height:9px}50%{height:34px}}
 textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
  align-items:flex-start;display:block}
@@ -273,22 +386,21 @@ zh: {
   "cat.other": "其他",
 
   "yr.empty": (v) => v.y + " 年还没有任何记录。",
-  "yr.emptyHint": "全年总结只统计你真正记过的月份。",
+  "yr.emptyHint": "只统计你真正记过的月份。",
   "yr.headline": (v) => v.y + " 年" + (v.neg ? "缺口" : "结余"),
   "yr.range": (v) => "从 " + v.from + " 月开始用，统计 " + v.list + "（共 " + v.n +
     " 个月）· 之前的月份不补",
   "yr.timesN": (v) => v.what + " × " + v.n + " 个月",
   "yr.ledgerIn": "记账收入", "yr.ledgerOut": "记账支出", "yr.confirmed": "确认存入的",
-  "yr.note": "固定项按你开始用之后的月数乘。开始之前的月份一律不补 —— " +
-    "不会凭空多出 12 个月的房租。",
+  "yr.note": "固定项只乘你开始用之后的月数，之前的不补。",
   "yr.monthly": "每月结余", "yr.noRecord": "没有记录",
 
   "cf.title": (v) => "本月还有 " + v.n + " 项没确认",
-  "cf.hint": "没确认的不会算进结余 —— 确认一下，上面的数才是准的。",
+  "cf.hint": "没确认的不算进结余。",
   "cf.saved": "已存", "cf.paid": "已还", "cf.no": "没有",
 
   "su.title": "把设置补全", "su.later": "以后再说",
-  "su.hint": "补上之后，上面的结余才是准的。没有的项可以不填。",
+  "su.hint": "补上之后结余才准。没有的可以不填。",
   "su.outSub": "房租、水电这些", "su.debtSub": "有房贷车贷分期的话",
   "su.saveSub": "每月想存多少",
 
@@ -306,18 +418,16 @@ zh: {
   "va.accountsN": (v) => v.n + " 个账户　·　其中 " + v.reserved + " 为储蓄预留",
   "va.lifeDone": "已经攒够了", "va.lifeLeft": (v) => "还差 " + v.amt,
   "va.tabAccounts": (v) => "账户 " + v.n, "va.tabSavings": (v) => "固定储蓄 " + v.n,
-  "va.notice": "金库就是你的账户们 —— 没有连银行，数字你自己记。点一下就能改，" +
-    "改动不算消费，也不进账本。",
+  "va.notice": "数字你自己维护 —— 改余额不算消费，也不进账本。",
   "va.reservedOn": (v) => "其中 " + v.amt + " 为储蓄预留",
   "va.overBalance": "（超过余额了）",
   "va.shareOf": (v) => "占总资产 " + v.pct + "%",
   "va.addAccount": "新建账户",
   "va.planJars": "攒物计划专项",
-  "va.planJarsHint": "卖旧物换来的钱，计划在管，不能手动动用。",
+  "va.planJarsHint": "卖旧物换来的，计划在管，不能手动动用。",
   "va.planJarGrows": "卖一件就自己涨",
-  "va.savingsHint": "每月往某个账户里划出一块。钱没离开金库，只是被预留了 —— " +
-    "所以总资产不会变少。",
-  "va.savingsEmpty": "还没有。设一笔，系统就会替你盯着每月存没存。",
+  "va.savingsHint": "从某个账户里划出一块。钱没离开金库，总资产不会变少。",
+  "va.savingsEmpty": "设一笔，每个月会替你盯着存没存。",
   "va.addGoal": "新建一笔储蓄", "va.sumGoal": "每月应存合计",
   "va.autoOn": (v) => "自动 · 每月 " + v.day + " 号",
   "va.autoDone": "本月已存入", "va.autoWill": (v) => v.day + " 号自动存入",
@@ -326,13 +436,12 @@ zh: {
   "va.perMonthNeed": (v) => v.months + " 个月 · 每月必存 " + v.amt,
 
   "bi.tabOut": "固定支出", "bi.tabDebt": "固定还贷", "bi.total": "合计",
-  "bi.emptyOut": "房租、水电、交通这类每月都要走的钱。加一条，每个月自动计入支出。",
+  "bi.emptyOut": "房租、水电、交通这类每月都要走的钱。",
   "bi.addOut": "添加固定支出", "bi.sumOut": "每月固定支出合计",
-  "bi.noteOut": "这些钱到日子就走，所以整月都算进支出 —— 和储蓄不一样，储蓄要你确认了才扣。",
+  "bi.noteOut": "到日子就走，所以整月都算支出 —— 储蓄不一样，要确认了才扣。",
   "bi.emptyDebt": "房贷、车贷、分期这类有期限的还款。",
   "bi.addDebt": "录入还贷", "bi.sumDebt": "每月还款合计",
-  "bi.noteDebt": "还贷该付就是该付，所以照样整月计入支出。「这月已还」只是别让你忘 —— " +
-    "手动的过了日子还没答，上面会标红。",
+  "bi.noteDebt": "该付就是该付，照样整月计入。手动的过了日子没答会标红。",
   "bi.autoOn": (v) => "自动 · 每月 " + v.day + " 号",
   "bi.autoDone": "本月已扣", "bi.autoWill": (v) => v.day + " 号自动扣",
   "bi.paidThis": "这月已还", "bi.notPaid": "还没还", "bi.notPaidYet": "这月还没还",
@@ -344,7 +453,7 @@ zh: {
   "pie.title": (v) => v.period + " · 钱去哪了",
   "pie.emptyYear": (v) => "这一年没有" + v.kind + "。",
   "pie.emptyMonth": (v) => "这个月没有" + v.kind + "。",
-  "pie.noteIn": "固定收入在「我」里声明，按名目各算一块。",
+  "pie.noteIn": "固定收入按名目各算一块。",
   "pie.noteOut": (v) => "固定支出和还贷在「" + v.bills + "」里声明，各算一块。",
   "pie.folded": "　不足 3% 的并进了「其他」。",
   "pie.other": "其他",
@@ -356,7 +465,7 @@ zh: {
   "tx.editDraft": "改这一笔", "tx.dropDraft": "这笔不要了",
   "tx.add": "记一笔", "tx.addBtn": "记下来", "tx.one": "这一笔", "tx.del": "删除这一笔",
   "lg.title": "人生大目标",
-  "lg.hint": "一个足够远、足够有意义的数。金库总额对着它走，右上角那条就是进度。",
+  "lg.hint": "一个足够远的数。金库总额对着它走。",
   "lg.what": "目标是什么", "lg.whatPh": "如：一年生活费、财务自由、买房",
   "lg.howMuch": "需要多少钱", "lg.nowAt": (v) => "金库现在 " + v.amt,
   "lg.drop": "取消这个目标",
@@ -368,20 +477,20 @@ zh: {
   "fx.name": "名目",
   "fx.namePhIn": "如：工资、收房租、存款利息", "fx.namePhOut": "如：房租、水电、交通月卡",
   "fx.amount": "每月金额", "fx.day": "每月几号", "fx.dayPh": "1 – 31",
-  "fx.dayHintIn": "发钱的日子，账本里会按这天显示",
-  "fx.dayHintOut": "扣钱的日子，账本里会按这天显示",
+  "fx.dayHintIn": "账本里会按这天显示",
+  "fx.dayHintOut": "账本里会按这天显示",
   "fx.addIn": "添加固定收入", "fx.addOut": "添加固定支出",
   "fx.editIn": "这笔固定收入", "fx.editOut": "这笔固定支出",
   "go.new": "新建一笔固定储蓄", "go.edit": "这笔固定储蓄",
   "go.name": "储蓄名字", "go.namePh": "如：买房首付、紧急预备金",
   "go.target": "目标总额", "go.months": "计划期限（月）",
   "go.account": "存入哪个账户",
-  "go.accountHint": "钱就放在这个账户里 —— 目标只是把它划出来一块，不会让总资产变少",
+  "go.accountHint": "钱还在这个账户里，只是被划出来一块",
   "go.how": "怎么存", "go.auto": "银行自动转", "go.manual": "我手动转",
-  "go.autoHint": "银行里已经设好定期转入，系统到日子自动记上，列表上不用你点。",
-  "go.manualHint": "每个月列表上会问你一次「这月存了吗」。",
+  "go.autoHint": "银行已经在自动转，到日子系统自己记上。",
+  "go.manualHint": "每个月问你一次「这月存了吗」。",
   "go.create": "创建目标",
-  "go.createHint": "固定储蓄会从收入里预留 —— 结余和种草页的可用预算都会变少。",
+  "go.createHint": "会从收入里预留 —— 结余和可用预算都会变少。",
   "go.saved": "已存金额", "go.savedHint": "记错了可以直接改成实际数字",
   "go.del": "删除这笔储蓄",
   "db.new": "录入一笔还贷", "db.edit": "这笔还贷",
@@ -391,7 +500,7 @@ zh: {
   "db.account": "从哪个账户扣",
   "db.how": "怎么还", "db.auto": "银行自动扣", "db.manual": "我手动还",
   "db.autoHint": "银行自动扣，到日子系统自己记上。",
-  "db.manualHint": "每个月问你一次「这月还了吗」—— 过了日子还没答会标红。",
+  "db.manualHint": "每个月问你一次「这月还了吗」，逾期标红。",
   "db.bind": "绑定", "db.unbind": "解除绑定",
   "pl.title": "卖旧东西来换",
   "pl.jarSuffix": "基金",
@@ -455,22 +564,20 @@ zh: {
   "k.wiped": "清空了 —— 从头设一遍", "k.demoBack": "演示数据已恢复",
   "e.badBackup": "这不是这个 app 的备份文件。",
   "wz.step0": "先挑语言和货币",
-  "wz.hint0": "之后在「我」里随时能改。切货币只换符号和写法，不做汇率换算。",
   "wz.step1": "先说收入", "wz.step2": "再说账户",
-  "wz.hint1": "每个月固定进来的钱 —— 工资、房租收入、利息都算。声明一次，以后不用每月记。",
-  "wz.hint2": "先记下你常用的账户。银行卡、微信、Monzo… 金库就是你的账户们，数字你自己维护。",
+  "wz.hint1": "工资、房租、利息这类每月都有的钱。声明一次，不用每月记。",
+  "wz.hint2": "银行卡、微信、Monzo… 金库就是你的账户们。",
   "wz.namePh": "如：工资", "wz.dayLabel": "每月几号到账", "wz.dayPh": "留空按 1 号算",
   "wz.acctName": "账户名称", "wz.acctPh": "如：招商银行卡", "wz.acctBal": "现在有多少钱",
   "wz.add": "添加", "wz.addAnother": "添加另一个",
   "wz.next": "下一步", "wz.start": "开始用",
   "wz.skip": "跳过，之后再设",
-  "wz.footer": "固定支出、还贷、攒钱这些不用现在填 —— 进去之后财况页会提醒你补。",
+  "wz.footer": "固定支出、还贷、攒钱之后再补，财况页会提醒你。",
   "sp.title": "还剩的钱存到哪",
-  "sp.hint": "存进去就是普通存款了 —— 不进账本，也不会凭空多出可花的闲钱。",
+  "sp.hint": "存进去就是普通存款，不进账本。",
   "sp.into": "存入", "sp.btn": "存入并关掉罐子",
   "cb.title": "已经攒的钱怎么办",
-  "cb.hint": "你打算直接掏钱买，那罐子里这笔卖出来的钱就得有个去处。" +
-    "买这一笔会进账本 —— 它不是计划出的钱。",
+  "cb.hint": "直接掏钱买，那罐子里卖来的钱得有个去处。这一笔会进账本。",
   "cb.toSavings": "转成存款", "cb.btn": "存起来，然后买",
   "ts.title": "这笔钱去哪",
   "ts.hint": (v) => "你卖掉 " + v.n + " 件不用的东西换来的。它不会消失，只是换个地方待着。",
@@ -479,7 +586,7 @@ zh: {
   "sa.howMuch": "卖了多少钱", "sa.whichPlan": "计入哪个计划",
   "sa.leftToGo": (v) => "还差 " + v.amt,
   "sa.intoJar": (v) => "进「" + v.jar + "」· 还差 " + v.amt,
-  "sa.note": "不写进账本 —— 卖旧东西不是挣钱，是把东西换成钱。",
+  "sa.note": "不进账本 —— 卖旧东西不是挣钱，是把东西换成钱。",
   "as.say": "说点什么",
   "as.listen": "按住说话", "as.listening": "在听…", "as.stop": "说完了",
   "as.noMic": "这个浏览器不支持语音输入 —— 直接打字也一样。",
@@ -487,7 +594,7 @@ zh: {
   "as.micNothing": "没听清，再说一次？",
   "as.micHttp": "语音输入需要 https —— 在正式网址上打开就能用。",
   "as.placeholder": "比如：我今天吃饭花了10元，打车花了9元",
-  "as.parse": "解析", "as.parseHint": "解析只是给你看 —— 确认之后才写进去。",
+  "as.parse": "解析", "as.parseHint": "先给你看，确认之后才写进去。",
   "as.foundN": (v) => "识别到 " + v.n + " 笔",
   "as.previewMeta": (v) => v.sum + " · " + v.date + " · 点任意一笔可以改",
   "as.noAmount": "没听出金额，确认前得补上。",
@@ -503,7 +610,7 @@ zh: {
   "as.decision": "你在纠结要不要买",
   "as.necMeta": (v) => "必要度 " + v.n + " / 10" + (v.dup ? " · 已有类似" : ""),
   "as.scoreMeta": (v) => v.score + " 分 · " + v.price + " 占可用预算 " + v.pct + "%",
-  "as.readonly": "这一条没有「确认」—— 它只是回答，不落账。",
+  "as.readonly": "只是回答，不落账。",
   "as.openQuiz": "打开测验面板",
   "px.fixed": "固定", "px.transfer": "转存", "px.expected": "预计",
   "px.savingNotSpend": "算储蓄，不算支出",
@@ -523,7 +630,7 @@ zh: {
   "wl.emptyActive": "清单空空如也 —— 说明你的克制力不错。",
   "wl.emptyDone": "还没有归档记录。",
   "wl.notBought": "最终没买的",
-  "wl.notBoughtHint": "买下来的那一笔只记在这里 —— 账本里不会出现。",
+  "wl.notBoughtHint": "买下来的只记在这里，账本里不出现。",
   "wl.planState": (v) => "攒物计划 · 已攒 " + v.raised + "　还差 " + v.left,
   "wl.cooledDone": "冷静期已结束 · 可以买了",
   "wl.coolingLeft": (v) => "冷静期还剩 " + plural2(v.h, "小时"),
@@ -585,20 +692,19 @@ zh: {
   "verdict.green": "绿灯 · 可以直接买", "verdict.amber": "黄灯 · 建议冷静",
   "verdict.red": "红灯 · 强烈阻止",
   "advice.green": "完全在预算范围内，必要性也够高。放心买。",
-  "advice.amber": "边界决策：不是绝对必需，或会占用较多闲钱。建议冷却 48 小时。",
+  "advice.amber": "不是非要不可，或者占掉太多闲钱。放 48 小时再说。",
   "advice.red": "已被拦截：它占你可用预算的比重太大，必要度又不够高。",
   "advice.redDup": "已被拦截：你在储蓄模式下，而且已经有类似的东西了。",
   "set.mode": "财务模式", "set.modeSave": "储蓄模式", "set.modeComfort": "舒适模式",
-  "set.modeHint": "储蓄模式把价格惩罚从 1.5 倍提到 4 倍，再额外扣 10 分。",
+  "set.modeHint": "对价格更苛刻，红灯更容易亮。",
   "set.fixedIn": "固定收入",
-  "set.fixedInHint": "工资、收房租、存款利息这类每月都有的钱。声明一次就行，不用每月记账。",
+  "set.fixedInHint": "工资、房租、利息这类每月都有的钱。声明一次，不用每月记。",
   "set.fixedInEmpty": "还没有。加一条，每个月就自动算上。",
   "set.perMonthSum": "每月合计", "set.addFixedIn": "添加固定收入",
   "set.movedNote": (v) => "固定支出和还贷搬到「" + v.bills + "」那一页了，固定储蓄在「" +
     v.vault + "」里。",
   "set.cats": "分类",
-  "set.catsHint": "系统自带的不能改。自己加的点一下改名，点标签上的 × 删除 —— " +
-    "删掉之后，已经记着这个分类的旧账目不会变。",
+  "set.catsHint": "自己加的点一下改名，× 删除。删掉不影响已经记着它的旧账目。",
   "set.newCat": "新建",
   "set.cooldown": "默认冷静时长",
   "set.hours": (v) => v.h + " 小时", "set.days": (v) => v.d + " 天",
@@ -621,23 +727,20 @@ zh: {
   "k.planDropped": "计划已放弃",
   "set.data": "你的数据",
   "wipe.title": "清空所有数据？",
-  "wipe.body": "这台设备上记的账、账户、储蓄、清单会全部删掉，撤不回来。" +
-    "建议先导出一份备份。",
+  "wipe.body": "这台设备上的记录会全部删掉，撤不回来。",
   "wipe.yes": "我确定，清空", "wipe.exportFirst": "先导出备份",
   "demo.title": "恢复演示数据？",
-  "demo.body": "会用一套示例数据盖掉你现在的记录。想留住的话先导出。",
+  "demo.body": "示例数据会盖掉你现在的记录。",
   "demo.yes": "我确定，恢复演示数据",
-  "set.dataHint": "账目只存在这台设备的浏览器里，不会上传到任何地方。" +
-    "所以换手机、清缓存之前，记得先导出一份。",
+  "set.dataHint": "只存在这台设备上，不上传。换手机或清缓存前先导出。",
   "set.savedAt": (v) => "上次保存：" + v.when,
   "set.neverSaved": "还没存过",
   "set.export": "导出备份", "set.import": "从备份恢复",
   "set.wipe": "清空，从头开始", "set.demo": "恢复演示数据",
   "set.saved": "这一页的改动都已保存",
+  "set.theme": "外观", "theme.auto": "跟随系统", "theme.light": "浅色", "theme.dark": "深色",
   "set.currency": "货币",
-  "set.currencyHint": "只换符号和写法，不做汇率换算 —— 一个人就用一种钱。",
   "set.language": "语言",
-  "set.languageHint": "英文版是重写的，不是翻译 —— 有说不顺的地方告诉我。",
 },
 en: {
   "tab.money": "Money", "tab.bills": "Bills", "tab.wants": "Wants", "tab.vault": "Vault",
@@ -658,25 +761,22 @@ en: {
   "cat.other": "Other",
 
   "yr.empty": (v) => "Nothing recorded in " + v.y + " yet.",
-  "yr.emptyHint": "The yearly summary only counts months you actually recorded.",
+  "yr.emptyHint": "Only months you actually recorded.",
   "yr.headline": (v) => v.y + (v.neg ? " shortfall" : " left over"),
   "yr.range": (v) => "You started in " + MON3[+v.from - 1] + ". Covers " + v.list +
     " (" + plural(v.n, "month", "months") + ") — earlier months are never back-filled.",
   "yr.timesN": (v) => v.what + " × " + plural(v.n, "month", "months"),
   "yr.ledgerIn": "Logged income", "yr.ledgerOut": "Logged spending",
   "yr.confirmed": "Confirmed savings",
-  "yr.note": "Fixed items are multiplied by the months since you started — never before " +
-    "that, so you never get a phantom year of rent.",
+  "yr.note": "Fixed items only count from the month you started.",
   "yr.monthly": "Month by month", "yr.noRecord": "no records",
 
   "cf.title": (v) => plural(v.n, "item", "items") + " still unconfirmed",
-  "cf.hint": "Unconfirmed money isn't taken out yet — confirm it and the number above " +
-    "becomes real.",
+  "cf.hint": "Unconfirmed money isn't counted yet.",
   "cf.saved": "Saved", "cf.paid": "Paid", "cf.no": "Not yet",
 
   "su.title": "Finish setting up", "su.later": "Later",
-  "su.hint": "Fill these in and the number above becomes accurate. Skip anything you " +
-    "don't have.",
+  "su.hint": "Fill these in and the number above becomes accurate.",
   "su.outSub": "Rent, bills, that sort of thing",
   "su.debtSub": "A mortgage, car loan or instalments",
   "su.saveSub": "How much you want to put aside",
@@ -698,21 +798,18 @@ en: {
     " of it is set aside",
   "va.lifeDone": "you're there", "va.lifeLeft": (v) => v.amt + " to go",
   "va.tabAccounts": (v) => "Accounts " + v.n, "va.tabSavings": (v) => "Set aside " + v.n,
-  "va.notice": "The vault is just your accounts — nothing is connected to a bank, you " +
-    "keep the numbers yourself. Tap one to correct it; that isn't spending and it never " +
+  "va.notice": "You keep the numbers — fixing a balance isn't spending and never " +
     "reaches your ledger.",
   "va.reservedOn": (v) => v.amt + " of this is set aside",
   "va.overBalance": " (more than the balance)",
   "va.shareOf": (v) => v.pct + "% of everything",
   "va.addAccount": "New account",
   "va.planJars": "Sell-to-buy plans",
-  "va.planJarsHint": "Money from selling things. The plan looks after it — you can't " +
-    "spend it by hand.",
+  "va.planJarsHint": "From selling things. The plan holds it — you can't spend it by hand.",
   "va.planJarGrows": "Grows every time you sell something",
-  "va.savingsHint": "Set aside a slice of one account each month. The money never leaves " +
-    "the vault, it's only reserved — so the total doesn't drop.",
-  "va.savingsEmpty": "Nothing yet. Set one up and the app will keep asking whether you " +
-    "put it aside.",
+  "va.savingsHint": "Reserve a slice of one account. The money doesn't leave, so the " +
+    "total doesn't drop.",
+  "va.savingsEmpty": "Set one up and I'll keep asking whether you put it aside.",
   "va.addGoal": "New savings goal", "va.sumGoal": "To set aside each month",
   "va.autoOn": (v) => "Automatic · the " + nth(+v.day),
   "va.autoDone": "In for this month", "va.autoWill": (v) => "Goes in on the " + nth(+v.day),
@@ -721,16 +818,14 @@ en: {
   "va.perMonthNeed": (v) => plural(v.months, "month", "months") + " · " + v.amt + " a month",
 
   "bi.tabOut": "Fixed costs", "bi.tabDebt": "Loans", "bi.total": "Total",
-  "bi.emptyOut": "Rent, utilities, commuting — money that leaves every month. " +
-    "Add one and it counts itself from then on.",
+  "bi.emptyOut": "Rent, utilities, commuting — money that leaves every month.",
   "bi.addOut": "Add a fixed cost", "bi.sumOut": "Fixed costs per month",
-  "bi.noteOut": "This money goes on its due date, so the whole month counts it — " +
-    "unlike savings, which only count once you confirm them.",
+  "bi.noteOut": "It goes on its due date, so the whole month counts it — savings " +
+    "only count once you confirm them.",
   "bi.emptyDebt": "A mortgage, car loan or instalment plan — borrowing with an end date.",
   "bi.addDebt": "Add a loan", "bi.sumDebt": "Loan payments per month",
-  "bi.noteDebt": "A payment due is a payment due, so the whole month counts it. " +
-    "\u201cPaid\u201d is just so you don't forget — miss the date on a manual one and " +
-    "it turns red up there.",
+  "bi.noteDebt": "Due is due, so the whole month counts it. Miss the date on a " +
+    "manual one and it turns red.",
   "bi.autoOn": (v) => "Automatic · the " + nth(+v.day),
   "bi.autoDone": "Taken this month", "bi.autoWill": (v) => "Goes out on the " + nth(+v.day),
   "bi.paidThis": "Paid this month", "bi.notPaid": "Not yet", "bi.notPaidYet": "Not paid yet",
@@ -742,7 +837,7 @@ en: {
   "pie.title": (v) => "Where it went · " + v.period,
   "pie.emptyYear": (v) => "No " + v.kind + " this year.",
   "pie.emptyMonth": (v) => "No " + v.kind + " this month.",
-  "pie.noteIn": "Regular income is declared in Me and counted line by line.",
+  "pie.noteIn": "Regular income is counted line by line.",
   "pie.noteOut": (v) => "Fixed costs and loans are declared in " + v.bills +
     " and counted separately.",
   "pie.folded": "　Anything under 3% is folded into Other.",
@@ -756,8 +851,7 @@ en: {
   "tx.add": "Log an entry", "tx.addBtn": "Log it", "tx.one": "This entry",
   "tx.del": "Delete this entry",
   "lg.title": "The big one",
-  "lg.hint": "A number far enough out to matter. Everything in the vault counts towards " +
-    "it, and the bar up top is how far you've got.",
+  "lg.hint": "A number far enough out to matter. The vault counts towards it.",
   "lg.what": "What are you aiming at?", "lg.whatPh": "e.g. a year of living costs, a deposit",
   "lg.howMuch": "How much is it?", "lg.nowAt": (v) => "Vault holds " + v.amt,
   "lg.drop": "Drop this goal",
@@ -771,23 +865,20 @@ en: {
   "fx.namePhIn": "e.g. Salary, rent I collect, interest",
   "fx.namePhOut": "e.g. Rent, utilities, travelcard",
   "fx.amount": "How much a month", "fx.day": "Which day of the month", "fx.dayPh": "1 – 31",
-  "fx.dayHintIn": "The day it lands — your ledger will show it on that date",
-  "fx.dayHintOut": "The day it goes — your ledger will show it on that date",
+  "fx.dayHintIn": "Your ledger will show it on that date",
+  "fx.dayHintOut": "Your ledger will show it on that date",
   "fx.addIn": "Add regular income", "fx.addOut": "Add a fixed cost",
   "fx.editIn": "This income", "fx.editOut": "This cost",
   "go.new": "New savings goal", "go.edit": "This savings goal",
   "go.name": "What are you saving for?", "go.namePh": "e.g. house deposit, emergency fund",
   "go.target": "How much in total", "go.months": "Over how many months",
   "go.account": "Which account holds it",
-  "go.accountHint": "The money just sits in this account — the goal only reserves a " +
-    "slice of it, so your total never drops",
+  "go.accountHint": "The money stays in this account, just reserved",
   "go.how": "How does it happen?", "go.auto": "Standing order", "go.manual": "I move it myself",
-  "go.autoHint": "Your bank already moves it, so the app ticks it off on the day and " +
-    "never asks.",
-  "go.manualHint": "Once a month the list will ask whether you moved it.",
+  "go.autoHint": "Your bank already moves it; I'll tick it off on the day.",
+  "go.manualHint": "Once a month I'll ask whether you moved it.",
   "go.create": "Create it",
-  "go.createHint": "This is reserved out of your income — both your monthly figure and " +
-    "your spending budget go down.",
+  "go.createHint": "Reserved out of your income — your monthly figure and budget both drop.",
   "go.saved": "Saved so far", "go.savedHint": "Got it wrong? Just type the real number",
   "go.del": "Delete this goal",
   "db.new": "Add a loan", "db.edit": "This loan",
@@ -797,8 +888,8 @@ en: {
   "db.termsHint": "Leave it at 0 if it's open-ended",
   "db.account": "Which account it comes from",
   "db.how": "How does it happen?", "db.auto": "Direct debit", "db.manual": "I pay it myself",
-  "db.autoHint": "The bank takes it, so the app ticks it off on the day.",
-  "db.manualHint": "Once a month it asks whether you paid — miss the date and it turns red.",
+  "db.autoHint": "The bank takes it; I'll tick it off on the day.",
+  "db.manualHint": "Once a month I'll ask whether you paid. Late turns red.",
   "db.bind": "Add it", "db.unbind": "Remove it",
   "pl.title": "Sell things to pay for it",
   "pl.jarSuffix": " fund",
@@ -869,13 +960,9 @@ en: {
   "k.wiped": "Cleared — set it up again", "k.demoBack": "Demo data restored",
   "e.badBackup": "That isn't a backup from this app.",
   "wz.step0": "Language and currency",
-  "wz.hint0": "You can change both later in Me. Switching currency changes the symbol " +
-    "and formatting only — nothing is converted.",
   "wz.step1": "Money coming in", "wz.step2": "Where you keep it",
-  "wz.hint1": "Money that turns up every month — salary, rent you collect, interest. " +
-    "Say it once and you'll never log it again.",
-  "wz.hint2": "Now the accounts you actually use. Current account, savings, Monzo pots — " +
-    "the vault is just your accounts, and you keep the numbers.",
+  "wz.hint1": "Salary, rent, interest — money that turns up every month. Say it once.",
+  "wz.hint2": "Current account, savings, Monzo pots — the vault is just your accounts.",
   "wz.namePh": "e.g. Salary", "wz.dayLabel": "Which day does it land?",
   "wz.dayPh": "leave blank for the 1st",
   "wz.acctName": "Account name", "wz.acctPh": "e.g. Monzo current account",
@@ -883,15 +970,13 @@ en: {
   "wz.add": "Add", "wz.addAnother": "Add another",
   "wz.next": "Next", "wz.start": "Start",
   "wz.skip": "Skip — I'll set this up later",
-  "wz.footer": "Fixed costs, loans and savings can wait — the Money page will remind you.",
+  "wz.footer": "Fixed costs, loans and savings can wait — Money will remind you.",
   "sp.title": "Where should the rest go?",
-  "sp.hint": "Once it's in, it's ordinary savings — it never enters your ledger and it " +
-    "doesn't turn into spending money.",
+  "sp.hint": "It becomes ordinary savings — never enters your ledger.",
   "sp.into": "Into", "sp.btn": "Save it and close the pot",
   "cb.title": "What about the money you raised?",
-  "cb.hint": "If you're paying for it outright, the money you raised by selling needs " +
-    "somewhere to go. The purchase itself does enter your ledger — the plan didn't pay " +
-    "for it.",
+  "cb.hint": "If you're paying outright, the money you raised needs somewhere to " +
+    "go. This purchase does enter your ledger.",
   "cb.toSavings": "Keep it as savings", "cb.btn": "Save it, then buy",
   "ts.title": "Where does this go?",
   "ts.hint": (v) => "You earned it selling " + plural(v.n, "thing", "things") +
@@ -901,8 +986,8 @@ en: {
   "sa.howMuch": "What did it go for?", "sa.whichPlan": "Which plan?",
   "sa.leftToGo": (v) => v.amt + " to go",
   "sa.intoJar": (v) => "Into " + v.jar + " · " + v.amt + " to go",
-  "sa.note": "This never enters your ledger — selling something isn't earning, " +
-    "it's turning a thing back into money.",
+  "sa.note": "Never enters your ledger — selling isn't earning, it's turning a " +
+    "thing back into money.",
   "as.say": "Say it out loud",
   "as.listen": "Hold to talk", "as.listening": "Listening…", "as.stop": "Done",
   "as.noMic": "This browser can't do speech input — typing works just as well.",
@@ -910,8 +995,7 @@ en: {
   "as.micNothing": "Didn't catch that — try again?",
   "as.micHttp": "Speech input needs https — it works on the real address.",
   "as.placeholder": "e.g. lunch was 10 and the taxi was 9",
-  "as.parse": "Read it back", "as.parseHint": "This is only a preview — nothing is saved " +
-    "until you confirm.",
+  "as.parse": "Read it back", "as.parseHint": "A preview — nothing is saved until you confirm.",
   "as.foundN": (v) => "Heard " + plural(v.n, "entry", "entries"),
   "as.previewMeta": (v) => v.sum + " · " + v.date + " · tap any line to fix it",
   "as.noAmount": "I couldn't hear an amount — fill it in before confirming.",
@@ -930,7 +1014,7 @@ en: {
   "as.necMeta": (v) => "Need it " + v.n + "/10" + (v.dup ? " · already own one" : ""),
   "as.scoreMeta": (v) => v.score + " pts · " + v.price + " is " + v.pct +
     "% of your budget",
-  "as.readonly": "Nothing to confirm here — it's an answer, not an entry.",
+  "as.readonly": "An answer, not an entry.",
   "as.openQuiz": "Open the full test",
   "px.fixed": "fixed", "px.transfer": "moved", "px.expected": "expected",
   "px.savingNotSpend": "counts as saving, not spending",
@@ -952,7 +1036,7 @@ en: {
   "wl.emptyActive": "Nothing on the list — say what you like about your self-control.",
   "wl.emptyDone": "Nothing closed yet.",
   "wl.notBought": "Never bought",
-  "wl.notBoughtHint": "A purchase is recorded here only — it never shows up in your ledger.",
+  "wl.notBoughtHint": "Recorded here only, never in your ledger.",
   "wl.planState": (v) => "Selling to fund it · " + v.raised + " raised　" + v.left + " to go",
   "wl.cooledDone": "Cooling-off over · you can buy it",
   "wl.coolingLeft": (v) => plural(v.h, "hour", "hours") + " of cooling-off left",
@@ -1023,25 +1107,22 @@ en: {
   "verdict.green": "Green · go ahead", "verdict.amber": "Amber · sleep on it",
   "verdict.red": "Red · don't",
   "advice.green": "Comfortably inside your budget, and you need it enough. Buy it.",
-  "advice.amber": "A close call: not essential, or it eats a big share of your spare " +
-    "money. Give it 48 hours.",
+  "advice.amber": "Not essential, or it eats too much of your spare money. Give it 48 hours.",
   "advice.red": "Blocked: it takes too big a bite out of your budget and you don't " +
     "need it enough.",
   "advice.redDup": "Blocked: you're saving hard, and you already own something like it.",
   "set.mode": "How strict should I be?", "set.modeSave": "Saving hard",
   "set.modeComfort": "Comfortable",
-  "set.modeHint": "Saving hard raises the price penalty from 1.5× to 4× and takes " +
-    "another 10 points off.",
+  "set.modeHint": "Harder on price — the red light comes up sooner.",
   "set.fixedIn": "Regular income",
-  "set.fixedInHint": "Salary, rent you collect, interest — money that turns up every " +
-    "month. Declare it once; you never log it again.",
+  "set.fixedInHint": "Salary, rent, interest — money that turns up every month. Say it once.",
   "set.fixedInEmpty": "Nothing yet. Add one and every month counts it automatically.",
   "set.perMonthSum": "Per month", "set.addFixedIn": "Add regular income",
   "set.movedNote": (v) => "Fixed costs and loans live in " + v.bills +
     "; money you set aside lives in " + v.vault + ".",
   "set.cats": "Categories",
-  "set.catsHint": "The built-in ones are fixed. Tap one of yours to rename it, or the × " +
-    "to delete it — deleting never changes entries already filed under it.",
+  "set.catsHint": "Tap one of yours to rename it, × to delete. Deleting never changes " +
+    "entries already filed under it.",
   "set.newCat": "New",
   "set.cooldown": "Default cooling-off time",
   "set.hours": (v) => plural(v.h, "hour", "hours"), "set.days": (v) => plural(v.d, "day", "days"),
@@ -1066,26 +1147,22 @@ en: {
   "k.planDropped": "Plan dropped",
   "set.data": "Your data",
   "wipe.title": "Clear everything?",
-  "wipe.body": "Every entry, account, savings goal and wishlist item on this device " +
-    "goes, and it can't be undone. Export a backup first.",
+  "wipe.body": "Everything on this device goes, and it can't be undone.",
   "wipe.yes": "Yes, clear it", "wipe.exportFirst": "Export a backup first",
   "demo.title": "Load the demo data?",
-  "demo.body": "A set of example data will replace what you have now. " +
-    "Export first if you want to keep it.",
+  "demo.body": "Example data will replace what you have now.",
   "demo.yes": "Yes, load the demo",
-  "set.dataHint": "Everything lives in this browser, on this device — it is never " +
-    "uploaded anywhere. So export a copy before you change phone or clear your browser.",
+  "set.dataHint": "Stays on this device, never uploaded. Export before you change " +
+    "phone or clear your browser.",
   "set.savedAt": (v) => "Last saved " + v.when,
   "set.neverSaved": "nothing saved yet",
   "set.export": "Export a backup", "set.import": "Restore from a backup",
   "set.wipe": "Clear everything and start over", "set.demo": "Load the demo data",
   "set.saved": "Everything on this page is saved",
+  "set.theme": "Appearance", "theme.auto": "System", "theme.light": "Light",
+  "theme.dark": "Dark",
   "set.currency": "Currency",
-  "set.currencyHint": "Changes the symbol and formatting only — no conversion. " +
-    "One person, one currency.",
   "set.language": "Language",
-  "set.languageHint": "The English is written from scratch, not translated — tell me " +
-    "anywhere it reads oddly.",
 },
 };
 
@@ -1560,9 +1637,10 @@ const ic = (n, s = 20, c) => '<svg width="' + s + '" height="' + s + '" viewBox=
   'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
   'stroke-linejoin="round" style="flex-shrink:0' + (c ? ";color:" + c : "") + '">' + P[n] + "</svg>";
 
-const GREEN = "oklch(0.60 0.12 148)", AMBER = "oklch(0.70 0.13 78)", RED = "oklch(0.56 0.16 27)";
-const GREEN_BG = "oklch(0.965 0.025 148)", AMBER_BG = "oklch(0.965 0.035 78)",
-      RED_BG = "oklch(0.965 0.028 27)";
+/* 判定色从 CSS token 里取 —— 换肤时 CSS 和 JS 不能各说各话 */
+const GREEN = "var(--good)", AMBER = "var(--warn)", RED = "var(--bad)";
+const GREEN_BG = "var(--good-bg)", AMBER_BG = "var(--warn-bg)",
+      RED_BG = "var(--bad-bg)";
 /* 颜色是常量，文字不是 —— 写成函数，切语言时才会跟着变 */
 const TONE_C = { green: [GREEN, GREEN_BG], amber: [AMBER, AMBER_BG], red: [RED, RED_BG] };
 const TONE = (v) => [TONE_C[v][0], TONE_C[v][1], t("verdict." + v)];
@@ -1581,7 +1659,7 @@ const id = () => "x" + ++uid;
 function seed() {
   const t = Date.UTC(2026, 8, 7, 12, 0);
   return {
-    saveMode: true, cooldownHours: 48, currency: "CNY", lang: "zh",
+    saveMode: true, cooldownHours: 48, currency: "CNY", lang: "zh", theme: "auto",
     /* 固定收支：声明一次，每个月自动计入 —— 房贷这类钱不用每月手动记一笔 */
     customCats: [],
     /* 一个意义重大的长期目标：金库总额 / 它 = 右上角那个进度条 */
@@ -1635,7 +1713,7 @@ function emptySeed() {
   const sys = (navigator.language || "zh").toLowerCase();
   const lang0 = sys.startsWith("zh") ? "zh" : "en";
   const cur0 = sys.startsWith("zh") ? "CNY" : sys.endsWith("-gb") ? "GBP" : "USD";
-  return { saveMode: true, cooldownHours: 48, currency: cur0, lang: lang0,
+  return { saveMode: true, cooldownHours: 48, currency: cur0, lang: lang0, theme: "auto",
     customCats: [], lifeGoal: null,
     fixedIn: [], fixedOut: [], accounts: [], tx: [], goals: [], debts: [],
     onboarded: true,
@@ -1710,6 +1788,12 @@ function exportName() {
 }
 
 let S = load() || seed();
+/* auto 就不打标记，交给 prefers-color-scheme */
+function applyTheme() {
+  const el = document.documentElement;
+  if (S.theme === "light" || S.theme === "dark") el.setAttribute("data-theme", S.theme);
+  else el.removeAttribute("data-theme");
+}
 let ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {} };
 const screen = () => ui.stack[ui.stack.length - 1];
 const jar = (n) => S.accounts.find((a) => a.name === n);
@@ -1772,7 +1856,9 @@ const seg = (key, opts, val) => '<div class="seg">' + opts.map((o) =>
   o[0] + "</span>").join("") + "</div>";
 /* 分类饼图：单色阶（颜色留给红黄绿判定），按金额从大到小，切片之间留 2px 缝。
    身份靠标签，不靠颜色 —— 图例里有名字和金额。 */
-const RAMP = ["#2b2721", "#5f584c", "#877f6d", "#a9a08c", "#c6bda9", "#e0d8c6"];
+/* 饼图色阶：单色由深到浅（颜色留给红黄绿判定），也走 token */
+const RAMP = ["var(--ramp-1)", "var(--ramp-2)", "var(--ramp-3)",
+  "var(--ramp-4)", "var(--ramp-5)", "var(--ramp-6)"];
 function donut(cats, size, thick) {
   const total = cats.reduce((a, c) => a + c[1], 0) || 1;
   const r = (size - thick) / 2, C = 2 * Math.PI * r;
@@ -1801,7 +1887,7 @@ const listrow = (mid, right, sub, act) =>
   '<div style="flex:1;min-width:0"><div style="font-size:15px">' + mid + "</div>" +
   (sub ? '<div class="sub" style="font-size:11px">' + sub + "</div>" : "") + "</div>" +
   '<div class="money" style="font-size:15px">' + right + "</div>" +
-  (act ? '<span style="color:#c8c2b6">' + ic("chev", 15) + "</span>" : "") + "</div>";
+  (act ? '<span style="color:var(--chev)">' + ic("chev", 15) + "</span>" : "") + "</div>";
 
 /* ==========================================================================
    4. 各个页面
@@ -1838,12 +1924,12 @@ function yearView() {
   const txIn = sumOver(act, (m) => earnedIn(S, m));
   const txOut = sumOver(act, (m) => spentIn(S, m));
   const label = (name, v) => '<div style="display:flex;align-items:baseline;gap:9px;' +
-    'padding:6px 0;border-bottom:1px dotted #ddd8ce">' +
+    'padding:6px 0;border-bottom:1px dotted var(--line-2)">' +
     '<div class="sub" style="flex:1">' + name + "</div>" +
     '<div class="money" style="font-size:14px">' + yuan(v) + "</div></div>";
   const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
-    (on ? "#22201c" : "#dcd6c9") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
+    (on ? "var(--ink)" : "var(--chev)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
   return { tab: "dashboard", fab: "both",
@@ -1865,14 +1951,14 @@ function yearView() {
           (net < 0 ? neg(-net) : plus(net)) + "</div>" +
           '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
           '<div class="sub">' + t("word.income") +
-          ' <span class="money" style="color:#22201c">' + yuan(inc) + "</span></div>" +
+          ' <span class="money" style="color:var(--ink)">' + yuan(inc) + "</span></div>" +
           '<div class="sub">− ' + t("word.spending") +
-          ' <span class="money" style="color:#22201c">' + yuan(out) + "</span></div>" +
+          ' <span class="money" style="color:var(--ink)">' + yuan(out) + "</span></div>" +
           (saved ? '<div class="sub">− ' + t("word.savings") +
-            ' <span class="money" style="color:#22201c">' + yuan(saved) + "</span></div>"
+            ' <span class="money" style="color:var(--ink)">' + yuan(saved) + "</span></div>"
             : "") + "</div>" +
           '<div class="sub" style="font-size:11px;margin-top:8px;padding-top:7px;' +
-          'border-top:1px solid #eeeae1">' + t("yr.range", {
+          'border-top:1px solid var(--line)">' + t("yr.range", {
             from: firstMonth().slice(5),
             list: monthNames.length <= 4 ? monthNames.join(sep)
               : monthNames[0] + " – " + monthNames[monthNames.length - 1], n }) +
@@ -1896,7 +1982,7 @@ function yearView() {
 
           '<div style="display:flex;align-items:center;gap:9px;margin-top:2px">' +
           '<div class="h2" style="flex:1">' + t("yr.monthly") + "</div>" +
-          '<div class="sub" data-a="cats" style="cursor:pointer;color:#3a5a8c">' +
+          '<div class="sub" data-a="cats" style="cursor:pointer;color:var(--link)">' +
           t("word.breakdown") + ic("chev", 13) + "</div></div>" +
           shown.map((mm) => {
             const has = hasRecords(mm);
@@ -1910,7 +1996,7 @@ function yearView() {
               '<div style="flex:1">' + (has ? bar((Math.abs(v) / max) * 100,
                 v < 0 ? RED : GREEN) : bar(0)) + "</div>" +
               '<div class="money" style="font-size:14px;width:92px;text-align:right;color:' +
-              (has ? (v < 0 ? RED : "#22201c") : "#a39c90") + '">' +
+              (has ? (v < 0 ? RED : "var(--ink)") : "var(--ghosted)") + '">' +
               (has ? (v < 0 ? neg(-v) : plus(v)) : t("yr.noRecord")) + "</div></div>";
           }).join("")) };
 }
@@ -1966,7 +2052,7 @@ function setupCard() {
     miss.map((x) => '<div class="row" data-a="' + x[2] + '" style="cursor:pointer;' +
       'min-height:44px"><div style="flex:1"><div style="font-size:14px">' + x[0] + "</div>" +
       '<div class="sub" style="font-size:11px">' + x[1] + "</div></div>" +
-      '<span style="color:#c8c2b6">' + ic("chev", 15) + "</span></div>").join("") + "</div>";
+      '<span style="color:var(--chev)">' + ic("chev", 15) + "</span></div>").join("") + "</div>";
 }
 
 function monthView() {
@@ -1987,7 +2073,7 @@ function monthView() {
   const dates = Object.keys(days).sort().reverse();
   const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
-    (on ? "#22201c" : "#cfc9bd") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
+    (on ? "var(--ink)" : "var(--chev)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   return { tab: "dashboard", fab: "both",
     /* 月份选择器居中，和右上角的「我」平齐；左边留等宽的空位才真居中 */
     nav: '<div class="chip" data-a="settings" style="padding:4px 9px">' + t("nav.me") + "</div>" +
@@ -2008,11 +2094,11 @@ function monthView() {
       /* 三段减法摊开写，结余就不会被读成「净资产涨了多少」 */
       '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
       '<div class="sub">' + t("word.income") +
-      ' <span class="money" style="color:#22201c">' + yuan(inc) + "</span></div>" +
+      ' <span class="money" style="color:var(--ink)">' + yuan(inc) + "</span></div>" +
       '<div class="sub">− ' + t("word.spending") +
-      ' <span class="money" style="color:#22201c">' + yuan(out) + "</span></div>" +
+      ' <span class="money" style="color:var(--ink)">' + yuan(out) + "</span></div>" +
       (saved ? '<div class="sub">− ' + t("word.savings") +
-        ' <span class="money" style="color:#22201c">' + yuan(saved) + "</span></div>"
+        ' <span class="money" style="color:var(--ink)">' + yuan(saved) + "</span></div>"
         : "") + "</div>" +
       /* 四项各去各的地方 —— 原来一整句只链到「我」，可固定支出和还贷在账单、
          固定储蓄在金库，点过去全是错的。链接用负 margin 撑开点击区。 */
@@ -2020,12 +2106,12 @@ function monthView() {
       [[t("word.fixedIn"), "settings"], [t("word.fixedOut"), "route:out"],
         [t("word.debt"), "route:debt"], [t("word.fixedSave"), "toSavings2"]].map(([l, a]) =>
         '<span data-a="' + a + '" style="display:inline-block;padding:8px 5px;' +
-        'margin:-8px 0;cursor:pointer;color:#3a5a8c;text-decoration:underline">' + l +
-        "</span>").join('<span style="color:#a39c90">·</span>') + "</div>" +
+        'margin:-8px 0;cursor:pointer;color:var(--link);text-decoration:underline">' + l +
+        "</span>").join('<span style="color:var(--ghosted)">·</span>') + "</div>" +
       (() => {
         const need = cur ? stillToSave(S) : 0;
         if (net >= 0 && !need) return "";
-        return '<div style="border-top:1px solid #eeeae1;margin-top:9px;padding-top:8px" ' +
+        return '<div style="border-top:1px solid var(--line);margin-top:9px;padding-top:8px" ' +
           'data-a="route">' +
           (net < 0 ? '<div style="display:flex;gap:6px;font-size:12px;color:' + RED +
             '"><span style="margin-top:1px">' + ic("warn", 13) + "</span>" +
@@ -2042,14 +2128,14 @@ function monthView() {
       '<div class="h2" style="flex:1">' + t("mo.ledger") + "</div>" +
       '<div class="sub">' + t("mo.rows", { n: rows.length }) + "</div>" +
       (out > 0 ? '<div class="sub" data-a="cats" style="cursor:pointer;display:flex;' +
-        'align-items:center;gap:3px;color:#3a5a8c">' + t("word.breakdown") +
+        'align-items:center;gap:3px;color:var(--link)">' + t("word.breakdown") +
         ic("chev", 13) + "</div>" : "") +
       "</div>" +
 
       (future.length
         ? '<div class="row" data-a="toggleFuture" style="cursor:pointer;min-height:46px">' +
-          '<span style="color:#8b857a">' + ic("clock", 16) + "</span>" +
-          '<div style="flex:1;font-size:13px;color:#5c564c">' +
+          '<span style="color:var(--faint)">' + ic("clock", 16) + "</span>" +
+          '<div style="flex:1;font-size:13px;color:var(--ink-2)">' +
           t("mo.upcoming", { n: future.length }) +
           (future.some((f) => f.fixed === "in")
             ? "　" + t("mo.willArrive") + ' <span class="money">' +
@@ -2139,7 +2225,7 @@ SCREENS.jars = () => {
       '<div class="sub">' + t("va.accountsN", { n: S.accounts.length,
         reserved: yuan(S.goals.reduce((a, g) => a + g.saved, 0)) }) + "</div>" +
       (S.lifeGoal ? '<div class="sub" data-a="lifeGoal" style="font-size:11px;margin-top:7px;' +
-        'padding-top:7px;border-top:1px solid #eeeae1;cursor:pointer">' +
+        'padding-top:7px;border-top:1px solid var(--line);cursor:pointer">' +
         esc(S.lifeGoal.name) + " · " +
         (netAssets(S) >= S.lifeGoal.target ? t("va.lifeDone")
           : t("va.lifeLeft", { amt: yuan(S.lifeGoal.target - netAssets(S)) })) +
@@ -2149,8 +2235,8 @@ SCREENS.jars = () => {
         [t("va.tabSavings", { n: S.goals.length }), "savings"]], tab) +
 
       (tab === "accounts"
-        ? '<div class="banner" style="border-color:#c8c2b6;background:#faf8f3">' +
-          '<span style="margin-top:1px;color:#736c60">' + ic("warn", 15) + "</span>" +
+        ? '<div class="banner" style="border-color:var(--chev);background:var(--surface-2)">' +
+          '<span style="margin-top:1px;color:var(--muted)">' + ic("warn", 15) + "</span>" +
           "<div>" + t("va.notice") + "</div></div>" +
           plain.map((a) => swipe(listrow(esc(a.name), yuan(a.balance),
             earmarkOn(a.name) > 0
@@ -2284,17 +2370,17 @@ SCREENS.settings = () => {
       '<div class="card" style="padding:2px 14px">' +
       (S.fixedIn.length ? S.fixedIn.map((x, i) => swipe(
         '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;cursor:pointer' +
-        (i < S.fixedIn.length - 1 ? ";border-bottom:1px solid #eeeae1" : "") +
+        (i < S.fixedIn.length - 1 ? ";border-bottom:1px solid var(--line)" : "") +
         '" data-a="editFixed:in:' + x.id + '">' +
         '<div style="flex:1;font-size:15px">' + esc(x.name) +
         '<div class="sub" style="font-size:11px">' + t("date.onDay", { day: x.day }) +
         "</div></div>" +
         '<div class="money" style="font-size:15px">' + yuan(x.amount) + "</div>" +
-        '<span style="color:#c8c2b6">' + ic("chev", 15) + "</span></div>",
+        '<span style="color:var(--chev)">' + ic("chev", 15) + "</span></div>",
         "delFixed:in:" + x.id, ["fin", x.id])).join("")
         : '<div class="sub" style="padding:13px 0">' + t("set.fixedInEmpty") + "</div>") +
       (S.fixedIn.length ? '<div style="display:flex;align-items:baseline;gap:9px;padding:10px 0;' +
-        'border-top:1px solid #22201c"><div class="lbl" style="flex:1">' +
+        'border-top:1px solid var(--line-2)"><div class="lbl" style="flex:1">' +
         t("set.perMonthSum") + "</div>" +
         '<div class="num money" style="font-size:15px">' + yuan(fixedIn(S)) + "</div></div>" : "") +
       "</div>" +
@@ -2307,7 +2393,7 @@ SCREENS.settings = () => {
       '<div class="lbl" style="margin-top:6px">' + t("set.cats") + "</div>" +
       '<div class="sub" style="margin-top:-8px">' + t("set.catsHint") + "</div>" +
       '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      SYS_CATS.map((c) => '<div class="chip flat" style="color:#8b857a">' + catLabel(c) +
+      SYS_CATS.map((c) => '<div class="chip flat" style="color:var(--faint)">' + catLabel(c) +
         "</div>").join("") +
       S.customCats.map(catTag).join("") +
       '<div class="chip newcat" data-a="newCat">' + ic("plus", 13) + " " +
@@ -2318,14 +2404,21 @@ SCREENS.settings = () => {
       '<div style="display:flex;gap:7px">' + [["中文", "zh"], ["English", "en"]].map(([l, k]) =>
         '<div class="chip ' + (lang() === k ? "on" : "") + '" data-a="lang:' + k + '">' + l +
         "</div>").join("") + "</div>" +
-      '<div class="sub">' + t("set.languageHint") + "</div></div>" +
+      "</div>" +
 
       '<div class="fld" style="margin-top:6px"><div class="lbl">' + t("set.currency") +
       "</div>" +
       '<div style="display:flex;gap:7px">' + Object.keys(CUR).map((k) =>
         '<div class="chip ' + (S.currency === k ? "on" : "") + '" data-a="cur:' + k + '">' +
         CUR[k].sym + " " + k + "</div>").join("") + "</div>" +
-      '<div class="sub">' + t("set.currencyHint") + "</div></div>" +
+      "</div>" +
+
+      '<div class="fld" style="margin-top:6px"><div class="lbl">' + t("set.theme") +
+      "</div>" +
+      '<div style="display:flex;gap:7px">' +
+      [["auto", "theme.auto"], ["light", "theme.light"], ["dark", "theme.dark"]]
+        .map(([k, key]) => '<div class="chip ' + ((S.theme || "auto") === k ? "on" : "") +
+          '" data-a="theme:' + k + '">' + t(key) + "</div>").join("") + "</div></div>" +
 
       '<div class="fld" style="margin-top:6px"><div class="lbl">' + t("set.cooldown") +
       "</div>" +
@@ -2349,7 +2442,7 @@ SCREENS.settings = () => {
       ";border-color:" + RED + '">' + t("set.wipe") + "</div></div>" +
 
       '<div style="display:flex;align-items:center;justify-content:center;gap:7px;' +
-      'padding:14px 0 2px;color:#736c60;font-size:12px">' + ic("check", 14) +
+      'padding:14px 0 2px;color:var(--muted);font-size:12px">' + ic("check", 14) +
       " " + t("set.saved") + "</div>" +
       '<div class="sub" style="font-size:11px;text-align:center">' + lastSavedLine() +
       "</div>" };
@@ -2392,7 +2485,7 @@ function snapNote(snap, r, b) {
   if (snap.budget !== b) why.push(t("sn.budgetChanged",
     { from: yuan(snap.budget), to: yuan(b), down: b < snap.budget }));
   const worse = r.score < snap.score;
-  return '<div class="banner" style="border-color:#c8c2b6;background:#faf8f3">' +
+  return '<div class="banner" style="border-color:var(--chev);background:var(--surface-2)">' +
     '<span style="margin-top:1px;color:' + (worse ? RED : GREEN) + '">' +
     ic(worse ? "warn" : "check", 15) + "</span><div>" + t("sn.was", {
       before: lampOf(snap.verdict) + " " + t("sc.pointsN", { n: snap.score.toFixed(1) }),
@@ -2432,13 +2525,13 @@ function breakdownCard(it, r, b) {
       budget: yuan(b) }) + "</div>" +
     '<div style="display:flex;align-items:flex-start;gap:8px;margin-top:7px">' +
     '<div class="sub" style="flex:1;font-size:12px">' + mainReason(it, r) + "</div>" +
-    '<div class="sub" data-a="toggleCalc" style="cursor:pointer;color:#3a5a8c;' +
+    '<div class="sub" data-a="toggleCalc" style="cursor:pointer;color:var(--link);' +
     'white-space:nowrap;font-size:12px">' +
     (ui.showCalc ? t("word.collapse") : t("bd.how")) +
     ic("chev", 12) + "</div></div>" +
     (ui.showCalc ? '<div class="card" style="margin-top:8px;padding:8px 12px">' +
       rows.map((x) => '<div style="display:flex;justify-content:space-between;font-size:12px;' +
-        'padding:5px 0;border-bottom:1px dotted #ddd8ce"><span class="sub">' + x[0] +
+        'padding:5px 0;border-bottom:1px dotted var(--line-2)"><span class="sub">' + x[0] +
         '</span><span class="money">' + x[1] + "</span></div>").join("") +
       '<div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0 0;' +
       'font-weight:600"><span>' + t("bd.total") + '</span><span class="money">' +
@@ -2454,8 +2547,8 @@ const actionStack = (btns) => '<div style="display:flex;flex-direction:column;ga
 /* 预算这块要老实交代自己是怎么算出来的，尤其是退档的时候 */
 function budgetBanner() {
   const bi = budgetInfo(S);
-  if (bi.tier === "ok") return '<div class="banner" style="border-color:#c8c2b6;' +
-    'background:#faf8f3"><div>' + t("bg.ok") + ' <b class="money">' + yuan(bi.amount) +
+  if (bi.tier === "ok") return '<div class="banner" style="border-color:var(--chev);' +
+    'background:var(--surface-2)"><div>' + t("bg.ok") + ' <b class="money">' + yuan(bi.amount) +
     '</b><br/><span class="sub">' + t("bg.okHow") + "</span></div></div>";
   if (bi.tier === "planTooBig") return '<div class="banner tap" data-a="toSavings2" ' +
     'style="border-color:' + AMBER + ";background:" + AMBER_BG + '">' +
@@ -2464,13 +2557,13 @@ function budgetBanner() {
     '<span class="sub">' + t("bg.noSave") + '</span><br/><span class="sub">' +
     t("bg.planTooBig", { income: yuan(bi.income), bills: yuan(bi.bills),
       save: yuan(bi.save) }) + "</span></div>" +
-    '<span style="color:#736c60;margin-top:2px">' + ic("chev", 14) + "</span></div>";
+    '<span style="color:var(--muted);margin-top:2px">' + ic("chev", 14) + "</span></div>";
   return '<div class="banner tap" data-a="route:out" style="border-color:' + RED +
     ";background:" + RED_BG + '"><span style="color:' + RED + ';margin-top:1px">' +
     ic("warn", 15) + '</span><div style="flex:1">' + t("bg.billsTooBig", {
       bills: yuan(bi.bills), income: yuan(bi.income),
       pct: Math.round(FLOOR_RATIO * 100), bills2: BILLS() }) + "</div>" +
-    '<span style="color:#736c60;margin-top:2px">' + ic("chev", 14) + "</span></div>";
+    '<span style="color:var(--muted);margin-top:2px">' + ic("chev", 14) + "</span></div>";
 }
 
 SCREENS.decisions = () => {
@@ -2487,10 +2580,10 @@ SCREENS.decisions = () => {
     body: '<div class="sub">' + (editing
       ? t("de.editIntro", { name: esc(editing.name) }) : t("de.intro")) + "</div>" +
       (clash ? '<div class="banner tap" data-a="wishItem:' + clash.id +
-        '" style="border-color:#c8c2b6;background:#faf8f3">' +
-        '<span style="margin-top:1px;color:#736c60">' + ic("warn", 15) + "</span>" +
+        '" style="border-color:var(--chev);background:var(--surface-2)">' +
+        '<span style="margin-top:1px;color:var(--muted)">' + ic("warn", 15) + "</span>" +
         '<div style="flex:1">' + t("de.clash", { name: esc(clash.name) }) + "</div>" +
-        '<span style="color:#736c60;margin-top:2px">' + ic("chev", 14) + "</span></div>" : "") +
+        '<span style="color:var(--muted);margin-top:2px">' + ic("chev", 14) + "</span></div>" : "") +
       field(t("de.name"), input("qname", q.name)) +
       field(t("de.price"), mInput("qprice", (q.price / unit()).toFixed(ccy().dec))) +
       '<div class="fld"><div style="display:flex;justify-content:space-between">' +
@@ -2521,9 +2614,9 @@ SCREENS.verdict = () => {
       '<div class="navt">' + t("vd.title") + "</div>",
     body: scoreCard(Object.assign({}, r, { dup: it.dup })) + breakdownCard(it, r, b) +
       (exists ? '<div class="banner tap" data-a="wishItem:' + exists.id +
-        '" style="border-color:#c8c2b6;background:#faf8f3"><div style="flex:1">' +
+        '" style="border-color:var(--chev);background:var(--surface-2)"><div style="flex:1">' +
         t("vd.already", { name: esc(it.name) }) + "</div>" +
-        '<span style="color:#736c60">' + ic("chev", 14) + "</span></div>" : "") +
+        '<span style="color:var(--muted)">' + ic("chev", 14) + "</span></div>" : "") +
       actionStack(acts) };
 };
 
@@ -2550,12 +2643,12 @@ SCREENS.wishlist = () => {
           '<div style="margin:9px 0">' + bar(pct) + "</div>" +
           '<div class="sub" style="display:flex;align-items:center;gap:5px">' +
           '<span style="flex:1">' + state + "</span>" +
-          '<span style="color:#c8c2b6">' + ic("chev", 14) + "</span></div></div>";
+          '<span style="color:var(--chev)">' + ic("chev", 14) + "</span></div></div>";
       }).join("")
     : S.archive.map((a) => '<div class="card">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
-        '<div class="h2" style="color:#5c564c">' + esc(a.name) + "</div>" +
-        '<div class="num money" style="color:#8b857a">' + yuan(a.price) + "</div></div>" +
+        '<div class="h2" style="color:var(--ink-2)">' + esc(a.name) + "</div>" +
+        '<div class="num money" style="color:var(--faint)">' + yuan(a.price) + "</div></div>" +
         '<div style="display:flex;align-items:center;gap:7px;margin-top:6px">' +
         '<div class="chip flat" style="padding:2px 9px">' + t("ar." + a.outcome) +
         "</div>" +
@@ -2575,7 +2668,7 @@ SCREENS.wishlist = () => {
           yuan(S.wishlist.filter((w) => !planOf(w.id)).reduce((a, w) => a + w.price, 0)) +
           "</div></div>" + (activePlans().length
             ? '<div style="display:flex;align-items:baseline;gap:9px;padding-top:6px;' +
-              'border-top:1px solid #eeeae1"><div class="lbl" style="flex:1">' +
+              'border-top:1px solid var(--line)"><div class="lbl" style="flex:1">' +
               t("wl.plansN", { n: activePlans().length,
                 raised: '<span class="money">' +
                   yuan(activePlans().reduce((a, p) => a + p.raised, 0)) + "</span>" }) +
@@ -2640,7 +2733,7 @@ SCREENS.wishItem = () => {
         n: p.sales.length, jar: esc(p.jar) }) + "</div>" +
       (p.sales.length ? '<div style="margin-top:6px">' + p.sales.slice().reverse()
         .map((x) => '<div style="display:flex;gap:9px;padding:6px 0;font-size:13px;' +
-          'border-bottom:1px solid #f0ece3"><span style="flex:1">' + esc(x.name) +
+          'border-bottom:1px solid var(--line)"><span style="flex:1">' + esc(x.name) +
           '</span><span class="sub">' + x.date.slice(5) + '</span><span class="money">' +
           yuan(x.amount) + "</span></div>").join("") + "</div>" : "") + "</div>"
     : "";
@@ -2667,7 +2760,7 @@ SCREENS.wishItem = () => {
 const grab = '<div class="grab"></div>';
 const head = (title, extra) => '<div style="display:flex;align-items:center;gap:9px">' +
   '<div class="h2" style="flex:1">' + title + "</div>" + (extra || "") +
-  '<div data-a="close" style="cursor:pointer;color:#8b857a">' + ic("close", 18) + "</div></div>";
+  '<div data-a="close" style="cursor:pointer;color:var(--faint)">' + ic("close", 18) + "</div></div>";
 const errline = () => ui.f.err
   ? '<div class="errline"><span style="margin-top:2px">' + ic("warn", 14) + "</span><div>" +
     ui.f.err + "</div></div>" : "";
@@ -2733,7 +2826,7 @@ SHEETS.assistant = () => {
     '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
 
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
-    'background:#efece5;border-style:dashed">' + p.intent + "</div>";
+    'background:var(--surface-2);border-style:dashed">' + p.intent + "</div>";
   if (p.intent === "ledger" || p.intent === "multi_ledger") {
     /* 一句话里可能同时有进和出 —— 加成一个数是没意义的 */
     const out = p.drafts.filter((d) => d.type === "out").reduce((a, d) => a + d.amount, 0);
@@ -2746,12 +2839,12 @@ SHEETS.assistant = () => {
       /* 解析器一定会错 —— 预览这一步存在的意义就是让人改，所以每行可编辑 */
       p.drafts.map((d, i) => '<div data-a="editDraft:' + i + '" style="display:flex;gap:10px;' +
         'align-items:center;min-height:44px;cursor:pointer;' +
-        'border-bottom:1px solid #f0ece3"><div class="chip flat" style="padding:2px 9px">' +
+        'border-bottom:1px solid var(--line)"><div class="chip flat" style="padding:2px 9px">' +
         esc(catLabel(d.category)) + '</div><div style="flex:1;font-size:15px">' +
         esc(d.description) +
         '</div><div class="money" style="font-size:15px">' +
         (d.type === "in" ? plus(d.amount) : yuan(d.amount)) + "</div>" +
-        '<span style="color:#c8c2b6">' + ic("chev", 14) + "</span></div>").join("") +
+        '<span style="color:var(--chev)">' + ic("chev", 14) + "</span></div>").join("") +
       (p.drafts.some((d) => d.amount <= 0)
         ? '<div class="errline"><span>' + ic("warn", 14) + "</span><div>" +
           t("as.noAmount") + "</div></div>" : "") +
@@ -2759,25 +2852,25 @@ SHEETS.assistant = () => {
   }
   if (p.intent === "transfer") return grab + head(t("as.transfer"), chip) +
     '<div class="big money">' + yuan(p.move.amount) + "</div>" +
-    '<div class="fldbox" style="background:#faf8f3">' + esc(p.move.from) +
-    '<div style="flex:1;text-align:center;color:#a39c90">' + ic("arrow", 18) + "</div>" +
+    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.move.from) +
+    '<div style="flex:1;text-align:center;color:var(--ghosted)">' + ic("arrow", 18) + "</div>" +
     esc(p.move.to) + "</div>" +
     '<div class="sub">' + t("as.transferNote", { from: esc(p.move.from),
       bal: jarLine(p.move.from) }) + "</div>" +
     btn(t("as.commitTransfer"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
   if (p.intent === "deposit") return grab + head(t("as.deposit"), chip) +
     '<div class="big money">' + yuan(p.move.amount) + "</div>" +
-    '<div class="fldbox" style="background:#faf8f3">' +
+    '<div class="fldbox" style="background:var(--surface-2)">' +
     t("as.depositTo", { to: esc(p.move.to) }) + "</div>" +
     btn(t("as.commitDeposit"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
   if (p.intent === "goal") return grab + head(t("as.newGoal"), chip) +
-    '<div class="fldbox" style="background:#faf8f3">' + esc(p.goal.name) +
+    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.goal.name) +
     '<div style="flex:1"></div><span class="money">' + yuan(p.goal.target) + "</span></div>" +
     '<div class="sub">' + t("as.goalMeta", { months: p.goal.months,
       amt: yuan(Math.round(p.goal.target / p.goal.months)) }) + "</div>" +
     btn(t("as.commitGoal"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
   if (p.intent === "debt") return grab + head(t("as.newDebt"), chip) +
-    '<div class="fldbox" style="background:#faf8f3">' + esc(p.debt.description) +
+    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.debt.description) +
     '<div style="flex:1"></div><span class="money">' + neg(p.debt.monthly) + " " +
     t("bi.perMonth") + "</span></div>" +
     btn(t("as.commitDebt"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
@@ -2786,7 +2879,7 @@ SHEETS.assistant = () => {
   const r = evaluatePurchase(p.item.price || 1, b, p.item.necessity, S.saveMode, p.item.dup);
   const [tone, bg, label] = TONE(r.verdict);
   return grab + head(t("as.decision"), chip) +
-    '<div class="fldbox" style="background:#faf8f3">' + esc(p.item.name) +
+    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.item.name) +
     '<div style="flex:1"></div><span class="sub">' +
     t("as.necMeta", { n: p.item.necessity, dup: p.item.dup }) + "</span></div>" +
     '<div class="banner" style="border-color:' + tone + ";background:" + bg + '">' +
@@ -2815,13 +2908,13 @@ function passiveRow(x, m) {
     : x.fixed === "in" ? plus(x.amount) : neg(x.amount);
   return '<div class="row" data-a="' + x.tap + '" style="cursor:pointer;opacity:' +
     (future ? ".55" : ".8") + '">' +
-    '<div style="flex:1;min-width:0"><div style="font-size:15px;color:#5c564c">' +
+    '<div style="flex:1;min-width:0"><div style="font-size:15px;color:var(--ink-2)">' +
     '<span class="chip flat" style="padding:1px 8px;font-size:11px;border-style:dashed">' +
     (x.xfer ? t("px.transfer") : t("px.fixed")) + "</span> " + esc(x.name) + "</div>" +
     '<div class="sub" style="font-size:11px">' +
     (future ? t("px.expected") : x.xfer ? t("px.savingNotSpend") : "") + "</div></div>" +
-    '<div class="money" style="font-size:15px;color:#8b857a">' + amount + "</div>" +
-    '<span style="color:#c8c2b6">' + ic("chev", 15) + "</span></div>";
+    '<div class="money" style="font-size:15px;color:var(--faint)">' + amount + "</div>" +
+    '<span style="color:var(--chev)">' + ic("chev", 15) + "</span></div>";
 }
 
 function breakdownOver(months, kind) {
@@ -2893,13 +2986,13 @@ function labeledDonut(rows, kind) {
       const tx = side === "right" ? W - 4 : 4;
       leaders.push('<path d="M' + (cx + (OUT + 3) * Math.cos(L.ang)).toFixed(1) + " " +
         (cy + (OUT + 3) * Math.sin(L.ang)).toFixed(1) + "L" + ex.toFixed(1) + " " + y.toFixed(1) +
-        "H" + (side === "right" ? tx - 2 : tx + 2) + '" fill="none" stroke="#cfc9bd" ' +
+        "H" + (side === "right" ? tx - 2 : tx + 2) + '" fill="none" stroke="var(--chev)" ' +
         'stroke-width="1"></path>');
       texts.push('<text x="' + tx + '" y="' + (y - 3) + '" text-anchor="' +
         (side === "right" ? "end" : "start") + '" font-size="12.5" font-weight="600" ' +
-        'fill="#22201c">' + esc(L.name) + "</text>" +
+        'fill="var(--ink)">' + esc(L.name) + "</text>" +
         '<text x="' + tx + '" y="' + (y + 12) + '" text-anchor="' +
-        (side === "right" ? "end" : "start") + '" font-size="10" fill="#736c60">' +
+        (side === "right" ? "end" : "start") + '" font-size="10" fill="var(--muted)">' +
         pctLabel(L.v, total) + " · " + yuan(L.v) + "</text>");
     });
   });
@@ -2908,9 +3001,9 @@ function labeledDonut(rows, kind) {
     '<g transform="rotate(-90 ' + cx + " " + cy + ')">' + segs.join("") + "</g>" +
     leaders.join("") + texts.join("") +
     '<text x="' + cx + '" y="' + (cy - 3) + '" text-anchor="middle" font-size="11" ' +
-    'fill="#736c60">' + t(kind === "in" ? "word.income" : "word.spending") + "</text>" +
+    'fill="var(--muted)">' + t(kind === "in" ? "word.income" : "word.spending") + "</text>" +
     '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="13" ' +
-    'font-weight="600" fill="#22201c">' + yuan(total) + "</text></svg>";
+    'font-weight="600" fill="var(--ink)">' + yuan(total) + "</text></svg>";
 }
 
 SHEETS.cats = () => {
@@ -2923,7 +3016,7 @@ SHEETS.cats = () => {
       '" style="padding:5px 13px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
   const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
-    "cursor:" + (on ? "pointer" : "default") + ";color:" + (on ? "#22201c" : "#dcd6c9") + '">' +
+    "cursor:" + (on ? "pointer" : "default") + ";color:" + (on ? "var(--ink)" : "var(--chev)") + '">' +
     ic(dir === "prev" ? "back" : "chev", 18) + "</div>";
   const nextOn = isYear() ? +viewYear() < +thisMonth().slice(0, 4) : !isThisMonth();
   return grab + head(t("pie.title", { period: isYear()
@@ -3029,7 +3122,7 @@ const accountField = (label, hint) => {
   return field(label, '<div style="display:flex;gap:8px">' +
     '<div style="flex:1">' + (opts.length
       ? select("account", opts, ui.f.account)
-      : '<div class="fldbox" style="color:#8b857a">' + t("ja.noneYet") + "</div>") +
+      : '<div class="fldbox" style="color:var(--faint)">' + t("ja.noneYet") + "</div>") +
       "</div>" +
     '<div class="chip" data-a="addJar" style="height:46px;padding:0 13px;border-width:1.5px">' +
     ic("plus", 15) + " " + t("ja.addShort") + "</div></div>", hint);
@@ -3084,8 +3177,8 @@ SHEETS.startPlan = () => {
   const q = ui.f.item || ui.quiz;
   return grab + '<div style="display:flex;align-items:center;gap:9px">' + ic("loop", 19) +
     '<div class="h2" style="flex:1">' + t("pl.title") + "</div>" +
-    '<div data-a="close" style="cursor:pointer;color:#8b857a">' + ic("close", 18) + "</div></div>" +
-    '<div class="fldbox" style="background:#faf8f3">' + esc(q.name) +
+    '<div data-a="close" style="cursor:pointer;color:var(--faint)">' + ic("close", 18) + "</div></div>" +
+    '<div class="fldbox" style="background:var(--surface-2)">' + esc(q.name) +
     '<div style="flex:1"></div><span class="money">' + yuan(q.price) + "</span></div>" +
     '<div style="font-size:14px;line-height:1.8">' +
     ic("check", 14) + " " + t("pl.p1", { name: esc(q.name) + t("pl.jarSuffix") }) + "<br/>" +
@@ -3229,6 +3322,7 @@ const ACT = {
     render(); },
   cool: (h) => { S.cooldownHours = +h; render(); },
   cur: (k) => { S.currency = k; render(); toast(t("k.currencyNow", { code: k })); },
+  theme: (k) => { S.theme = k; applyTheme(); render(); },
   /* 换语言时顺手把币种也换成常见的那个，省得英文界面配 ￥ */
   lang: (k) => { S.lang = k;
     if (k === "en" && S.currency === "CNY") S.currency = "GBP";
@@ -3718,7 +3812,7 @@ function wizardView() {
     "</div>" +
     '<div class="money" style="font-size:15px">' +
     yuan(step === 1 ? x.amount : x.balance) + "</div>" +
-    '<span class="sub" data-a="wizDrop:' + i + '" style="cursor:pointer;color:#a39c90;' +
+    '<span class="sub" data-a="wizDrop:' + i + '" style="cursor:pointer;color:var(--ghosted);' +
     'font-size:11px">' + t("f.delete") + "</span></div>").join("");
 
   /* 第 0 步只有两排 chip，一定有值，所以「下一步」永远是亮的 */
@@ -3756,7 +3850,8 @@ function wizardView() {
     t(["wz.step0", "wz.step1", "wz.step2"][step]) + "</div>" +
     '<div class="sub">' + (step + 1) + " / 3</div></div>" +
     '<div class="body" style="gap:12px">' +
-    '<div class="sub">' + t(["wz.hint0", "wz.hint1", "wz.hint2"][step]) + "</div>" +
+    (step === 0 ? "" : '<div class="sub">' + t(["", "wz.hint1", "wz.hint2"][step]) +
+      "</div>") +
     (step === 0 ? pickers
       : added +
         (adding ? template
@@ -4002,7 +4097,7 @@ const EXAMPLES = ["今天吃拉面25.5元，打车18元，看电影60元",
   "从微信零钱转账500元到招商银行卡", "我想买一个3000块的相机 必要度打分8",
   "计划3年攒够20万买房", "每月还房贷3000", "存入2000到支付宝"];
 document.getElementById("examples").innerHTML = EXAMPLES.map((x, i) =>
-  '<li><a href="#" data-ex="' + i + '" style="color:#3a5a8c">' + x + "</a></li>").join("");
+  '<li><a href="#" data-ex="' + i + '" style="color:var(--link)">' + x + "</a></li>").join("");
 function updateClock() {
   document.getElementById("clock").textContent = "原型时间：" +
     now().toISOString().slice(0, 16).replace("T", " ") +
@@ -4028,6 +4123,7 @@ document.querySelector(".side").addEventListener("click", (e) => {
   }
 });
 ui.quiz = { name: "", price: 0, necessity: 5, dup: false };
+applyTheme();
 updateClock();
 render();
 
