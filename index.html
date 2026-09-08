@@ -486,7 +486,6 @@ zh: {
   "as.micDenied": "没拿到麦克风权限。到系统设置里允许一下，或者直接打字。",
   "as.micNothing": "没听清，再说一次？",
   "as.micHttp": "语音输入需要 https —— 在正式网址上打开就能用。",
-  "as.enParser": "英文的语音解析还没做 —— 现在只有中文能识别得准。",
   "as.placeholder": "比如：我今天吃饭花了10元，打车花了9元",
   "as.parse": "解析", "as.parseHint": "解析只是给你看 —— 确认之后才写进去。",
   "as.foundN": (v) => "识别到 " + v.n + " 笔",
@@ -605,6 +604,11 @@ zh: {
   "set.hours": (v) => v.h + " 小时", "set.days": (v) => v.d + " 天",
   "fab.addTx": "记一笔",
   "data.cashWallet": "现金钱包",
+  "parse.someIncome": "兼职收入",
+  "parse.someSpend": (v) => v.cat + "消费",
+  "parse.someThing": "心仪好物", "parse.someGoal": "新攒钱计划",
+  "parse.debt.mortgage": "月度房贷", "parse.debt.carloan": "月度车贷",
+  "parse.debt.other": "固定负债还款",
   "lg.set": "设个大目标",
   "wi.clearedDesc": (v) => "愿望清账: " + v.name,
   "k.catDeletedKept": (v) => "已删除 —— " + v.n + " 笔旧账目仍写着「" + v.name + "」",
@@ -905,8 +909,6 @@ en: {
   "as.micDenied": "No microphone permission. Allow it in Settings, or just type.",
   "as.micNothing": "Didn't catch that — try again?",
   "as.micHttp": "Speech input needs https — it works on the real address.",
-  "as.enParser": "English speech isn't understood yet — only Chinese parses properly " +
-    "for now. Type it and edit the preview.",
   "as.placeholder": "e.g. lunch was 10 and the taxi was 9",
   "as.parse": "Read it back", "as.parseHint": "This is only a preview — nothing is saved " +
     "until you confirm.",
@@ -1045,6 +1047,11 @@ en: {
   "set.hours": (v) => plural(v.h, "hour", "hours"), "set.days": (v) => plural(v.d, "day", "days"),
   "fab.addTx": "Add",
   "data.cashWallet": "Cash",
+  "parse.someIncome": "Money in",
+  "parse.someSpend": (v) => v.cat,
+  "parse.someThing": "Something I want", "parse.someGoal": "New savings plan",
+  "parse.debt.mortgage": "Mortgage", "parse.debt.carloan": "Car loan",
+  "parse.debt.other": "Loan repayment",
   "lg.set": "Set a big goal",
   "wi.clearedDesc": (v) => "Wishlist: " + v.name,
   "k.catDeletedKept": (v) => "Deleted — " + plural(v.n, "entry", "entries") +
@@ -1254,129 +1261,71 @@ const cooled = (item) => hoursLeft(item) === 0;
 /* ==========================================================================
    2. 意图解析 —— finance_core/parsing.py 的精简移植，分支顺序一致
    ========================================================================== */
-const CAT_RULES = [
-  ["food", ["吃", "饭", "拉面", "咖啡", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食"]],
-  ["transport", ["车", "打车", "地铁", "公交", "航空", "高德", "滴滴", "出行", "路费"]],
-  ["fun", ["玩", "电影", "游戏", "娱乐", "网吧", "剧本杀"]],
-  ["shopping", ["买", "衣服", "鞋", "网购", "淘宝", "拼多多", "京东", "美团", "超市"]],
-  ["social", ["礼物", "红包", "人情", "随礼", "送礼"]],
-];
-/* 方向比话题重要：出租（不是租）、收房租（不是房租）、收到（不是红包） */
-const INCOME_KW = ["收入", "发工资", "工资", "薪水", "月薪", "奖金", "年终奖", "提成",
-  "补贴", "兼职", "外快", "私活", "稿费", "打赏", "分红", "利息", "返现", "中奖",
-  "报销", "退款", "退钱", "赔付", "出租", "收房租", "收租",
-  "入账", "进账", "到账", "收到", "收款", "赚"];
-const SALARY_KW = ["工资", "发工资", "薪水", "月薪", "奖金", "年终奖", "提成", "补贴"];
-const NON_LEDGER = ["想买", "要买", "纠结", "该不该", "测验", "转账", "转到", "转入",
-  "存入", "小金库", "存钱", "攒钱", "攒够", "还贷", "房贷", "车贷", "债务", "贷款", "每月还"];
-const DECISION_KW = ["想买", "要买", "纠结", "该不该", "测验"];
-const DUP_KW = ["有类似的", "已经有了", "替代品", "重复", "旧的"];
-const PLAN_KW = ["攒钱", "攒够", "还贷", "房贷", "车贷", "债务", "贷款", "每月还"];
-const DEBT_KW = ["还贷", "还款", "房贷", "车贷", "贷款", "每月还"];
-const ASSET_KW = ["转账", "转到", "转入", "存入", "微信", "支付宝", "招商", "余额宝", "小金库"];
-const STRONG_ASSET = ["转账", "转到", "转入", "存入", "划拨"];
-const MULT = { "万": 10000, "千": 1000, "w": 10000, "W": 10000, "k": 1000, "K": 1000 };
-const has = (t, kws) => kws.some((k) => t.includes(k));
-const AMOUNT_RE = /(\d+(?:\.\d+)?)\s*(万|千|[wWkK])?/g;
-const DURATION_RE = /^\s*(年|个月|月|周|星期|天|日|小时|分钟|岁)/;
-const CLAUSE_RE = /[，。、；;,]|(?<!\d)\.(?!\d)|\s+|另外|和|并且|然后/;
-const UNIT_RE = /\d+(?:\.\d+)?\s*(?:万|千|[wWkK])?\s*(?:块钱|元钱|元|块|角|毛)?/g;
-const VERB_RE = /花了|支出|消费|买了|收入|收到|进账|到账|入账|花费|用去|赚了|赚到|赚/g;
-
-function extractAmounts(text) {
-  const out = [];
-  let m;
-  AMOUNT_RE.lastIndex = 0;
-  while ((m = AMOUNT_RE.exec(text))) {
-    if (DURATION_RE.test(text.slice(m.index + m[0].length))) continue;
-    out.push(toCents(m[1]) * (m[2] ? MULT[m[2]] : 1));
-  }
-  return out;
-}
-function classify(text, isIncome) {
-  /* 支出分类规则是给支出写的 —— 收入不能套，否则「兼职送外卖赚了300」会变成餐饮 */
-  if (isIncome) return has(text, SALARY_KW) ? "salary" : "other";
-  for (const [cat, kws] of CAT_RULES) if (has(text, kws)) return cat;
-  return "other";
-}
-function canonAccount(name) {
-  if (name.includes("微信")) return "微信零钱";
-  if (name.includes("支付宝") || name.includes("余额宝")) return "支付宝理财";
-  if (name.includes("招商") || name.includes("招行")) return "招商银行卡";
-  return name;
-}
-function cleanDesc(clause, cat, isIncome) {
-  let d = clause.replace(UNIT_RE, "").replace(VERB_RE, "").trim();
-  return d || (isIncome ? "兼职收入" : catLabel(cat) + "消费");
-}
-function isAssetMove(t) {
-  return has(t, STRONG_ASSET) || /从\s*[一-龥\w]+?(?:转|存|划)/.test(t);
-}
-function parseUtterance(text) {
-  const raw = (text || "").trim();
-  if (!raw) return null;
-
-  if (!has(raw, NON_LEDGER) && !isAssetMove(raw)) {
-    const drafts = [];
-    for (const clause of raw.split(CLAUSE_RE)) {
-      const c = (clause || "").trim();
-      if (!c) continue;
-      const amts = extractAmounts(c);
-      if (!amts.length) continue;
-      const isIncome = has(c, INCOME_KW);
-      const cat = classify(c, isIncome);
-      drafts.push({ type: isIncome ? "in" : "out", amount: amts[0],
-        category: cat, description: cleanDesc(c, cat, isIncome), date: today() });
-    }
-    if (drafts.length > 1) return { intent: "multi_ledger", raw, drafts };
-    if (drafts.length === 1) return { intent: "ledger", raw, drafts };
-  }
-
-  const amts = extractAmounts(raw);
-  const amount = amts[0] || 0;
-
-  if (has(raw, DECISION_KW)) {
-    let necessity = 5;
-    const sm = raw.match(/(?:必要度|打分|评分|必要性|分数|等级)(?:[:：\s]*(?:必要度|打分|评分))*[:：\s]*(\d+)/);
-    if (sm) necessity = Math.max(1, Math.min(10, +sm[1]));
-    else for (const a of amts)
-      if (a !== amount && a >= 100 && a <= 1000) { necessity = a / 100; break; }
+/* 两套规则，按界面语言选。英文不是把中文关键词译一遍就行 ——
+   语序、单复数、还有 "paid" 到底是收还是支，都不一样，得各写各的。 */
+const RULES = {
+zh: {
+  cats: [
+    ["food", ["吃", "饭", "拉面", "咖啡", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食"]],
+    ["transport", ["车", "打车", "地铁", "公交", "航空", "高德", "滴滴", "出行", "路费"]],
+    ["fun", ["玩", "电影", "游戏", "娱乐", "网吧", "剧本杀"]],
+    ["shopping", ["买", "衣服", "鞋", "网购", "淘宝", "拼多多", "京东", "美团", "超市"]],
+    ["social", ["礼物", "红包", "人情", "随礼", "送礼"]],
+  ],
+  /* 方向比话题重要：出租（不是租）、收房租（不是房租）、收到（不是红包） */
+  income: ["收入", "发工资", "工资", "薪水", "月薪", "奖金", "年终奖", "提成",
+    "补贴", "兼职", "外快", "私活", "稿费", "打赏", "分红", "利息", "返现", "中奖",
+    "报销", "退款", "退钱", "赔付", "出租", "收房租", "收租",
+    "入账", "进账", "到账", "收到", "收款", "赚"],
+  salary: ["工资", "发工资", "薪水", "月薪", "奖金", "年终奖", "提成", "补贴"],
+  nonLedger: ["想买", "要买", "纠结", "该不该", "测验", "转账", "转到", "转入",
+    "存入", "小金库", "存钱", "攒钱", "攒够", "还贷", "房贷", "车贷", "债务", "贷款", "每月还"],
+  decision: ["想买", "要买", "纠结", "该不该", "测验"],
+  dup: ["有类似的", "已经有了", "替代品", "重复", "旧的"],
+  plan: ["攒钱", "攒够", "还贷", "房贷", "车贷", "债务", "贷款", "每月还"],
+  debt: ["还贷", "还款", "房贷", "车贷", "贷款", "每月还"],
+  asset: ["转账", "转到", "转入", "存入", "微信", "支付宝", "招商", "余额宝", "小金库"],
+  strongAsset: ["转账", "转到", "转入", "存入", "划拨"],
+  mult: { "万": 10000, "千": 1000, "w": 10000, "W": 10000, "k": 1000, "K": 1000 },
+  amount: /(\d+(?:\.\d+)?)\s*(万|千|[wWkK])?/g,
+  duration: /^\s*(年|个月|月|周|星期|天|日|小时|分钟|岁)/,
+  clause: /[，。、；;,]|(?<!\d)\.(?!\d)|\s+|另外|和|并且|然后/,
+  unit: /\d+(?:\.\d+)?\s*(?:万|千|[wWkK])?\s*(?:块钱|元钱|元|块|角|毛)?/g,
+  verb: /花了|支出|消费|买了|收入|收到|进账|到账|入账|花费|用去|赚了|赚到|赚/g,
+  assetMove: /从\s*[一-龥\w]+?(?:转|存|划)/,
+  canon: (name) => name.includes("微信") ? "微信零钱"
+    : (name.includes("支付宝") || name.includes("余额宝")) ? "支付宝理财"
+    : (name.includes("招商") || name.includes("招行")) ? "招商银行卡" : name,
+  tidy: (d) => d,
+  necessity: (raw) => {
+    const m = raw.match(/(?:必要度|打分|评分|必要性|分数|等级)(?:[:：\s]*(?:必要度|打分|评分))*[:：\s]*(\d+)/);
+    return m ? +m[1] : null;
+  },
+  wantName: (raw) => {
     const im = raw.replace(/(?:必要度|打分|评分|必要性|分数|等级)[:：\s]*\d+/, " ")
       .match(/(?:想买|要买|纠结|测验)[:：\s]*([一-龥\w\s]+)/);
-    let name = "心仪好物";
-    if (im) {
-      const parts = im[1].split(/\d+(?:\.\d+)?/)
-        .map((p) => p.replace(/^[的\s]*(?:块钱|元钱|元|块|钱|万|千)*[的\s]*/, "")
-          .replace(/^(?:一|1)?(?:个|台|部|双|件|款|支|套|张|把|只)\s*/, "").trim())
-        .filter(Boolean);
-      if (parts.length) name = parts.reduce((a, b) => (b.length > a.length ? b : a));
-    }
-    return { intent: "decision", raw, item: { name, price: amount,
-      necessity, dup: has(raw, DUP_KW) } };
-  }
-
-  if (has(raw, PLAN_KW)) {
-    if (has(raw, DEBT_KW)) {
-      const d = raw.includes("房贷") ? "月度房贷"
-        : raw.includes("车贷") ? "月度车贷" : "固定负债还款";
-      return { intent: "debt", raw, debt: { description: d, monthly: amount } };
-    }
-    let months = 12;
+    if (!im) return null;
+    const parts = im[1].split(/\d+(?:\.\d+)?/)
+      .map((x) => x.replace(/^[的\s]*(?:块钱|元钱|元|块|钱|万|千)*[的\s]*/, "")
+        .replace(/^(?:一|1)?(?:个|台|部|双|件|款|支|套|张|把|只)\s*/, "").trim())
+      .filter(Boolean);
+    return parts.length ? parts.reduce((a, b) => (b.length > a.length ? b : a)) : null;
+  },
+  months: (raw) => {
     const y = raw.match(/(\d+)\s*年/), mo = raw.match(/(\d+)\s*个月/);
-    if (y) months = +y[1] * 12; else if (mo) months = +mo[1];
+    return y ? +y[1] * 12 : mo ? +mo[1] : null;
+  },
+  goalName: (raw) => {
     const nm = raw.match(/(?:攒钱|攒|目标)[:：\s]*([一-龥\w\s]+)/);
-    let name = "新攒钱计划";
-    if (nm) {
-      const cleaned = nm[1].split(/\d+(?:\.\d+)?/)
-        .map((p) => p.replace(/^[的\s]*(?:万|千|块钱|元钱|元|块)*[的\s]*/, "")
-          .replace(/^(?:目标|计划|攒钱|攒|存钱|为了|为|够|到)+\s*/, "").trim())
-        .filter(Boolean);
-      if (cleaned.length) name = cleaned.reduce((a, b) => (b.length > a.length ? b : a));
-    }
-    return { intent: "goal", raw, goal: { name, target: amount, months } };
-  }
-
-  if (has(raw, ASSET_KW) || isAssetMove(raw)) {
+    if (!nm) return null;
+    const cleaned = nm[1].split(/\d+(?:\.\d+)?/)
+      .map((x) => x.replace(/^[的\s]*(?:万|千|块钱|元钱|元|块)*[的\s]*/, "")
+        .replace(/^(?:目标|计划|攒钱|攒|存钱|为了|为|够|到)+\s*/, "").trim())
+      .filter(Boolean);
+    return cleaned.length ? cleaned.reduce((a, b) => (b.length > a.length ? b : a)) : null;
+  },
+  debtKind: (raw) => raw.includes("房贷") ? "mortgage" : raw.includes("车贷") ? "carloan" : "other",
+  transferParts: (raw) => {
     let from = "", to = "";
     const fm = raw.match(/从\s*([一-龥\w]+?)(?:转到|转入|转账|转|存)/);
     if (fm) from = fm[1];
@@ -1391,14 +1340,190 @@ function parseUtterance(text) {
         if (c) to = c;
       }
     }
-    from = from ? canonAccount(from) : "";
-    to = to ? canonAccount(to) : "";
+    return { from, to };
+  },
+},
+en: {
+  cats: [
+    ["food", ["lunch", "dinner", "breakfast", "brunch", "coffee", "cafe", "café",
+      "restaurant", "takeaway", "takeout", "pizza", "snack", "ate", "eating out"]],
+    ["transport", ["taxi", "uber", "bolt", "cab", "bus", "train", "tube", "metro",
+      "subway", "tram", "petrol", "fuel", "parking", "flight", "oyster", "travelcard",
+      "commute"]],
+    ["fun", ["cinema", "movie", "film", "game", "concert", "gig", "pub", "bar",
+      "drinks", "netflix", "spotify", "museum", "bowling"]],
+    ["shopping", ["bought", "clothes", "shoes", "amazon", "ebay", "argos", "shop",
+      "shopping", "supermarket", "tesco", "sainsbury", "groceries", "ikea"]],
+    ["social", ["gift", "present", "birthday", "wedding", "charity", "donation"]],
+  ],
+  /* "paid" 故意不算收入 —— "I paid 20 for lunch" 是支出。
+     只有明确是钱进来的说法才算：got paid / payday / refund … */
+  income: ["salary", "payday", "got paid", "paycheck", "pay cheque", "wage", "wages",
+    "bonus", "refund", "reimburse", "rebate", "cashback", "cash back", "interest",
+    "dividend", "rental income", "rent from", "earned", "earnt", "sold", "income",
+    "freelance", "invoice", "won", "received", "came in"],
+  salary: ["salary", "payday", "got paid", "paycheck", "pay cheque", "wage", "wages",
+    "bonus"],
+  nonLedger: ["want to buy", "wanna buy", "thinking of buying", "should i buy",
+    "should i get", "tempted", "worth it", "transfer", "transferred", "top up",
+    "topped up", "save up", "saving up", "save for", "mortgage", "car loan", "loan",
+    "repay", "monthly payment", "instalment", "installment", "pay off"],
+  decision: ["want to buy", "wanna buy", "thinking of buying", "should i buy",
+    "should i get", "tempted"],
+  dup: ["already have", "already own", "already got", "similar one", "spare",
+    "duplicate", "got one"],
+  plan: ["save up", "saving up", "save for", "mortgage", "car loan", "loan", "repay",
+    "monthly payment", "instalment", "installment", "pay off"],
+  debt: ["mortgage", "car loan", "loan", "repay", "repayment", "monthly payment",
+    "instalment", "installment", "pay off"],
+  asset: ["transfer", "transferred", "top up", "topped up", "into savings", "pot"],
+  strongAsset: ["transfer", "transferred", "top up", "topped up"],
+  mult: { k: 1000, K: 1000, m: 1000000, M: 1000000 },
+  /* 允许 £12, 1,250.50, 3k */
+  amount: /[£$¥€]?\s*(\d[\d,]*(?:\.\d+)?)(?:\s*([kKmM])(?![a-zA-Z]))?/g,
+  duration: /^\s*(?:st|nd|rd|th)?\s*(years?|months?|weeks?|days?|hours?|mins?|minutes?)\b/i,
+  /* 英文不能像中文那样按空格断句 —— 那会把一句话拆成词 */
+  clause: /[,;]|(?<!\d)\.(?!\d)|\s+and\s+|\s+then\s+|\s+plus\s+|\n/i,
+  unit: /[£$¥€]?\s*\d[\d,]*(?:\.\d+)?\s*(?:[kKmM]\b|quid|pounds?|dollars?|euros?|p\b)?/g,
+  verb: /\b(?:i|we)?\s*(?:spent|paid|bought|buying|cost|costs|earned|earnt|made|received|got\s+paid|got|sold|was|were|is|are)\b/gi,
+  assetMove: /\bfrom\s+[\w'’]+(?:\s+[\w'’]+)?\s+(?:to|into)\s+[\w'’]+/i,
+  canon: (name) => name.replace(/\b\w/g, (c) => c.toUpperCase()),
+  /* 去掉金额和动词之后常剩下 "on a"、"for the" 这种壳，剥掉再首字母大写 */
+  tidy: (d) => {
+    let x = d.replace(/\s+/g, " ").trim()
+      /* 「got paid 2400 today」剥完只剩 today —— 时间词单独留着当摘要没意义 */
+      .replace(/\b(?:today|yesterday|tonight|this\s+(?:morning|afternoon|evening|month|week)|last\s+(?:night|week|month))\b/gi, " ")
+      .replace(/\s+/g, " ").trim()
+      .replace(/^(?:on|for|at|in|to|of|from)\s+/i, "")
+      .replace(/^(?:a|an|the|my|some)\s+/i, "")
+      .replace(/\s+(?:on|for|at|in|to|of|from)$/i, "")
+      .replace(/^[-–—:,\s]+|[-–—:,\s]+$/g, "");
+    return x ? x.charAt(0).toUpperCase() + x.slice(1) : x;
+  },
+  necessity: (raw) => {
+    const m = raw.match(/(?:necessity|need(?:\s+it)?|score|rating)\D{0,8}(\d+)/i) ||
+      raw.match(/\b(\d+)\s*(?:\/|out of)\s*10\b/i);
+    return m ? +m[1] : null;
+  },
+  wantName: (raw) => {
+    const m = raw.replace(/(?:necessity|score|rating)\D{0,8}\d+/i, " ")
+      .match(/\b(?:buy|buying|get|getting)\s+([^,;.]+)/i);
+    if (!m) return null;
+    const cleaned = m[1].split(/[£$¥€]?\s*\d[\d,]*(?:\.\d+)?[kKmM]?/)
+      .map((x) => RULES.en.tidy(x)).filter(Boolean);
+    return cleaned.length ? cleaned.reduce((a, b) => (b.length > a.length ? b : a)) : null;
+  },
+  months: (raw) => {
+    const y = raw.match(/(\d+)\s*years?/i), mo = raw.match(/(\d+)\s*months?/i);
+    return y ? +y[1] * 12 : mo ? +mo[1] : null;
+  },
+  goalName: (raw) => {
+    const m = raw.match(/\b(?:save\s+up\s+for|saving\s+up\s+for|save\s+for|towards?)\s+([^,;]+)/i)
+      || raw.match(/\bfor\s+([^,;]+)/i);
+    if (!m) return null;
+    const cleaned = m[1].split(/[£$¥€]?\s*\d[\d,]*(?:\.\d+)?[kKmM]?/)
+      .map((x) => RULES.en.tidy(x.replace(/\bin\s+\d+.*$/i, ""))).filter(Boolean);
+    return cleaned.length ? cleaned.reduce((a, b) => (b.length > a.length ? b : a)) : null;
+  },
+  debtKind: (raw) => /mortgage/i.test(raw) ? "mortgage"
+    : /car\s*loan|car\s*finance/i.test(raw) ? "carloan" : "other",
+  transferParts: (raw) => {
+    const m = raw.match(/\bfrom\s+([\w'’]+(?:\s+[\w'’]+)?)\s+(?:to|into)\s+([\w'’]+(?:\s+[\w'’]+)?)/i);
+    if (m) return { from: m[1].trim(), to: m[2].trim() };
+    const t = raw.match(/\b(?:to|into|top(?:ped)?\s+up)\s+(?:my\s+)?([\w'’]+(?:\s+[\w'’]+)?)/i);
+    return { from: "", to: t ? t[1].trim() : "" };
+  },
+},
+};
+const R = () => RULES[lang()] || RULES.zh;
+const has = (t, kws) => { const s2 = lang() === "en" ? t.toLowerCase() : t;
+  return kws.some((k) => s2.includes(k)); };
+
+function extractAmounts(text) {
+  const out = [];
+  const re = R().amount, mult = R().mult;
+  let m;
+  re.lastIndex = 0;
+  while ((m = re.exec(text))) {
+    if (R().duration.test(text.slice(m.index + m[0].length))) continue;
+    const n = m[1].replace(/,/g, "");
+    if (!n) continue;
+    out.push(toCents(n) * (m[2] ? mult[m[2]] : 1));
+  }
+  return out;
+}
+function classify(text, isIncome) {
+  /* 支出分类规则是给支出写的 —— 收入不能套，否则「兼职送外卖赚了300」会变成餐饮 */
+  if (isIncome) return has(text, R().salary) ? "salary" : "other";
+  for (const [cat, kws] of R().cats) if (has(text, kws)) return cat;
+  return "other";
+}
+function canonAccount(name) { return R().canon(name); }
+function cleanDesc(clause, cat, isIncome) {
+  /* 用空格替换而不是删掉：直接删会让「spent」和「on」粘成「spenton」，
+     后面那步按词删动词就再也匹配不上 */
+  const d = R().tidy(clause.replace(R().unit, " ").replace(R().verb, " ").trim());
+  return d || (isIncome ? t("parse.someIncome") : t("parse.someSpend", { cat: catLabel(cat) }));
+}
+function isAssetMove(t2) {
+  return has(t2, R().strongAsset) || R().assetMove.test(t2);
+}
+function parseUtterance(text) {
+  const raw = (text || "").trim();
+  if (!raw) return null;
+
+  if (!has(raw, R().nonLedger) && !isAssetMove(raw)) {
+    const drafts = [];
+    for (const clause of raw.split(R().clause)) {
+      const c = (clause || "").trim();
+      if (!c) continue;
+      const amts = extractAmounts(c);
+      if (!amts.length) continue;
+      const isIncome = has(c, R().income);
+      const cat = classify(c, isIncome);
+      drafts.push({ type: isIncome ? "in" : "out", amount: amts[0],
+        category: cat, description: cleanDesc(c, cat, isIncome), date: today() });
+    }
+    if (drafts.length > 1) return { intent: "multi_ledger", raw, drafts };
+    if (drafts.length === 1) return { intent: "ledger", raw, drafts };
+  }
+
+  const amts = extractAmounts(raw);
+  const amount = amts[0] || 0;
+
+  if (has(raw, R().decision)) {
+    let necessity = R().necessity(raw);
+    if (necessity != null) necessity = Math.max(1, Math.min(10, necessity));
+    else {
+      necessity = 5;
+      for (const a of amts)
+        if (a !== amount && a >= 100 && a <= 1000) { necessity = a / 100; break; }
+    }
+    const name = R().wantName(raw) || t("parse.someThing");
+    return { intent: "decision", raw, item: { name, price: amount,
+      necessity, dup: has(raw, R().dup) } };
+  }
+
+  if (has(raw, R().plan)) {
+    if (has(raw, R().debt)) {
+      return { intent: "debt", raw,
+        debt: { description: t("parse.debt." + R().debtKind(raw)), monthly: amount } };
+    }
+    const months = R().months(raw) || 12;
+    const name = R().goalName(raw) || t("parse.someGoal");
+    return { intent: "goal", raw, goal: { name, target: amount, months } };
+  }
+
+  if (has(raw, R().asset) || isAssetMove(raw)) {
+    const parts = R().transferParts(raw);
+    const from = parts.from ? canonAccount(parts.from) : "";
+    const to = parts.to ? canonAccount(parts.to) : "";
     if (from && to) return { intent: "transfer", raw, move: { from, to, amount } };
     return { intent: "deposit", raw,
       move: { to: to || biggestJar(), amount } };
   }
 
-  const isIncome = has(raw, INCOME_KW);
+  const isIncome = has(raw, R().income);
   const cat = classify(raw, isIncome);
   return { intent: "ledger", raw, drafts: [{ type: isIncome ? "in" : "out",
     amount, category: cat,
@@ -2605,8 +2730,7 @@ SHEETS.assistant = () => {
         ic("mic", 17) + " " + t(listening ? "as.stop" : "as.listen") + "</div>"
       : '<div class="sub" style="text-align:center">' + t("as.noMic") + "</div>") +
     errline() + btn(t("as.parse"), "parse", "pri") +
-    '<div class="sub" style="text-align:center">' + t("as.parseHint") +
-    (isEn() ? "<br/>" + t("as.enParser") : "") + "</div>";
+    '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
 
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
     'background:#efece5;border-style:dashed">' + p.intent + "</div>";
