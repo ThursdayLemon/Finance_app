@@ -18,55 +18,40 @@
    Token 层 —— 全站唯一的取色处。换肤和深色模式都只动这一块。
    语义命名，不是「灰1灰2」：以后换一套视觉，对着角色填就行。
    ========================================================================== */
+/* ==========================================================================
+   Token 层 —— 全站唯一的取色处。17 个：14 个核心 + 3 个派生的淡色。
+   和 Figma 的 Color collection 一比一（名字一模一样）。
+   少用新颜色，多用透明度：按下态、条槽、色阶都是已有色加 alpha。
+   ========================================================================== */
 :root{
-  /* Phantom：单色紫 + 近白纸面。结构色只有一个 aubergine。
-     判定色的黄和红是往紫里调过的 —— 直接上鲜艳橙红会打破这套的克制。 */
-  --aubergine:#3c315b; --ghost:#b9a9f5; --peri:#ab9ff2;
-  --ink:#1c1c1c;          /* 正文墨色 */
-  --ink-2:#3c315b;        /* 次级正文 —— 用品牌紫，标题和导航靠它 */
-  --muted:#86848d;        /* 说明小字 */
-  --faint:#9a97a2;        /* 更弱的字、图标 */
-  --ghosted:#bbb8c4;      /* 禁用态 */
-  --paper:#f4f2f6;        /* 页面底 —— 比卡片深一点，卡片才不用描边 */
-  --surface:#fdfcfe;      /* 卡片底 */
-  --surface-2:#eae8ee;    /* 次级面：按下、条带 */
-  --surface-3:#3c315b;    /* 三级面：底部 tab 栏走深紫 */
-  --line:#eceaf0;         /* 分隔线 */
-  --line-2:#fdfcfe;       /* 卡片描边 —— 和卡片同色，等于没有边 */
-  --edge:#e0dee4;         /* 控件描边 */
-  --edge-2:#dcdae1;       /* 输入框描边 */
-  --track:#e9e8ea;        /* 进度条底槽 */
-  --press:#eceaf0;        /* 按下反馈 */
-  --chev:#bbb8c4;         /* 右侧箭头 */
-  /* 深紫 tab 栏上的字：不能跟着 --paper 走，深色下 --paper 也是暗的，
-     选中那一项会变成深字压深底，直接看不见 */
-  --nav-ink:#9a92b4; --nav-on:#fdfcfe;
-  --link:#7a6bc4;         /* 文字链 */
-  /* 看真机截图改的：Phantom 自己的 app 里涨跌就是鲜明的红绿，
-     没有往紫里调 —— 判定一眼就得认出来，这比色板统一重要 */
-  --good:#12b76a;
-  --warn:#f0c219;
+  --ink:#303030;            /* 正文、图标 */
+  --ink-muted:#878684;      /* 说明小字 */
+  --ink-faint:#c6c6c6;      /* 占位、禁用、弱图标 */
+  --page:#ece8e5;           /* 页面底 */
+  --surface:#ffffff;        /* 卡片 */
+  --sunken:#f6f5f3;         /* 芯片、内嵌条、次级面 */
+  --line:#e7e7e7;           /* 分隔线、描边 */
+  --accent:#4a56d4;         /* AI、链接、进度 */
+  --on-accent:#ffffff;      /* 压在 accent 上的字 */
+  --nav:rgba(0,0,0,.8);     /* 悬浮导航栏的底 */
+  --on-nav:#ffffff;         /* 导航栏上的字和图标 */
+  --good:#2cbc00;
+  --warn:#f0c219;           /* 浅色下对比度 1.5:1 —— 已知并接受，它是信号不是正文 */
   --bad:#e8383b;
-  --good-bg:#e8f8f0;
-  --warn-bg:#fdf3e2;
-  --bad-bg:#fdedec;
-  --ramp-1:#3c315b; --ramp-2:#6a5d90; --ramp-3:#9a8fbb;
-  --ramp-4:#bdb4d6; --ramp-5:#d6d0e8; --ramp-6:#e9e6f2;
-  --stage:#eae8ee;        /* 桌面上手机外面那片底 */
-  --note:#fffec4;         /* 桌面说明栏里的便签 */
-  --note-line:#d8d4a0;
-  --note-ink:#6b6730;
-  /* 「一切都是胶囊」是这套的签名，圆角整体推大一档 */
+  /* 派生：别手改，改核心色它们自己跟着走 */
+  --good-tint:color-mix(in srgb, var(--good) 12%, transparent);
+  --warn-tint:color-mix(in srgb, var(--warn) 14%, transparent);
+  --bad-tint:color-mix(in srgb, var(--bad) 10%, transparent);
+  /* 由核心色派生出来的状态层，不占 token 名额 */
+  --press:color-mix(in srgb, var(--ink) 6%, transparent);
+  --track:color-mix(in srgb, var(--ink) 10%, transparent);
+  --ai-gradient:linear-gradient(135deg,#293cbb,#7178ed);
   --r-sm:10px; --r:16px; --r-md:20px; --r-lg:28px; --r-pill:100px;
-  /* 这套只允许一处阴影：主按钮那圈淡紫光晕 */
-  --shadow-fab:none;
-  --shadow-pill:rgb(226,223,254) 0 0 4px 0;
-  --shadow-sheet:0 -12px 40px -24px rgba(60,49,91,.45);
+  --shadow-fab:0 4px 14px -4px rgba(74,86,212,.35);
+  --shadow-pill:none;
+  --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.18);
   --font:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
-  /* 那份 style reference 写的是官网：350 whisper weight。但真机截图里
-     app 本身不是那样 —— 段落标题和所有数值都是实打实的粗体。
-     做 app 以 app 为准：正文 400，标题和金额 600。 */
   --w-body:400; --w-mid:500; --w-bold:600;
 }
 
@@ -75,42 +60,40 @@
    三种状态：跟随系统（不带 data-theme）、明确选浅色、明确选深色。 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { color-scheme: dark;
-  --aubergine:#e2dffe; --ghost:#b9a9f5; --peri:#ab9ff2;
-    --ink:#f5f5f5; --ink-2:#f5f5f5; --muted:#8e8e93; --faint:#7a7a80; --ghosted:#5a5a60;
-    --paper:#0b0b0c; --surface:#161617; --surface-2:#1f1f21; --surface-3:#000;
-    --line:#252527; --line-2:#161617; --edge:#2c2c2f; --edge-2:#38383c;
-    --track:#2c2c2f; --press:#252527; --chev:#5a5a60; --link:#ab9ff2;
-    --nav-ink:#6e6e75; --nav-on:#ffffff;
-    --good:#32d583; --warn:#f0c219; --bad:#ff4d4f;
-    --good-bg:#12291f; --warn-bg:#2b2313; --bad-bg:#2c1516;
-    --ramp-1:#ab9ff2; --ramp-2:#8b7fd0; --ramp-3:#6d63a8;
-    --ramp-4:#524a80; --ramp-5:#3a3459; --ramp-6:#282436;
-    --stage:#000; --note:#2b2313; --note-line:#5c4a1c; --note-ink:#e0cd8c;
-    --shadow-fab:none;
+  --ink:#f2f2f0; --ink-muted:#98968f; --ink-faint:#5c5a55;
+    --page:#141312; --surface:#1e1d1b; --sunken:#282625; --line:#2f2d2b;
+    --accent:#7178ed; --on-accent:#ffffff;
+    --nav:rgba(0,0,0,.85); --on-nav:#ffffff;
+    --good:#4ade5c; --warn:#f0c219; --bad:#ff4d4f;
+    --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
+    --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
+    --bad-tint:color-mix(in srgb, var(--bad) 14%, transparent);
+    --press:color-mix(in srgb, var(--ink) 8%, transparent);
+    --track:color-mix(in srgb, var(--ink) 14%, transparent);
+    --shadow-fab:0 4px 14px -4px rgba(113,120,237,.45);
     --shadow-pill:none;
-    --shadow-sheet:0 -12px 40px -24px rgba(0,0,0,.9);
+    --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"] { color-scheme: dark;
-  --aubergine:#e2dffe; --ghost:#b9a9f5; --peri:#ab9ff2;
-  --ink:#f5f5f5; --ink-2:#f5f5f5; --muted:#8e8e93; --faint:#7a7a80; --ghosted:#5a5a60;
-  --paper:#0b0b0c; --surface:#161617; --surface-2:#1f1f21; --surface-3:#000;
-  --line:#252527; --line-2:#161617; --edge:#2c2c2f; --edge-2:#38383c;
-  --track:#2c2c2f; --press:#252527; --chev:#5a5a60; --link:#ab9ff2;
-  --nav-ink:#6e6e75; --nav-on:#ffffff;
-  --good:#32d583; --warn:#f0c219; --bad:#ff4d4f;
-  --good-bg:#12291f; --warn-bg:#2b2313; --bad-bg:#2c1516;
-  --ramp-1:#ab9ff2; --ramp-2:#8b7fd0; --ramp-3:#6d63a8;
-  --ramp-4:#524a80; --ramp-5:#3a3459; --ramp-6:#282436;
-  --stage:#000; --note:#2b2313; --note-line:#5c4a1c; --note-ink:#e0cd8c;
-  --shadow-fab:none;
+  --ink:#f2f2f0; --ink-muted:#98968f; --ink-faint:#5c5a55;
+  --page:#141312; --surface:#1e1d1b; --sunken:#282625; --line:#2f2d2b;
+  --accent:#7178ed; --on-accent:#ffffff;
+  --nav:rgba(0,0,0,.85); --on-nav:#ffffff;
+  --good:#4ade5c; --warn:#f0c219; --bad:#ff4d4f;
+  --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
+  --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
+  --bad-tint:color-mix(in srgb, var(--bad) 14%, transparent);
+  --press:color-mix(in srgb, var(--ink) 8%, transparent);
+  --track:color-mix(in srgb, var(--ink) 14%, transparent);
+  --shadow-fab:0 4px 14px -4px rgba(113,120,237,.45);
   --shadow-pill:none;
-  --shadow-sheet:0 -12px 40px -24px rgba(0,0,0,.9);
+  --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--stage);color:var(--ink);line-height:1.5;font-size:14px;
+body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:14px;
  font-weight:var(--w-body);
  font-family:var(--font);
  -webkit-font-smoothing:antialiased}
@@ -118,26 +101,26 @@ body{margin:0;background:var(--stage);color:var(--ink);line-height:1.5;font-size
  padding:40px 28px 80px;flex-wrap:wrap}
 .side{width:300px;padding-top:6px}
 .side h1{font-size:22px;font-weight:600;margin:0 0 8px}
-.side p{font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.65}
-.side h2{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted);
- margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--chev)}
+.side p{font-size:13px;color:var(--ink);margin:0 0 14px;line-height:1.65}
+.side h2{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--ink-muted);
+ margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--ink-faint)}
 .side .k{display:flex;flex-wrap:wrap;gap:7px}
-.side button{font:inherit;font-size:12px;border:1px solid var(--ink);background:var(--paper);
+.side button{font:inherit;font-size:12px;border:1px solid var(--ink);background:var(--page);
  border-radius:var(--r-pill);padding:6px 12px;cursor:pointer}
-.side button:hover{background:var(--ink);color:var(--paper)}
-.side .hint{font-family:"Caveat",cursive;font-size:16px;color:var(--note-ink);background:var(--note);
- border:1px dashed var(--note-line);border-radius:var(--r-sm);padding:8px 11px;line-height:1.35}
-.side .ex{font-size:12px;color:var(--ink-2);line-height:1.9;margin:0;padding-left:16px}
-.side .clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);margin:8px 0 0}
+.side button:hover{background:var(--ink);color:var(--page)}
+.side .hint{font-family:"Caveat",cursive;font-size:16px;color:var(--ink-muted);background:var(--sunken);
+ border:1px dashed var(--line);border-radius:var(--r-sm);padding:8px 11px;line-height:1.35}
+.side .ex{font-size:12px;color:var(--ink);line-height:1.9;margin:0;padding-left:16px}
+.side .clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted);margin:8px 0 0}
 
-.phone{width:390px;height:844px;border:1px solid var(--line-2);border-radius:var(--r-lg);
- background:var(--paper);
+.phone{width:390px;height:844px;border:1px solid var(--line);border-radius:var(--r-lg);
+ background:var(--page);
  overflow:hidden;display:flex;flex-direction:column;position:relative;flex-shrink:0;
  box-shadow:var(--shadow-sheet)}
 .inset{height:40px;flex-shrink:0}
 .nav{min-height:50px;display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;
  border-bottom:1px solid var(--line)}
-.navt{font-size:20px;font-weight:var(--w-bold);color:var(--ink-2);letter-spacing:-.02em}
+.navt{font-size:20px;font-weight:var(--w-bold);color:var(--ink);letter-spacing:-.02em}
 .body{flex:1;padding:14px 16px 20px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
@@ -147,30 +130,30 @@ body{margin:0;background:var(--stage);color:var(--ink);line-height:1.5;font-size
    所以有它的页面要把这块高度垫出来，不然年视图这种长页面最后一张卡会被压住 */
 .body.hasfab{padding-bottom:88px}
 .tabs{height:66px;border-top:1px solid var(--line);display:flex;flex-shrink:0;
- background:var(--surface-3)}
+ background:var(--nav)}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
- font-size:10px;color:var(--nav-ink);cursor:pointer}
-.tab.on{color:var(--nav-on);font-weight:var(--w-mid)}
+ font-size:10px;color:var(--ink-faint);cursor:pointer}
+.tab.on{color:var(--on-nav);font-weight:var(--w-mid)}
 .tab:active{background:rgba(255,255,255,.07)}
 .fab{position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:50%;
- background:var(--ink-2);color:var(--paper);display:flex;align-items:center;
+ background:var(--ai-gradient);color:var(--on-accent);display:flex;align-items:center;
  justify-content:center;cursor:pointer;box-shadow:var(--shadow-fab)}
 .fab:active{transform:scale(.94)}
 .fabrow{position:absolute;right:16px;bottom:78px;display:flex;align-items:center;gap:10px}
 .fabrow .fab{position:static}
-.fabpill{height:56px;border-radius:var(--r-pill);background:var(--ghost);border:0;
- color:#1c1c1c;
+.fabpill{height:56px;border-radius:var(--r-pill);background:var(--surface);border:0;
+ color:var(--ink);
  display:flex;align-items:center;gap:7px;padding:0 20px;font-size:15px;font-weight:500;
  cursor:pointer;box-shadow:var(--shadow-pill);white-space:nowrap}
 .fabpill:active{transform:scale(.97)}
 
 /* 真机上卡片没有描边 —— 靠自己的填充比页面底浅一档来分层 */
-.card{border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--surface);
+.card{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);
  padding:17px 18px}
 .card.tap{cursor:pointer}
-.card.tap:active{background:var(--surface-2)}
-.lbl,.sub{font-size:12px;color:var(--muted)}
-.h2{font-size:16px;font-weight:var(--w-bold);color:var(--ink-2)}
+.card.tap:active{background:var(--sunken)}
+.lbl,.sub{font-size:12px;color:var(--ink-muted)}
+.h2{font-size:16px;font-weight:var(--w-bold);color:var(--ink)}
 .big{font-size:34px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
  letter-spacing:-.025em}
 .num{font-size:17px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
@@ -180,67 +163,67 @@ body{margin:0;background:var(--stage);color:var(--ink);line-height:1.5;font-size
 .row{min-height:54px;display:flex;align-items:center;gap:11px;padding:7px 0;
  border-bottom:1px solid var(--line)}
 .card .row:last-child{border-bottom:0}
-.chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:5px 13px;
- font-size:12px;background:var(--surface-2);color:var(--ink-2);
+.chip{border:1px solid var(--line);border-radius:var(--r-pill);padding:5px 13px;
+ font-size:12px;background:var(--sunken);color:var(--ink);
  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
-.chip.on{background:var(--ghost);border-color:var(--ghost);color:#1c1c1c;
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
  font-weight:var(--w-mid);box-shadow:var(--shadow-pill)}
 .chip.flat{cursor:default}
 /* 自定义分类就是普通标签，只是右边多一个 ×；「新建」是同一个壳子，描边改虚线 */
-.chip.newcat{border-style:dashed;color:var(--muted)}
+.chip.newcat{border-style:dashed;color:var(--ink-muted)}
 .chip .tag-x{margin:-4px -8px -4px -1px;padding:4px 8px;display:inline-flex;align-items:center;
- color:var(--ghosted)}
+ color:var(--ink-faint)}
 .chip .tag-x:active{color:var(--ink)}
-.mbtn{min-height:50px;border:1px solid var(--edge);background:var(--surface-2);
+.mbtn{min-height:50px;border:1px solid var(--line);background:var(--sunken);
  border-radius:var(--r-pill);display:flex;align-items:center;
  justify-content:center;gap:7px;font-size:15px;font-weight:500;background:var(--surface);padding:0 14px;
  cursor:pointer;text-align:center;color:var(--ink)}
 .mbtn:active{transform:translateY(1px)}
-.mbtn.pri{background:var(--ghost);border-color:var(--ghost);color:#1c1c1c;
+.mbtn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
  font-weight:var(--w-bold);box-shadow:var(--shadow-pill)}
-.mbtn.off{color:var(--ghosted);border-color:var(--chev);background:var(--surface-2);cursor:not-allowed}
+.mbtn.off{color:var(--ink-faint);border-color:var(--ink-faint);background:var(--sunken);cursor:not-allowed}
 .mbtn.sm{min-height:40px;font-size:13px}
 .barh{height:8px;background:var(--track);border-radius:var(--r-pill);overflow:hidden}
-.barh>i{display:block;height:100%;background:var(--peri);transition:width .35s ease}
+.barh>i{display:block;height:100%;background:var(--accent);transition:width .35s ease}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .banner{border:1px solid;border-radius:var(--r-md);padding:12px 14px;font-size:13px;
  display:flex;gap:9px;
  align-items:flex-start;line-height:1.45}
 .banner.tap{cursor:pointer}
-.dash{border:1px dashed var(--peri);border-radius:var(--r-pill);background:transparent;
+.dash{border:1px dashed var(--accent);border-radius:var(--r-pill);background:transparent;
  min-height:54px;
- display:flex;align-items:center;justify-content:center;gap:7px;color:var(--faint);font-size:14px;
+ display:flex;align-items:center;justify-content:center;gap:7px;color:var(--ink-muted);font-size:14px;
  cursor:pointer}
 .dash:active{background:var(--press)}
 .fld{display:flex;flex-direction:column;gap:5px}
-.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--edge-2);
- background:var(--surface-2);border-radius:var(--r);
+.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--line);
+ background:var(--sunken);border-radius:var(--r);
  background:var(--surface);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
  font-family:inherit;color:inherit;width:100%}
 input.fldbox,select.fldbox{-webkit-appearance:none;appearance:none}
 input.fldbox:focus,select.fldbox:focus{outline:none;border-color:var(--ink);border-width:1.5px}
-select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 49%,var(--faint) 51%),
- linear-gradient(135deg,var(--faint) 49%,transparent 51%);
+select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 49%,var(--ink-muted) 51%),
+ linear-gradient(135deg,var(--ink-muted) 49%,transparent 51%);
  background-position:calc(100% - 17px) 21px,calc(100% - 12px) 21px;
  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 .fldbox.err{border-color:var(--bad);border-width:1.5px}
 .errline{display:flex;gap:7px;font-size:13px;color:var(--bad);align-items:flex-start}
 .seg{display:flex;border:0;border-radius:var(--r-pill);overflow:hidden;
- background:var(--surface-2);padding:3px;font-weight:var(--w-mid)}
+ background:var(--sunken);padding:3px;font-weight:var(--w-mid)}
 .seg>span{flex:1;padding:9px 0;text-align:center;font-size:14px;cursor:pointer;
- border-radius:var(--r-pill);color:var(--ink-2)}
+ border-radius:var(--r-pill);color:var(--ink)}
 .seg>span.on{background:var(--surface);color:var(--ink);font-weight:var(--w-bold)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:var(--r-pill);
  background:var(--track);margin:16px 0 6px}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;
- border-radius:50%;background:var(--paper);border:1.5px solid var(--ink);cursor:pointer}
-.toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--edge);
- background:var(--surface-2);
+ border-radius:50%;background:var(--page);border:1.5px solid var(--ink);cursor:pointer}
+.toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--line);
+ background:var(--sunken);
  position:relative;flex-shrink:0;cursor:pointer;transition:background .2s}
 .toggle>i{position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;
- background:var(--line-2);transition:left .2s,background .2s}
-.toggle.on{background:var(--peri);border-color:var(--peri)}
-.toggle.on>i{left:21px;background:var(--paper)}
+ background:var(--line);transition:left .2s,background .2s}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle.on>i{left:21px;background:var(--page)}
 /* 左滑删除：红底垫在下面，内容层往左推 */
 /* 红底放在删除面板上，不要放在容器上 —— 容器铺红色会在行与行之间透出红缝 */
 /* 跟着里面卡片的圆角裁 —— 否则四个圆角处会透出底下的红色删除面板 */
@@ -253,33 +236,33 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  border-radius:inherit;display:flex;
  align-items:center;justify-content:center;cursor:pointer;background:var(--bad)}
 /* 跟外壳一样圆：卡片圆角外那一圈才不会露出底下的红 */
-.sw-body{position:relative;background:var(--paper);border-radius:inherit;
+.sw-body{position:relative;background:var(--page);border-radius:inherit;
  transition:transform .18s ease;touch-action:pan-y}
 /* 长按拿起来排序：不加把手，不改版式 —— 点还是进详情，左滑还是删除 */
 .srt{transition:transform .16s ease}
 .srt.lift{position:relative;z-index:6;transition:none;
  box-shadow:0 10px 24px -10px rgba(34,32,28,.55);border-radius:var(--r-md)}
-.srt.lift .sw-body,.srt.lift.card{background:var(--paper)}
+.srt.lift .sw-body,.srt.lift.card{background:var(--page)}
 .dragging{touch-action:none;user-select:none}
 .card .sw-body{background:var(--surface)}
 .sw.open .sw-body{transform:translateX(-76px)}
 .dim{position:absolute;inset:0;background:rgba(34,32,28,.36)}
 .dim.anim{animation:fade .18s ease}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-top:0;
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--page);border-top:0;
  border-radius:var(--r-lg) var(--r-lg) 0 0;padding:10px 16px 20px;display:flex;flex-direction:column;gap:11px;
  max-height:88%;overflow-y:auto}
 .sheet.anim{animation:up .24s cubic-bezier(.2,.8,.3,1)}
-.grab{width:38px;height:4px;border-radius:var(--r-pill);background:var(--chev);align-self:center;
+.grab{width:38px;height:4px;border-radius:var(--r-pill);background:var(--ink-faint);align-self:center;
  margin-bottom:5px;flex-shrink:0}
 .toast.high{bottom:auto;top:52px}
-.toast{position:absolute;left:16px;right:16px;bottom:78px;background:var(--ink-2);
- color:var(--paper);border-radius:var(--r-pill);
+.toast{position:absolute;left:16px;right:16px;bottom:78px;background:var(--ink);
+ color:var(--page);border-radius:var(--r-pill);
  border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;
  animation:up .2s ease;z-index:5}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .wave{display:flex;gap:4px;align-items:center;justify-content:center;height:44px}
-.wave>span{width:3px;background:var(--chev);border-radius:var(--r-sm);height:9px}
+.wave>span{width:3px;background:var(--ink-faint);border-radius:var(--r-sm);height:9px}
 .wave.on>span{background:var(--ink);animation:w .9s ease-in-out infinite}
 @keyframes w{0%,100%{height:9px}50%{height:34px}}
 textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
@@ -1650,8 +1633,8 @@ const ic = (n, s = 20, c) => '<svg width="' + s + '" height="' + s + '" viewBox=
 
 /* 判定色从 CSS token 里取 —— 换肤时 CSS 和 JS 不能各说各话 */
 const GREEN = "var(--good)", AMBER = "var(--warn)", RED = "var(--bad)";
-const GREEN_BG = "var(--good-bg)", AMBER_BG = "var(--warn-bg)",
-      RED_BG = "var(--bad-bg)";
+const GREEN_BG = "var(--good-tint)", AMBER_BG = "var(--warn-tint)",
+      RED_BG = "var(--bad-tint)";
 /* 颜色是常量，文字不是 —— 写成函数，切语言时才会跟着变 */
 const TONE_C = { green: [GREEN, GREEN_BG], amber: [AMBER, AMBER_BG], red: [RED, RED_BG] };
 const TONE = (v) => [TONE_C[v][0], TONE_C[v][1], t("verdict." + v)];
@@ -1868,8 +1851,8 @@ const seg = (key, opts, val) => '<div class="seg">' + opts.map((o) =>
 /* 分类饼图：单色阶（颜色留给红黄绿判定），按金额从大到小，切片之间留 2px 缝。
    身份靠标签，不靠颜色 —— 图例里有名字和金额。 */
 /* 饼图色阶：单色由深到浅（颜色留给红黄绿判定），也走 token */
-const RAMP = ["var(--ramp-1)", "var(--ramp-2)", "var(--ramp-3)",
-  "var(--ramp-4)", "var(--ramp-5)", "var(--ramp-6)"];
+const RAMP = ["var(--accent)", "var(--accent)", "var(--accent)",
+  "var(--accent)", "var(--accent)", "var(--accent)"];
 function donut(cats, size, thick) {
   const total = cats.reduce((a, c) => a + c[1], 0) || 1;
   const r = (size - thick) / 2, C = 2 * Math.PI * r;
@@ -1899,7 +1882,7 @@ const listrow = (mid, right, sub, act) =>
   '<div style="flex:1;min-width:0"><div style="font-size:15px">' + mid + "</div>" +
   (sub ? '<div class="sub" style="font-size:11px">' + sub + "</div>" : "") + "</div>" +
   '<div class="money" style="font-size:15px">' + right + "</div>" +
-  (act ? '<span style="color:var(--chev)">' + ic("chev", 15) + "</span>" : "") + "</div>";
+  (act ? '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span>" : "") + "</div>";
 
 /* ==========================================================================
    4. 各个页面
@@ -1936,12 +1919,12 @@ function yearView() {
   const txIn = sumOver(act, (m) => earnedIn(S, m));
   const txOut = sumOver(act, (m) => spentIn(S, m));
   const label = (name, v) => '<div style="display:flex;align-items:baseline;gap:9px;' +
-    'padding:6px 0;border-bottom:1px dotted var(--line-2)">' +
+    'padding:6px 0;border-bottom:1px dotted var(--line)">' +
     '<div class="sub" style="flex:1">' + name + "</div>" +
     '<div class="money" style="font-size:14px">' + yuan(v) + "</div></div>";
   const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
-    (on ? "var(--ink)" : "var(--chev)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
+    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
   return { tab: "dashboard", fab: "both",
@@ -1994,7 +1977,7 @@ function yearView() {
 
           '<div style="display:flex;align-items:center;gap:9px;margin-top:2px">' +
           '<div class="h2" style="flex:1">' + t("yr.monthly") + "</div>" +
-          '<div class="sub" data-a="cats" style="cursor:pointer;color:var(--link)">' +
+          '<div class="sub" data-a="cats" style="cursor:pointer;color:var(--accent)">' +
           t("word.breakdown") + ic("chev", 13) + "</div></div>" +
           shown.map((mm) => {
             const has = hasRecords(mm);
@@ -2008,7 +1991,7 @@ function yearView() {
               '<div style="flex:1">' + (has ? bar((Math.abs(v) / max) * 100,
                 v < 0 ? RED : GREEN) : bar(0)) + "</div>" +
               '<div class="money" style="font-size:14px;width:92px;text-align:right;color:' +
-              (has ? (v < 0 ? RED : "var(--ink)") : "var(--ghosted)") + '">' +
+              (has ? (v < 0 ? RED : "var(--ink)") : "var(--ink-faint)") + '">' +
               (has ? (v < 0 ? neg(-v) : plus(v)) : t("yr.noRecord")) + "</div></div>";
           }).join("")) };
 }
@@ -2064,7 +2047,7 @@ function setupCard() {
     miss.map((x) => '<div class="row" data-a="' + x[2] + '" style="cursor:pointer;' +
       'min-height:44px"><div style="flex:1"><div style="font-size:14px">' + x[0] + "</div>" +
       '<div class="sub" style="font-size:11px">' + x[1] + "</div></div>" +
-      '<span style="color:var(--chev)">' + ic("chev", 15) + "</span></div>").join("") + "</div>";
+      '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span></div>").join("") + "</div>";
 }
 
 function monthView() {
@@ -2085,7 +2068,7 @@ function monthView() {
   const dates = Object.keys(days).sort().reverse();
   const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
-    (on ? "var(--ink)" : "var(--chev)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
+    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   return { tab: "dashboard", fab: "both",
     /* 月份选择器居中，和右上角的「我」平齐；左边留等宽的空位才真居中 */
     nav: '<div class="chip" data-a="settings" style="padding:4px 9px">' + t("nav.me") + "</div>" +
@@ -2118,8 +2101,8 @@ function monthView() {
       [[t("word.fixedIn"), "settings"], [t("word.fixedOut"), "route:out"],
         [t("word.debt"), "route:debt"], [t("word.fixedSave"), "toSavings2"]].map(([l, a]) =>
         '<span data-a="' + a + '" style="display:inline-block;padding:8px 5px;' +
-        'margin:-8px 0;cursor:pointer;color:var(--link);text-decoration:underline">' + l +
-        "</span>").join('<span style="color:var(--ghosted)">·</span>') + "</div>" +
+        'margin:-8px 0;cursor:pointer;color:var(--accent);text-decoration:underline">' + l +
+        "</span>").join('<span style="color:var(--ink-faint)">·</span>') + "</div>" +
       (() => {
         const need = cur ? stillToSave(S) : 0;
         if (net >= 0 && !need) return "";
@@ -2140,14 +2123,14 @@ function monthView() {
       '<div class="h2" style="flex:1">' + t("mo.ledger") + "</div>" +
       '<div class="sub">' + t("mo.rows", { n: rows.length }) + "</div>" +
       (out > 0 ? '<div class="sub" data-a="cats" style="cursor:pointer;display:flex;' +
-        'align-items:center;gap:3px;color:var(--link)">' + t("word.breakdown") +
+        'align-items:center;gap:3px;color:var(--accent)">' + t("word.breakdown") +
         ic("chev", 13) + "</div>" : "") +
       "</div>" +
 
       (future.length
         ? '<div class="row" data-a="toggleFuture" style="cursor:pointer;min-height:46px">' +
-          '<span style="color:var(--faint)">' + ic("clock", 16) + "</span>" +
-          '<div style="flex:1;font-size:13px;color:var(--ink-2)">' +
+          '<span style="color:var(--ink-muted)">' + ic("clock", 16) + "</span>" +
+          '<div style="flex:1;font-size:13px;color:var(--ink)">' +
           t("mo.upcoming", { n: future.length }) +
           (future.some((f) => f.fixed === "in")
             ? "　" + t("mo.willArrive") + ' <span class="money">' +
@@ -2247,8 +2230,8 @@ SCREENS.jars = () => {
         [t("va.tabSavings", { n: S.goals.length }), "savings"]], tab) +
 
       (tab === "accounts"
-        ? '<div class="banner" style="border-color:var(--chev);background:var(--surface-2)">' +
-          '<span style="margin-top:1px;color:var(--muted)">' + ic("warn", 15) + "</span>" +
+        ? '<div class="banner" style="border-color:var(--ink-faint);background:var(--sunken)">' +
+          '<span style="margin-top:1px;color:var(--ink-muted)">' + ic("warn", 15) + "</span>" +
           "<div>" + t("va.notice") + "</div></div>" +
           plain.map((a) => swipe(listrow(esc(a.name), yuan(a.balance),
             earmarkOn(a.name) > 0
@@ -2388,11 +2371,11 @@ SCREENS.settings = () => {
         '<div class="sub" style="font-size:11px">' + t("date.onDay", { day: x.day }) +
         "</div></div>" +
         '<div class="money" style="font-size:15px">' + yuan(x.amount) + "</div>" +
-        '<span style="color:var(--chev)">' + ic("chev", 15) + "</span></div>",
+        '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span></div>",
         "delFixed:in:" + x.id, ["fin", x.id])).join("")
         : '<div class="sub" style="padding:13px 0">' + t("set.fixedInEmpty") + "</div>") +
       (S.fixedIn.length ? '<div style="display:flex;align-items:baseline;gap:9px;padding:10px 0;' +
-        'border-top:1px solid var(--line-2)"><div class="lbl" style="flex:1">' +
+        'border-top:1px solid var(--line)"><div class="lbl" style="flex:1">' +
         t("set.perMonthSum") + "</div>" +
         '<div class="num money" style="font-size:15px">' + yuan(fixedIn(S)) + "</div></div>" : "") +
       "</div>" +
@@ -2405,7 +2388,7 @@ SCREENS.settings = () => {
       '<div class="lbl" style="margin-top:6px">' + t("set.cats") + "</div>" +
       '<div class="sub" style="margin-top:-8px">' + t("set.catsHint") + "</div>" +
       '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      SYS_CATS.map((c) => '<div class="chip flat" style="color:var(--faint)">' + catLabel(c) +
+      SYS_CATS.map((c) => '<div class="chip flat" style="color:var(--ink-muted)">' + catLabel(c) +
         "</div>").join("") +
       S.customCats.map(catTag).join("") +
       '<div class="chip newcat" data-a="newCat">' + ic("plus", 13) + " " +
@@ -2454,7 +2437,7 @@ SCREENS.settings = () => {
       ";border-color:" + RED + '">' + t("set.wipe") + "</div></div>" +
 
       '<div style="display:flex;align-items:center;justify-content:center;gap:7px;' +
-      'padding:14px 0 2px;color:var(--muted);font-size:12px">' + ic("check", 14) +
+      'padding:14px 0 2px;color:var(--ink-muted);font-size:12px">' + ic("check", 14) +
       " " + t("set.saved") + "</div>" +
       '<div class="sub" style="font-size:11px;text-align:center">' + lastSavedLine() +
       "</div>" };
@@ -2497,7 +2480,7 @@ function snapNote(snap, r, b) {
   if (snap.budget !== b) why.push(t("sn.budgetChanged",
     { from: yuan(snap.budget), to: yuan(b), down: b < snap.budget }));
   const worse = r.score < snap.score;
-  return '<div class="banner" style="border-color:var(--chev);background:var(--surface-2)">' +
+  return '<div class="banner" style="border-color:var(--ink-faint);background:var(--sunken)">' +
     '<span style="margin-top:1px;color:' + (worse ? RED : GREEN) + '">' +
     ic(worse ? "warn" : "check", 15) + "</span><div>" + t("sn.was", {
       before: lampOf(snap.verdict) + " " + t("sc.pointsN", { n: snap.score.toFixed(1) }),
@@ -2537,13 +2520,13 @@ function breakdownCard(it, r, b) {
       budget: yuan(b) }) + "</div>" +
     '<div style="display:flex;align-items:flex-start;gap:8px;margin-top:7px">' +
     '<div class="sub" style="flex:1;font-size:12px">' + mainReason(it, r) + "</div>" +
-    '<div class="sub" data-a="toggleCalc" style="cursor:pointer;color:var(--link);' +
+    '<div class="sub" data-a="toggleCalc" style="cursor:pointer;color:var(--accent);' +
     'white-space:nowrap;font-size:12px">' +
     (ui.showCalc ? t("word.collapse") : t("bd.how")) +
     ic("chev", 12) + "</div></div>" +
     (ui.showCalc ? '<div class="card" style="margin-top:8px;padding:8px 12px">' +
       rows.map((x) => '<div style="display:flex;justify-content:space-between;font-size:12px;' +
-        'padding:5px 0;border-bottom:1px dotted var(--line-2)"><span class="sub">' + x[0] +
+        'padding:5px 0;border-bottom:1px dotted var(--line)"><span class="sub">' + x[0] +
         '</span><span class="money">' + x[1] + "</span></div>").join("") +
       '<div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0 0;' +
       'font-weight:600"><span>' + t("bd.total") + '</span><span class="money">' +
@@ -2559,8 +2542,8 @@ const actionStack = (btns) => '<div style="display:flex;flex-direction:column;ga
 /* 预算这块要老实交代自己是怎么算出来的，尤其是退档的时候 */
 function budgetBanner() {
   const bi = budgetInfo(S);
-  if (bi.tier === "ok") return '<div class="banner" style="border-color:var(--chev);' +
-    'background:var(--surface-2)"><div>' + t("bg.ok") + ' <b class="money">' + yuan(bi.amount) +
+  if (bi.tier === "ok") return '<div class="banner" style="border-color:var(--ink-faint);' +
+    'background:var(--sunken)"><div>' + t("bg.ok") + ' <b class="money">' + yuan(bi.amount) +
     '</b><br/><span class="sub">' + t("bg.okHow") + "</span></div></div>";
   if (bi.tier === "planTooBig") return '<div class="banner tap" data-a="toSavings2" ' +
     'style="border-color:' + AMBER + ";background:" + AMBER_BG + '">' +
@@ -2569,13 +2552,13 @@ function budgetBanner() {
     '<span class="sub">' + t("bg.noSave") + '</span><br/><span class="sub">' +
     t("bg.planTooBig", { income: yuan(bi.income), bills: yuan(bi.bills),
       save: yuan(bi.save) }) + "</span></div>" +
-    '<span style="color:var(--muted);margin-top:2px">' + ic("chev", 14) + "</span></div>";
+    '<span style="color:var(--ink-muted);margin-top:2px">' + ic("chev", 14) + "</span></div>";
   return '<div class="banner tap" data-a="route:out" style="border-color:' + RED +
     ";background:" + RED_BG + '"><span style="color:' + RED + ';margin-top:1px">' +
     ic("warn", 15) + '</span><div style="flex:1">' + t("bg.billsTooBig", {
       bills: yuan(bi.bills), income: yuan(bi.income),
       pct: Math.round(FLOOR_RATIO * 100), bills2: BILLS() }) + "</div>" +
-    '<span style="color:var(--muted);margin-top:2px">' + ic("chev", 14) + "</span></div>";
+    '<span style="color:var(--ink-muted);margin-top:2px">' + ic("chev", 14) + "</span></div>";
 }
 
 SCREENS.decisions = () => {
@@ -2592,10 +2575,10 @@ SCREENS.decisions = () => {
     body: '<div class="sub">' + (editing
       ? t("de.editIntro", { name: esc(editing.name) }) : t("de.intro")) + "</div>" +
       (clash ? '<div class="banner tap" data-a="wishItem:' + clash.id +
-        '" style="border-color:var(--chev);background:var(--surface-2)">' +
-        '<span style="margin-top:1px;color:var(--muted)">' + ic("warn", 15) + "</span>" +
+        '" style="border-color:var(--ink-faint);background:var(--sunken)">' +
+        '<span style="margin-top:1px;color:var(--ink-muted)">' + ic("warn", 15) + "</span>" +
         '<div style="flex:1">' + t("de.clash", { name: esc(clash.name) }) + "</div>" +
-        '<span style="color:var(--muted);margin-top:2px">' + ic("chev", 14) + "</span></div>" : "") +
+        '<span style="color:var(--ink-muted);margin-top:2px">' + ic("chev", 14) + "</span></div>" : "") +
       field(t("de.name"), input("qname", q.name)) +
       field(t("de.price"), mInput("qprice", (q.price / unit()).toFixed(ccy().dec))) +
       '<div class="fld"><div style="display:flex;justify-content:space-between">' +
@@ -2626,9 +2609,9 @@ SCREENS.verdict = () => {
       '<div class="navt">' + t("vd.title") + "</div>",
     body: scoreCard(Object.assign({}, r, { dup: it.dup })) + breakdownCard(it, r, b) +
       (exists ? '<div class="banner tap" data-a="wishItem:' + exists.id +
-        '" style="border-color:var(--chev);background:var(--surface-2)"><div style="flex:1">' +
+        '" style="border-color:var(--ink-faint);background:var(--sunken)"><div style="flex:1">' +
         t("vd.already", { name: esc(it.name) }) + "</div>" +
-        '<span style="color:var(--muted)">' + ic("chev", 14) + "</span></div>" : "") +
+        '<span style="color:var(--ink-muted)">' + ic("chev", 14) + "</span></div>" : "") +
       actionStack(acts) };
 };
 
@@ -2655,12 +2638,12 @@ SCREENS.wishlist = () => {
           '<div style="margin:9px 0">' + bar(pct) + "</div>" +
           '<div class="sub" style="display:flex;align-items:center;gap:5px">' +
           '<span style="flex:1">' + state + "</span>" +
-          '<span style="color:var(--chev)">' + ic("chev", 14) + "</span></div></div>";
+          '<span style="color:var(--ink-faint)">' + ic("chev", 14) + "</span></div></div>";
       }).join("")
     : S.archive.map((a) => '<div class="card">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
-        '<div class="h2" style="color:var(--ink-2)">' + esc(a.name) + "</div>" +
-        '<div class="num money" style="color:var(--faint)">' + yuan(a.price) + "</div></div>" +
+        '<div class="h2" style="color:var(--ink)">' + esc(a.name) + "</div>" +
+        '<div class="num money" style="color:var(--ink-muted)">' + yuan(a.price) + "</div></div>" +
         '<div style="display:flex;align-items:center;gap:7px;margin-top:6px">' +
         '<div class="chip flat" style="padding:2px 9px">' + t("ar." + a.outcome) +
         "</div>" +
@@ -2772,7 +2755,7 @@ SCREENS.wishItem = () => {
 const grab = '<div class="grab"></div>';
 const head = (title, extra) => '<div style="display:flex;align-items:center;gap:9px">' +
   '<div class="h2" style="flex:1">' + title + "</div>" + (extra || "") +
-  '<div data-a="close" style="cursor:pointer;color:var(--faint)">' + ic("close", 18) + "</div></div>";
+  '<div data-a="close" style="cursor:pointer;color:var(--ink-muted)">' + ic("close", 18) + "</div></div>";
 const errline = () => ui.f.err
   ? '<div class="errline"><span style="margin-top:2px">' + ic("warn", 14) + "</span><div>" +
     ui.f.err + "</div></div>" : "";
@@ -2838,7 +2821,7 @@ SHEETS.assistant = () => {
     '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
 
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
-    'background:var(--surface-2);border-style:dashed">' + p.intent + "</div>";
+    'background:var(--sunken);border-style:dashed">' + p.intent + "</div>";
   if (p.intent === "ledger" || p.intent === "multi_ledger") {
     /* 一句话里可能同时有进和出 —— 加成一个数是没意义的 */
     const out = p.drafts.filter((d) => d.type === "out").reduce((a, d) => a + d.amount, 0);
@@ -2856,7 +2839,7 @@ SHEETS.assistant = () => {
         esc(d.description) +
         '</div><div class="money" style="font-size:15px">' +
         (d.type === "in" ? plus(d.amount) : yuan(d.amount)) + "</div>" +
-        '<span style="color:var(--chev)">' + ic("chev", 14) + "</span></div>").join("") +
+        '<span style="color:var(--ink-faint)">' + ic("chev", 14) + "</span></div>").join("") +
       (p.drafts.some((d) => d.amount <= 0)
         ? '<div class="errline"><span>' + ic("warn", 14) + "</span><div>" +
           t("as.noAmount") + "</div></div>" : "") +
@@ -2864,25 +2847,25 @@ SHEETS.assistant = () => {
   }
   if (p.intent === "transfer") return grab + head(t("as.transfer"), chip) +
     '<div class="big money">' + yuan(p.move.amount) + "</div>" +
-    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.move.from) +
-    '<div style="flex:1;text-align:center;color:var(--ghosted)">' + ic("arrow", 18) + "</div>" +
+    '<div class="fldbox" style="background:var(--sunken)">' + esc(p.move.from) +
+    '<div style="flex:1;text-align:center;color:var(--ink-faint)">' + ic("arrow", 18) + "</div>" +
     esc(p.move.to) + "</div>" +
     '<div class="sub">' + t("as.transferNote", { from: esc(p.move.from),
       bal: jarLine(p.move.from) }) + "</div>" +
     btn(t("as.commitTransfer"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
   if (p.intent === "deposit") return grab + head(t("as.deposit"), chip) +
     '<div class="big money">' + yuan(p.move.amount) + "</div>" +
-    '<div class="fldbox" style="background:var(--surface-2)">' +
+    '<div class="fldbox" style="background:var(--sunken)">' +
     t("as.depositTo", { to: esc(p.move.to) }) + "</div>" +
     btn(t("as.commitDeposit"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
   if (p.intent === "goal") return grab + head(t("as.newGoal"), chip) +
-    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.goal.name) +
+    '<div class="fldbox" style="background:var(--sunken)">' + esc(p.goal.name) +
     '<div style="flex:1"></div><span class="money">' + yuan(p.goal.target) + "</span></div>" +
     '<div class="sub">' + t("as.goalMeta", { months: p.goal.months,
       amt: yuan(Math.round(p.goal.target / p.goal.months)) }) + "</div>" +
     btn(t("as.commitGoal"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
   if (p.intent === "debt") return grab + head(t("as.newDebt"), chip) +
-    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.debt.description) +
+    '<div class="fldbox" style="background:var(--sunken)">' + esc(p.debt.description) +
     '<div style="flex:1"></div><span class="money">' + neg(p.debt.monthly) + " " +
     t("bi.perMonth") + "</span></div>" +
     btn(t("as.commitDebt"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
@@ -2891,7 +2874,7 @@ SHEETS.assistant = () => {
   const r = evaluatePurchase(p.item.price || 1, b, p.item.necessity, S.saveMode, p.item.dup);
   const [tone, bg, label] = TONE(r.verdict);
   return grab + head(t("as.decision"), chip) +
-    '<div class="fldbox" style="background:var(--surface-2)">' + esc(p.item.name) +
+    '<div class="fldbox" style="background:var(--sunken)">' + esc(p.item.name) +
     '<div style="flex:1"></div><span class="sub">' +
     t("as.necMeta", { n: p.item.necessity, dup: p.item.dup }) + "</span></div>" +
     '<div class="banner" style="border-color:' + tone + ";background:" + bg + '">' +
@@ -2920,13 +2903,13 @@ function passiveRow(x, m) {
     : x.fixed === "in" ? plus(x.amount) : neg(x.amount);
   return '<div class="row" data-a="' + x.tap + '" style="cursor:pointer;opacity:' +
     (future ? ".55" : ".8") + '">' +
-    '<div style="flex:1;min-width:0"><div style="font-size:15px;color:var(--ink-2)">' +
+    '<div style="flex:1;min-width:0"><div style="font-size:15px;color:var(--ink)">' +
     '<span class="chip flat" style="padding:1px 8px;font-size:11px;border-style:dashed">' +
     (x.xfer ? t("px.transfer") : t("px.fixed")) + "</span> " + esc(x.name) + "</div>" +
     '<div class="sub" style="font-size:11px">' +
     (future ? t("px.expected") : x.xfer ? t("px.savingNotSpend") : "") + "</div></div>" +
-    '<div class="money" style="font-size:15px;color:var(--faint)">' + amount + "</div>" +
-    '<span style="color:var(--chev)">' + ic("chev", 15) + "</span></div>";
+    '<div class="money" style="font-size:15px;color:var(--ink-muted)">' + amount + "</div>" +
+    '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span></div>";
 }
 
 function breakdownOver(months, kind) {
@@ -2998,13 +2981,13 @@ function labeledDonut(rows, kind) {
       const tx = side === "right" ? W - 4 : 4;
       leaders.push('<path d="M' + (cx + (OUT + 3) * Math.cos(L.ang)).toFixed(1) + " " +
         (cy + (OUT + 3) * Math.sin(L.ang)).toFixed(1) + "L" + ex.toFixed(1) + " " + y.toFixed(1) +
-        "H" + (side === "right" ? tx - 2 : tx + 2) + '" fill="none" stroke="var(--chev)" ' +
+        "H" + (side === "right" ? tx - 2 : tx + 2) + '" fill="none" stroke="var(--ink-faint)" ' +
         'stroke-width="1"></path>');
       texts.push('<text x="' + tx + '" y="' + (y - 3) + '" text-anchor="' +
         (side === "right" ? "end" : "start") + '" font-size="12.5" font-weight="600" ' +
         'fill="var(--ink)">' + esc(L.name) + "</text>" +
         '<text x="' + tx + '" y="' + (y + 12) + '" text-anchor="' +
-        (side === "right" ? "end" : "start") + '" font-size="10" fill="var(--muted)">' +
+        (side === "right" ? "end" : "start") + '" font-size="10" fill="var(--ink-muted)">' +
         pctLabel(L.v, total) + " · " + yuan(L.v) + "</text>");
     });
   });
@@ -3013,7 +2996,7 @@ function labeledDonut(rows, kind) {
     '<g transform="rotate(-90 ' + cx + " " + cy + ')">' + segs.join("") + "</g>" +
     leaders.join("") + texts.join("") +
     '<text x="' + cx + '" y="' + (cy - 3) + '" text-anchor="middle" font-size="11" ' +
-    'fill="var(--muted)">' + t(kind === "in" ? "word.income" : "word.spending") + "</text>" +
+    'fill="var(--ink-muted)">' + t(kind === "in" ? "word.income" : "word.spending") + "</text>" +
     '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="13" ' +
     'font-weight="600" fill="var(--ink)">' + yuan(total) + "</text></svg>";
 }
@@ -3028,7 +3011,7 @@ SHEETS.cats = () => {
       '" style="padding:5px 13px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
   const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
-    "cursor:" + (on ? "pointer" : "default") + ";color:" + (on ? "var(--ink)" : "var(--chev)") + '">' +
+    "cursor:" + (on ? "pointer" : "default") + ";color:" + (on ? "var(--ink)" : "var(--ink-faint)") + '">' +
     ic(dir === "prev" ? "back" : "chev", 18) + "</div>";
   const nextOn = isYear() ? +viewYear() < +thisMonth().slice(0, 4) : !isThisMonth();
   return grab + head(t("pie.title", { period: isYear()
@@ -3134,7 +3117,7 @@ const accountField = (label, hint) => {
   return field(label, '<div style="display:flex;gap:8px">' +
     '<div style="flex:1">' + (opts.length
       ? select("account", opts, ui.f.account)
-      : '<div class="fldbox" style="color:var(--faint)">' + t("ja.noneYet") + "</div>") +
+      : '<div class="fldbox" style="color:var(--ink-muted)">' + t("ja.noneYet") + "</div>") +
       "</div>" +
     '<div class="chip" data-a="addJar" style="height:46px;padding:0 13px;border-width:1.5px">' +
     ic("plus", 15) + " " + t("ja.addShort") + "</div></div>", hint);
@@ -3189,8 +3172,8 @@ SHEETS.startPlan = () => {
   const q = ui.f.item || ui.quiz;
   return grab + '<div style="display:flex;align-items:center;gap:9px">' + ic("loop", 19) +
     '<div class="h2" style="flex:1">' + t("pl.title") + "</div>" +
-    '<div data-a="close" style="cursor:pointer;color:var(--faint)">' + ic("close", 18) + "</div></div>" +
-    '<div class="fldbox" style="background:var(--surface-2)">' + esc(q.name) +
+    '<div data-a="close" style="cursor:pointer;color:var(--ink-muted)">' + ic("close", 18) + "</div></div>" +
+    '<div class="fldbox" style="background:var(--sunken)">' + esc(q.name) +
     '<div style="flex:1"></div><span class="money">' + yuan(q.price) + "</span></div>" +
     '<div style="font-size:14px;line-height:1.8">' +
     ic("check", 14) + " " + t("pl.p1", { name: esc(q.name) + t("pl.jarSuffix") }) + "<br/>" +
@@ -3824,7 +3807,7 @@ function wizardView() {
     "</div>" +
     '<div class="money" style="font-size:15px">' +
     yuan(step === 1 ? x.amount : x.balance) + "</div>" +
-    '<span class="sub" data-a="wizDrop:' + i + '" style="cursor:pointer;color:var(--ghosted);' +
+    '<span class="sub" data-a="wizDrop:' + i + '" style="cursor:pointer;color:var(--ink-faint);' +
     'font-size:11px">' + t("f.delete") + "</span></div>").join("");
 
   /* 第 0 步只有两排 chip，一定有值，所以「下一步」永远是亮的 */
@@ -4109,7 +4092,7 @@ const EXAMPLES = ["今天吃拉面25.5元，打车18元，看电影60元",
   "从微信零钱转账500元到招商银行卡", "我想买一个3000块的相机 必要度打分8",
   "计划3年攒够20万买房", "每月还房贷3000", "存入2000到支付宝"];
 document.getElementById("examples").innerHTML = EXAMPLES.map((x, i) =>
-  '<li><a href="#" data-ex="' + i + '" style="color:var(--link)">' + x + "</a></li>").join("");
+  '<li><a href="#" data-ex="' + i + '" style="color:var(--accent)">' + x + "</a></li>").join("");
 function updateClock() {
   document.getElementById("clock").textContent = "原型时间：" +
     now().toISOString().slice(0, 16).replace("T", " ") +
