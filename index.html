@@ -267,11 +267,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .tile .sub{line-height:1.25}
 /* 一天一张卡，左边一条竖杠 */
 /* 列表一律装进白卡 —— 光着摆在底色上会散 */
-.listcard{background:var(--surface);border-radius:var(--r-lg);padding:4px 16px}
+.listcard{background:var(--surface);border-radius:var(--r);padding:4px 16px}
 .listcard .sw:not(:last-child) .row{border-bottom:1px solid var(--line)}
 .listcard .sw:last-child .row{border-bottom:0}
 .listcard .sw-body{background:var(--surface)}
-.daycard{display:flex;gap:12px;background:var(--surface);border-radius:var(--r-lg);
+.daycard{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);
  padding:0 12px;margin-top:-4px}
 .daybar{width:4px;border-radius:var(--r-sm);background:var(--ink);flex-shrink:0;
  margin:12px 0}
@@ -318,10 +318,11 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
   .side{display:none}
   .phone{width:100%;height:100vh;height:100dvh;border:0;border-radius:0;box-shadow:none}
   .inset{height:env(safe-area-inset-top)}
-  /* 悬浮簇整体往上让出 home 条 —— 别去改胶囊自己的高度，那会把它撑变形 */
-  .dock{bottom:calc(30px + env(safe-area-inset-bottom))}
-  .toast{bottom:calc(102px + env(safe-area-inset-bottom))}
-  .body,.body.hasfab{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  /* 稿子里悬浮簇离屏幕底 30 —— 用 max() 而不是加法：加法等于在 home 条上面
+     又垫了一层，簇会整个飘起来。别去改胶囊自己的高度，那会把它撑变形。 */
+  .dock{bottom:max(30px, env(safe-area-inset-bottom))}
+  .toast{bottom:calc(72px + max(30px, env(safe-area-inset-bottom)))}
+  .body,.body.hasfab{padding-bottom:calc(74px + max(30px, env(safe-area-inset-bottom)))}
   .sheet{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
   .toast.high{bottom:auto}
 }
