@@ -121,31 +121,27 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .nav{min-height:50px;display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;
  border-bottom:1px solid var(--line)}
 .navt{font-size:20px;font-weight:var(--w-bold);color:var(--ink);letter-spacing:-.02em}
-.body{flex:1;padding:14px 16px 20px;display:flex;flex-direction:column;gap:12px;
+.body{flex:1;padding:14px 16px 104px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
    一律不许收缩，超出就滚动 */
 .body > *{flex-shrink:0}
 /* 悬浮按钮浮在正文之上（bottom:78 + 56 高 = 盖住标签栏往上 72px），
    所以有它的页面要把这块高度垫出来，不然年视图这种长页面最后一张卡会被压住 */
-.body.hasfab{padding-bottom:88px}
-.tabs{height:66px;border-top:1px solid var(--line);display:flex;flex-shrink:0;
- background:var(--nav)}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
- font-size:10px;color:var(--ink-faint);cursor:pointer}
-.tab.on{color:var(--on-nav);font-weight:var(--w-mid)}
-.tab:active{background:rgba(255,255,255,.07)}
-.fab{position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:50%;
+.body.hasfab{padding-bottom:104px}
+/* 底部不再是通栏，是一簇悬浮的东西：导航胶囊 + AI 按钮并排，内容从底下滑过去 */
+.dock{position:absolute;right:21px;bottom:30px;display:flex;align-items:center;gap:11px;
+ z-index:4}
+.tabs{height:60px;border-radius:45px;background:var(--nav);display:flex;align-items:center;
+ gap:15px;padding:6px 8px;backdrop-filter:blur(12px)}
+.tab{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
+ justify-content:center;color:var(--on-nav);opacity:.55;cursor:pointer}
+.tab.on{opacity:1;width:48px;height:48px;background:rgba(255,255,255,.18)}
+.tab:active{transform:scale(.92)}
+.fab{width:56px;height:56px;border-radius:50%;flex-shrink:0;
  background:var(--ai-gradient);color:var(--on-accent);display:flex;align-items:center;
  justify-content:center;cursor:pointer;box-shadow:var(--shadow-fab)}
 .fab:active{transform:scale(.94)}
-.fabrow{position:absolute;right:16px;bottom:78px;display:flex;align-items:center;gap:10px}
-.fabrow .fab{position:static}
-.fabpill{height:56px;border-radius:var(--r-pill);background:var(--surface);border:0;
- color:var(--ink);
- display:flex;align-items:center;gap:7px;padding:0 20px;font-size:15px;font-weight:500;
- cursor:pointer;box-shadow:var(--shadow-pill);white-space:nowrap}
-.fabpill:active{transform:scale(.97)}
 
 /* 真机上卡片没有描边 —— 靠自己的填充比页面底浅一档来分层 */
 .card{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);
@@ -190,8 +186,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  display:flex;gap:9px;
  align-items:flex-start;line-height:1.45}
 .banner.tap{cursor:pointer}
-.dash{border:1px dashed var(--accent);border-radius:var(--r-pill);background:transparent;
- min-height:54px;
+.dash{border:1px dashed var(--ink-faint);border-radius:var(--r-pill);
+ background:var(--surface);min-height:54px;
  display:flex;align-items:center;justify-content:center;gap:7px;color:var(--ink-muted);font-size:14px;
  cursor:pointer}
 .dash:active{background:var(--press)}
@@ -261,9 +257,53 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  animation:up .2s ease;z-index:5}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
+/* 概览卡底下那四个统计块 */
+.tiles{display:flex;gap:6px;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}
+.tile{flex:1;min-width:0;padding:10px 4px;border-radius:var(--r-lg);text-align:center;
+ cursor:pointer}
+.tile:active{background:var(--press)}
+.tile .money{font-size:15px;white-space:nowrap}
+/* 三个字以上的标签在 4 等分里会撑破 —— 让它换行，块高由内容决定 */
+.tile .sub{line-height:1.25}
+/* 一天一张卡，左边一条竖杠 */
+/* 列表一律装进白卡 —— 光着摆在底色上会散 */
+.listcard{background:var(--surface);border-radius:var(--r-lg);padding:4px 16px}
+.listcard .sw:not(:last-child) .row{border-bottom:1px solid var(--line)}
+.listcard .sw:last-child .row{border-bottom:0}
+.listcard .sw-body{background:var(--surface)}
+.daycard{display:flex;gap:12px;background:var(--surface);border-radius:var(--r-lg);
+ padding:12px 13px;margin-top:-4px}
+.daybar{width:4px;border-radius:var(--r-sm);background:var(--ink);flex-shrink:0}
+.dayrows{flex:1;min-width:0}
+.dayrows .row{border-bottom:0;min-height:48px}
+.daycard .sw-body{background:var(--surface)}
+.dayrows .sw:not(:last-child) .row{border-bottom:1px solid var(--line)}
+/* 「我」是个圆形头像按钮，不是文字芯片 */
+.avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;background:var(--surface);color:var(--ink);
+ cursor:pointer}
+.avatar:active{background:var(--press)}
+/* 即将发生：暖色底的圆角条，和真实流水区分开 */
+.upcoming{display:flex;align-items:center;gap:11px;min-height:34px;padding:7px 12px;
+ border-radius:var(--r-md);background:var(--warn-tint);cursor:pointer}
+.iconbtn{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;
+ justify-content:center;background:var(--surface);color:var(--ink);cursor:pointer;
+ flex-shrink:0}
+.iconbtn:active{background:var(--press)}
 .wave{display:flex;gap:4px;align-items:center;justify-content:center;height:44px}
 .wave>span{width:3px;background:var(--ink-faint);border-radius:var(--r-sm);height:9px}
 .wave.on>span{background:var(--ink);animation:w .9s ease-in-out infinite}
+/* 输入方式那一排：两个小图标夹着中间的主按钮 */
+.inputbar{display:flex;align-items:center;gap:9px}
+.inputbtn{width:48px;height:48px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;background:var(--sunken);color:var(--ink);
+ cursor:pointer}
+.inputbtn:active{background:var(--press)}
+.inputmain{flex:1;height:48px;border-radius:var(--r-pill);background:var(--nav);
+ color:var(--on-nav);display:flex;align-items:center;justify-content:center;
+ font-size:15px;font-weight:var(--w-mid);cursor:pointer}
+.inputmain:active{transform:scale(.98)}
+.inputmain.off{background:var(--sunken);color:var(--ink-muted);font-size:13px}
 @keyframes w{0%,100%{height:9px}50%{height:34px}}
 textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
  align-items:flex-start;display:block}
@@ -328,6 +368,9 @@ const CUR = {
 };
 const ccy = () => CUR[S.currency] || CUR.CNY;
 const unit = () => Math.pow(10, ccy().dec);
+/* 统计块那种一行放四个的地方，小数没意义还挤 —— 只给整数 */
+const moneyShort = (c) => { const u = ccy();
+  return u.sym + Math.round(c / Math.pow(10, u.dec)).toLocaleString(u.loc); };
 const money = (c) => { const u = ccy();
   return u.sym + (c / Math.pow(10, u.dec)).toLocaleString(u.loc,
     { minimumFractionDigits: u.dec, maximumFractionDigits: u.dec }); };
@@ -582,6 +625,8 @@ zh: {
   "sa.intoJar": (v) => "进「" + v.jar + "」· 还差 " + v.amt,
   "sa.note": "不进账本 —— 卖旧东西不是挣钱，是把东西换成钱。",
   "as.say": "说点什么",
+  "as.shoot": "拍小票", "as.typeIt": "自己打",
+  "as.shootSoon": "拍小票认账还没接上 —— 先说一句，或者点右边自己打。",
   "as.listen": "按住说话", "as.listening": "在听…", "as.stop": "说完了",
   "as.noMic": "这个浏览器不支持语音输入 —— 直接打字也一样。",
   "as.micDenied": "没拿到麦克风权限。到系统设置里允许一下，或者直接打字。",
@@ -983,6 +1028,8 @@ en: {
   "sa.note": "Never enters your ledger — selling isn't earning, it's turning a " +
     "thing back into money.",
   "as.say": "Say it out loud",
+  "as.shoot": "Snap a receipt", "as.typeIt": "Type it",
+  "as.shootSoon": "Reading receipts isn't wired up yet — say it, or tap the keyboard.",
   "as.listen": "Hold to talk", "as.listening": "Listening…", "as.stop": "Done",
   "as.noMic": "This browser can't do speech input — typing works just as well.",
   "as.micDenied": "No microphone permission. Allow it in Settings, or just type.",
@@ -1610,6 +1657,10 @@ const P = {
   box: '<path d="M10 3.3 16.7 6.6v6.8L10 16.7 3.3 13.4V6.6z"/><path d="M3.3 6.6 10 9.9l6.7-3.3M10 9.9v6.8"/>',
   map: '<path d="M3.6 15.4V6.1l4.3-1.5 4.2 1.5 4.3-1.5v9.3l-4.3 1.5-4.2-1.5z"/><path d="M7.9 4.6v9.3M12.1 6.1v9.3"/>',
   gear: '<circle cx="10" cy="10" r="2.6"/><path d="M10 3.4v2.1M10 14.5v2.1M3.4 10h2.1M14.5 10h2.1M5.3 5.3l1.5 1.5M13.2 13.2l1.5 1.5M14.7 5.3l-1.5 1.5M6.8 13.2l-1.5 1.5"/>',
+  user: '<circle cx="10" cy="7.2" r="3.4"/><path d="M4 16.6a6 6 0 0 1 12 0"/>',
+  pie: '<path d="M10 10V2.8a7.2 7.2 0 0 1 6.9 9.3z"/><circle cx="10" cy="10" r="7.2"/>',
+  camera: '<rect x="2.6" y="5.4" width="14.8" height="11.2" rx="2"/><circle cx="10" cy="11" r="3.1"/><path d="M7 5.4 8.2 3.4h3.6L13 5.4"/>',
+  keyboard: '<rect x="2.4" y="5.6" width="15.2" height="9.6" rx="1.8"/><path d="M5.4 8.4h.01M8 8.4h.01M10.6 8.4h.01M13.2 8.4h.01M6.6 11h6.8"/>',
   mic: '<rect x="7.7" y="3.2" width="4.6" height="8.2" rx="2.3"/><path d="M4.9 9.6a5.1 5.1 0 0 0 10.2 0M10 14.7v2.1"/>',
   plus: '<path d="M10 4.2v11.6M4.2 10h11.6"/>',
   arrow: '<path d="M4 10h12M11.4 5.4 16 10l-4.6 4.6"/>',
@@ -1928,7 +1979,8 @@ function yearView() {
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
   return { tab: "dashboard", fab: "both",
-    nav: '<div class="chip" data-a="settings" style="padding:4px 9px">' + t("nav.me") + "</div>" +
+    nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
+      ic("user", 20) + "</div>" +
       '<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:2px">' +
       arrow("prev", true) +
       '<div class="h2" style="min-width:78px;text-align:center">' +
@@ -2071,7 +2123,8 @@ function monthView() {
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   return { tab: "dashboard", fab: "both",
     /* 月份选择器居中，和右上角的「我」平齐；左边留等宽的空位才真居中 */
-    nav: '<div class="chip" data-a="settings" style="padding:4px 9px">' + t("nav.me") + "</div>" +
+    nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
+      ic("user", 20) + "</div>" +
       '<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:2px">' +
       arrow("prev", true) +
       '<div class="h2" style="min-width:92px;text-align:center;font-size:14px">' +
@@ -2097,12 +2150,15 @@ function monthView() {
         : "") + "</div>" +
       /* 四项各去各的地方 —— 原来一整句只链到「我」，可固定支出和还贷在账单、
          固定储蓄在金库，点过去全是错的。链接用负 margin 撑开点击区。 */
-      '<div class="sub" style="font-size:11px;margin-top:5px">' + t("mo.counted") +
-      [[t("word.fixedIn"), "settings"], [t("word.fixedOut"), "route:out"],
-        [t("word.debt"), "route:debt"], [t("word.fixedSave"), "toSavings2"]].map(([l, a]) =>
-        '<span data-a="' + a + '" style="display:inline-block;padding:8px 5px;' +
-        'margin:-8px 0;cursor:pointer;color:var(--accent);text-decoration:underline">' + l +
-        "</span>").join('<span style="color:var(--ink-faint)">·</span>') + "</div>" +
+      /* 四个固定项各占一块，点进去各去各的页面 —— 比一行下划线好读，也好点 */
+      '<div class="tiles">' +
+      [[t("word.fixedIn"), fixedIn(S), "settings"],
+       [t("word.fixedSave"), goalCommit(S), "toSavings2"],
+       [t("word.fixedOut"), S.fixedOut.reduce((a, x) => a + x.amount, 0), "route:out"],
+       [t("word.debt"), debtCommit(S), "route:debt"]].map(([l, v, a]) =>
+        '<div class="tile" data-a="' + a + '"><div class="money">' + moneyShort(v) + "</div>" +
+        '<div class="sub" style="font-size:11px">' + esc(l) + "</div></div>").join("") +
+      "</div>" +
       (() => {
         const need = cur ? stillToSave(S) : 0;
         if (net >= 0 && !need) return "";
@@ -2121,14 +2177,12 @@ function monthView() {
       (cur ? confirmCard() + setupCard() : "") +
       '<div style="display:flex;align-items:center;gap:9px;margin-top:2px">' +
       '<div class="h2" style="flex:1">' + t("mo.ledger") + "</div>" +
-      '<div class="sub">' + t("mo.rows", { n: rows.length }) + "</div>" +
-      (out > 0 ? '<div class="sub" data-a="cats" style="cursor:pointer;display:flex;' +
-        'align-items:center;gap:3px;color:var(--accent)">' + t("word.breakdown") +
-        ic("chev", 13) + "</div>" : "") +
+      (out > 0 ? '<div class="iconbtn" data-a="cats" title="' + esc(t("word.breakdown")) +
+        '">' + ic("pie", 16) + "</div>" : "") +
       "</div>" +
 
       (future.length
-        ? '<div class="row" data-a="toggleFuture" style="cursor:pointer;min-height:46px">' +
+        ? '<div class="upcoming" data-a="toggleFuture">' +
           '<span style="color:var(--ink-muted)">' + ic("clock", 16) + "</span>" +
           '<div style="flex:1;font-size:13px;color:var(--ink)">' +
           t("mo.upcoming", { n: future.length }) +
@@ -2156,13 +2210,15 @@ function monthView() {
             return '<div class="lbl" style="margin-top:4px">' + dayLabel(d) +
               (o ? " · " + t("word.spending") + " " + yuan(o) : "") +
               (sv ? " · " + t("word.savings") + " " + yuan(sv) : "") + "</div>" +
-              '<div style="margin-top:-6px">' + days[d].map((t) => (t.fixed || t.xfer)
+              /* 一天一张白卡，左边一条竖杠把这一组圈起来 */
+              '<div class="daycard"><div class="daybar"></div><div class="dayrows">' +
+              days[d].map((t) => (t.fixed || t.xfer)
                 ? passiveRow(t, m)
                 : swipe(listrow(
                     '<span class="chip flat" style="padding:1px 8px;font-size:11px">' +
                     esc(catLabel(t.category)) + "</span> " + esc(t.description),
                     t.type === "out" ? neg(t.amount) : plus(t.amount), null,
-                    "editTx:" + t.id), "delTx:" + t.id)).join("") + "</div>";
+                    "editTx:" + t.id), "delTx:" + t.id)).join("") + "</div></div>";
           }).join("") + '<div style="height:56px"></div>'
         : '<div class="dash" style="min-height:120px;cursor:default;flex-direction:column;' +
           'gap:6px;padding:0 24px;text-align:center">' +
@@ -2233,13 +2289,13 @@ SCREENS.jars = () => {
         ? '<div class="banner" style="border-color:var(--ink-faint);background:var(--sunken)">' +
           '<span style="margin-top:1px;color:var(--ink-muted)">' + ic("warn", 15) + "</span>" +
           "<div>" + t("va.notice") + "</div></div>" +
-          plain.map((a) => swipe(listrow(esc(a.name), yuan(a.balance),
+          '<div class="listcard">' + plain.map((a) => swipe(listrow(esc(a.name), yuan(a.balance),
             earmarkOn(a.name) > 0
               ? t("va.reservedOn", { amt: yuan(earmarkOn(a.name)) }) +
                 (earmarkOn(a.name) > a.balance ? t("va.overBalance") : "")
               : t("va.shareOf", {
                   pct: Math.round((a.balance / Math.max(1, netAssets(S))) * 100) }),
-            "editJar:" + a.name), "delJar:" + a.name, ["acct", a.name])).join("") +
+            "editJar:" + a.name), "delJar:" + a.name, ["acct", a.name])).join("") + "</div>" +
           '<div class="dash" data-a="addJar">' + ic("plus", 16) + " " +
           t("va.addAccount") + "</div>" +
           (planJars.length
@@ -2328,7 +2384,8 @@ SCREENS.route = () => {
       yuan(fixedTotal + debtCommit(S)) + "</div></div>",
     body: seg("route", [[t("bi.tabOut"), "out"], [t("bi.tabDebt"), "debt"]], tab) +
       (tab === "out"
-        ? (S.fixedOut.length ? S.fixedOut.map(fixedRow).join("")
+        ? (S.fixedOut.length
+            ? '<div class="listcard">' + S.fixedOut.map(fixedRow).join("") + "</div>"
             : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
               'text-align:center">' + t("bi.emptyOut") + "</div>") +
           '<div class="dash" data-a="addFixedOut">' + ic("plus", 16) + " " +
@@ -2813,10 +2870,15 @@ SHEETS.assistant = () => {
     [9, 17, 28, 14, 34, 22, 40, 25, 13, 30, 19, 9].map((h, i) =>
       '<span style="' + (listening ? "height:" + h + "px;" : "") + "animation-delay:" +
       (i * 0.07).toFixed(2) + 's"></span>').join("") + "</div>" +
-    (SR
-      ? '<div class="mbtn' + (listening ? "" : " sm") + '" data-a="mic">' +
-        ic("mic", 17) + " " + t(listening ? "as.stop" : "as.listen") + "</div>"
-      : '<div class="sub" style="text-align:center">' + t("as.noMic") + "</div>") +
+    /* 三种输入并排：拍小票 / 说话 / 打字。悬浮胶囊上不再有「记一笔」，
+       手动那条路收到这里 —— 否则首页就没有非语音的入口了。 */
+    '<div class="inputbar">' +
+    '<div class="inputbtn" data-a="shoot" title="' + esc(t("as.shoot")) + '">' +
+    ic("camera", 20) + "</div>" +
+    '<div class="inputmain' + (SR ? "" : " off") + '" data-a="mic">' +
+    (SR ? t(listening ? "as.stop" : "as.listen") : t("as.noMic")) + "</div>" +
+    '<div class="inputbtn" data-a="addTx" title="' + esc(t("as.typeIt")) + '">' +
+    ic("keyboard", 20) + "</div></div>" +
     errline() + btn(t("as.parse"), "parse", "pri") +
     '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
 
@@ -3329,6 +3391,7 @@ const ACT = {
   /* 助手 */
   assistant: () => { micStop(); sheet("assistant", { text: "" }); },
   mic: () => micStart(),
+  shoot: () => { ui.f.err = t("as.shootSoon"); render(); },
   editDraft: (i) => { const d = ui.f.parsed.drafts[+i];
     pushSheet("editDraft", { i: +i, type: d.type, amount: (d.amount / 100).toFixed(2),
       category: d.category, description: d.description, date: d.date }); },
@@ -3766,10 +3829,11 @@ addDebt: () => sheet("addDebt", {}),
 /* ==========================================================================
    7. 渲染 / 输入 / 启动
    ========================================================================== */
+/* 图标本身就说明了去哪，胶囊里塞文字会挤 —— 选中态靠那圈浅底和放大表示 */
 function tabsHtml(active) {
   return '<div class="tabs">' + TABS().map(([i, l, k]) =>
-    '<div class="tab ' + (k === active ? "on" : "") + '" data-a="tab:' + k + '">' +
-    ic(i, 21) + "<span>" + l + "</span></div>").join("") + "</div>";
+    '<div class="tab ' + (k === active ? "on" : "") + '" data-a="tab:' + k +
+    '" title="' + esc(l) + '">' + ic(i, 22) + "</div>").join("") + "</div>";
 }
 /* 自动扣款的目标，到了日子就自己把这个月记上（幂等）。真实实现里这是后端的定时任务。 */
 function settleAutoGoals() {
@@ -3875,13 +3939,10 @@ function render() {
   const tab = v.tab === undefined ? TAB_OF[key] : v.tab;
   app.innerHTML = '<div class="inset"></div><div class="nav">' + v.nav + "</div>" +
     '<div class="body' + (v.fab ? " hasfab" : "") + '">' + v.body + "</div>" +
-    (tab ? tabsHtml(tab) : "") +
-    (v.fab && !ui.sheet
-      ? (v.fab === "both"
-        ? '<div class="fabrow"><div class="fabpill" data-a="addTx">' + ic("plus", 18) +
-          " " + t("fab.addTx") + '</div><div class="fab" data-a="assistant">' +
-          ic("mic", 24) + "</div></div>"
-        : '<div class="fab" data-a="assistant">' + ic("mic", 24) + "</div>")
+    (!ui.sheet && (tab || v.fab)
+      ? '<div class="dock">' + (tab ? tabsHtml(tab) : "") +
+        (v.fab ? '<div class="fab" data-a="assistant">' + ic("mic", 24) + "</div>" : "") +
+        "</div>"
       : "") +
     (ui.sheet ? '<div class="dim' + (ui.anim ? " anim" : "") + '" data-a="close"></div>' +
       '<div class="sheet' + (ui.anim ? " anim" : "") + '">' + SHEETS[ui.sheet]() + "</div>" : "") +
