@@ -1419,7 +1419,8 @@ const cooled = (item) => hoursLeft(item) === 0;
 const RULES = {
 zh: {
   cats: [
-    ["food", ["吃", "饭", "拉面", "咖啡", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食"]],
+    ["food", ["吃", "饭", "拉面", "咖啡", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食",
+      "买菜", "生鲜", "菜市场"]],
     ["transport", ["车", "打车", "地铁", "公交", "航空", "高德", "滴滴", "出行", "路费"]],
     ["fun", ["玩", "电影", "游戏", "娱乐", "网吧", "剧本杀"]],
     ["shopping", ["买", "衣服", "鞋", "网购", "淘宝", "拼多多", "京东", "美团", "超市"]],
@@ -1621,8 +1622,177 @@ function cleanDesc(clause, cat, isIncome) {
 function isAssetMove(t2) {
   return has(t2, R().strongAsset) || R().assetMove.test(t2);
 }
+
+/* ==========================================================================
+   口语数字归一 —— 识别引擎回的常常是汉字（「三十五块」「两千二」），
+   而金额正则只认阿拉伯数字，中间必须有这一层。打字进来的也走它。
+   ========================================================================== */
+const CN_D = { "〇":0, "零":0, "一":1, "幺":1, "二":2, "两":2, "俩":2, "三":3,
+  "四":4, "五":5, "六":6, "七":7, "八":8, "九":9 };
+const CN_U = { "十":10, "百":100, "千":1000, "万":10000, "亿":100000000 };
+/* 一段纯汉字数字 → 数值。认「一千零五」也认「一百五」这种省掉末位单位的说法。 */
+function cnNum(str) {
+  let total = 0, sec = 0, cur = 0, tail = 0, seen = false, zero = false;
+  for (const ch of str) {
+    if (ch === "零" || ch === "〇") { zero = true; seen = true; cur = 0; continue; }
+    if (CN_D[ch] !== undefined) { cur = CN_D[ch]; seen = true; continue; }
+    const u = CN_U[ch];
+    if (u === undefined) return null;
+    if (u >= 10000) { total += (sec + cur) * u; sec = 0; }
+    else { if (!seen && u === 10) cur = 1; sec += cur * u; }
+    cur = 0; seen = false; tail = u;
+  }
+  /* 「一百五」= 150、「两万三」= 23000：末尾光秃秃一个个位数，补上低一档的单位。
+     但「一千零五」里那个「零」就是在说「后面是个位」，这时候不能补。 */
+  if (cur) sec += (!zero && tail >= 100) ? cur * (tail / 10) : cur;
+  return total + sec;
+}
+/* 只有紧跟钱/时间单位的单个汉字才当数字看 —— 否则「一起」「一直」「二手」
+   会被改成「1起」「1直」「2手」。两个字以上的连串本来就基本只可能是数字。 */
+const CN_RUN = /[〇零一二两俩三四五六七八九十百千万亿]+/g;
+const CN_KEEP = /^(?:块钱|元钱|块|元|钱|毛|角|个月|年|月|天|周|岁)/;
+function cn2num(text) {
+  return text.replace(CN_RUN, (run, at) => {
+    /* 光一个「零」永远不是金额 —— 没人说「零块」，但「零钱」满地都是 */
+    if (run === "零" || run === "〇") return run;
+    const after = text.slice(at + run.length);
+    if (run.length === 1 && !CN_KEEP.test(after)) return run;
+    const n = cnNum(run);
+    return n === null ? run : String(n);
+  });
+}
+/* 账户名、自定义分类是用户自己起的名字，里面带数字词纯属巧合（「微信零钱」）。
+   转换之前先把它们挡起来，转完再放回去 —— 比逐条打补丁靠谱。 */
+function maskNames(text) {
+  const names = []
+    .concat((S.accounts || []).map((a) => a.name))
+    .concat((S.jars || []).map((j) => j.name))
+    .concat(S.customCats || [])
+    .filter((n) => n && /[〇零一二两俩三四五六七八九十百千万亿]/.test(n))
+    .sort((a, b) => b.length - a.length);
+  const kept = [];
+  let out = text;
+  names.forEach((n) => {
+    if (out.indexOf(n) < 0) return;
+    const tag = "\u0000" + String.fromCharCode(97 + kept.length) + "\u0000";
+    kept.push(n);
+    out = out.split(n).join(tag);
+  });
+  return { out, kept };
+}
+function unmaskNames(text, kept) {
+  let out = text;
+  kept.forEach((n, i) => {
+    out = out.split("\u0000" + String.fromCharCode(97 + i) + "\u0000").join(n);
+  });
+  return out;
+}
+/* 英文听写多半直接给数字，所以只认「钱旁边」的英文数词，宁可少认不乱认 */
+const EN_D = { zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7,
+  eight:8, nine:9, ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14,
+  fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20,
+  thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90 };
+function enWords(str) {
+  let total = 0, cur = 0, any = false;
+  for (const w of str.toLowerCase().split(/[\s-]+/).filter((x) => x && x !== "and")) {
+    if (EN_D[w] !== undefined) { cur += EN_D[w]; any = true; }
+    else if (w === "hundred") { cur = (cur || 1) * 100; any = true; }
+    else if (w === "thousand") { total += (cur || 1) * 1000; cur = 0; any = true; }
+    else return null;
+  }
+  return any ? total + cur : null;
+}
+const EN_WORD = "(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|" +
+  "twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|" +
+  "thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|and)";
+const EN_RUN = new RegExp("\\b" + EN_WORD + "(?:[\\s-]+" + EN_WORD + ")*\\b", "gi");
+const EN_MONEY = /^\s*(?:pounds?|quid|dollars?|bucks?|euros?|pence|p)\b/i;
+const EN_VERB = /(?:spent|paid|cost|costs|for|got|earned|made|about|around)\s+$/i;
+function en2num(text) {
+  return text.replace(EN_RUN, (run, at) => {
+    const after = text.slice(at + run.length);
+    if (!EN_MONEY.test(after) && !EN_VERB.test(text.slice(0, at))) return run;
+    const n = enWords(run);
+    return n === null ? run : String(n);
+  });
+}
+/* 「三块五」「五毛」这类角分的说法，转成小数 */
+function cnCents(text) {
+  return text
+    /* 「一块五」的「五」孤零零在句尾，cn2num 不敢单独转 —— 到这儿它前面
+       已经有「N块」了，意思就明确了 */
+    .replace(/(\d+)\s*(?:块钱|元钱|块|元)\s*([一二两三四五六七八九])(?:\s*(?:毛|角))?(?![〇零一二两俩三四五六七八九十百千万亿\d])/g,
+      (m, a, b) => a + "." + CN_D[b])
+    .replace(/(\d+(?:\.\d+)?)\s*(?:块钱|元钱|块|元)\s*(\d)(?:\s*(?:毛|角))?(?![\d.])/g,
+      (m, a, b) => (a.indexOf(".") >= 0 ? m : a + "." + b))
+    .replace(/(?<![\d.])(\d)\s*(?:毛|角)(?![\d])/g, "0.$1");
+}
+const FULLWIDTH = /[０-９．]/g;
+function normalizeSpoken(text) {
+  let out = String(text || "")
+    .replace(FULLWIDTH, (c) => "0123456789.".charAt("０１２３４５６７８９．".indexOf(c)));
+  if (lang() === "en") return en2num(out);
+  const m = maskNames(out);
+  return unmaskNames(cnCents(cn2num(m.out)), m.kept);
+}
+
+/* 用户自己记过的词当纠错表 —— 「罗森」被听成「罗生」这种，只在原句解析
+   不出来时才试一次，宁可不改也别改坏。 */
+function historyVocab() {
+  const n = new Map();
+  const bump = (w) => { w = String(w || "").trim();
+    if (w.length >= 2 && w.length <= 6 && /^[一-龥]+$/.test(w))
+      n.set(w, (n.get(w) || 0) + 1); };
+  (S.tx || []).forEach((x) => bump(x.description));
+  (S.jars || []).forEach((x) => bump(x.name));
+  (S.customCats || []).forEach(bump);
+  return [...n].filter(([, c]) => c >= 2).map(([w]) => w);
+}
+const dist1 = (a, b) => {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i] && ++d > 1) return false;
+  return d === 1;
+};
+function fixByHistory(text) {
+  const vocab = historyVocab();
+  let out = text;
+  vocab.forEach((w) => {
+    if (out.indexOf(w) >= 0) return;              /* 本来就对，别动 */
+    for (let i = 0; i + w.length <= out.length; i++) {
+      const win = out.slice(i, i + w.length);
+      if (!/^[一-龥]+$/.test(win) || vocab.indexOf(win) >= 0) continue;
+      if (dist1(w, win)) { out = out.slice(0, i) + w + out.slice(i + w.length); break; }
+    }
+  });
+  return out;
+}
+
+/* 识别引擎会给好几个候选，别只拿第 [0] 个 —— 让解析器投票：
+   哪个能干净地解析出金额就用哪个，平局时才听引擎自己的排序。 */
+function scoreCandidate(txt) {
+  const p = parseUtterance(txt);
+  if (!p) return 0;
+  let sc = 2;
+  if (p.drafts && p.drafts.length) {
+    sc += 2 + p.drafts.length;
+    if (p.drafts.every((d) => d.amount > 0)) sc += 2;
+  } else if (p.item || p.goal || p.debt || p.move) sc += 2;
+  return sc;
+}
+function pickBest(cands) {
+  const list = (cands || []).map((x) => String(x || "").trim()).filter(Boolean);
+  if (list.length < 2) return list[0] || "";
+  let best = list[0], top = -1;
+  list.forEach((txt, i) => {
+    const sc = scoreCandidate(txt) - i * 0.1;
+    if (sc > top) { top = sc; best = txt; }
+  });
+  return best;
+}
+
 function parseUtterance(text) {
-  const raw = (text || "").trim();
+  const raw = normalizeSpoken(text).trim();
   if (!raw) return null;
 
   if (!has(raw, R().nonLedger) && !isAssetMove(raw)) {
@@ -2874,36 +3044,74 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const micOK = () => !!SR && (location.protocol === "https:" ||
   ["localhost", "127.0.0.1"].indexOf(location.hostname) >= 0);
 let rec = null;
+/* 一次「说话」是由好几段识别拼起来的：iOS 只要静音就把 session 掐掉，
+   所以停顿之后要自己接上。base 是这次开口之前框里已有的字，
+   done 是这一轮已经收尾的句子，live 是还在变的那一句。 */
+let micBase = "", micDone = "", micQuiet = 0;
 
 function micStop() {
+  micQuiet = 99;                       /* 让 onend 别再自动接上 */
   if (rec) { try { rec.stop(); } catch (err) { /* 已经停了 */ } rec = null; }
   ui.listening = false;
 }
-function micStart() {
-  if (rec) return micStop();
-  if (!SR) { ui.f.err = t("as.noMic"); return render(); }
-  if (!micOK()) { ui.f.err = t("as.micHttp"); return render(); }
+function micText(live) {
+  return [micBase, micDone, live].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+}
+function micPaint(live) {
+  ui.f.text = micText(live);
+  /* 不整页重绘 —— 那会把抽屉重建一遍，动画也重放 */
+  const ta = document.querySelector('.sheet [data-f="text"]');
+  if (ta) ta.value = ui.f.text;
+}
+function micSession() {
   rec = new SR();
   rec.lang = isEn() ? "en-GB" : "zh-CN";
   rec.interimResults = true;
-  rec.continuous = false;
-  const base = ui.f.text || "";
+  /* 说到一半停顿一下就被切断，是「它没听全」最常见的原因 */
+  rec.continuous = true;
+  /* 引擎本来就会给好几个候选，只拿 [0] 是白白丢掉信息 */
+  rec.maxAlternatives = 5;
   rec.onresult = (ev) => {
-    let out = "";
-    for (let i = 0; i < ev.results.length; i++) out += ev.results[i][0].transcript;
-    ui.f.text = (base ? base + " " : "") + out;
-    /* 不整页重绘 —— 那会把抽屉重建一遍，动画也重放 */
-    const ta = document.querySelector('.sheet [data-f="text"]');
-    if (ta) ta.value = ui.f.text;
+    let live = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const r2 = ev.results[i];
+      if (r2.isFinal) {
+        /* 让解析器在候选里投票：能解析出金额的那条才是对的 */
+        const cands = [];
+        for (let k = 0; k < r2.length; k++) cands.push(r2[k].transcript);
+        micDone = (micDone + " " + pickBest(cands)).trim();
+        micQuiet = 0;
+      } else live += r2[0].transcript;
+    }
+    micPaint(live);
   };
   rec.onerror = (ev) => {
+    /* no-speech / aborted 是「刚才没人说话」，不是坏事 —— 别弹错误，接着听 */
+    if (ev.error === "no-speech" || ev.error === "aborted") return;
     ui.f.err = ev.error === "not-allowed" || ev.error === "service-not-allowed"
-      ? t("as.micDenied") : ev.error === "no-speech" ? t("as.micNothing") : t("as.noMic");
-    rec = null; ui.listening = false; render();
+      ? t("as.micDenied") : t("as.noMic");
+    micQuiet = 99; rec = null; ui.listening = false; render();
   };
-  rec.onend = () => { rec = null; ui.listening = false; render(); };
-  try { rec.start(); ui.listening = true; ui.f.err = null; render(); }
-  catch (err) { rec = null; ui.f.err = t("as.noMic"); render(); }
+  rec.onend = () => {
+    rec = null;
+    if (!ui.listening) return;
+    /* 连着三段都没听到东西就收工，免得麦克风一直开着空转 */
+    if (++micQuiet > 3) {
+      ui.listening = false;
+      if (!micText("")) ui.f.err = t("as.micNothing");
+      return render();
+    }
+    try { micSession(); } catch (err) { ui.listening = false; render(); }
+  };
+  rec.start();
+}
+function micStart() {
+  if (ui.listening) return micStop(), render();
+  if (!SR) { ui.f.err = t("as.noMic"); return render(); }
+  if (!micOK()) { ui.f.err = t("as.micHttp"); return render(); }
+  micBase = (ui.f.text || "").trim(); micDone = ""; micQuiet = 0;
+  try { micSession(); ui.listening = true; ui.f.err = null; render(); }
+  catch (err) { rec = null; ui.listening = false; ui.f.err = t("as.noMic"); render(); }
 }
 
 SHEETS.assistant = () => {
@@ -3457,7 +3665,8 @@ const ACT = {
     popSheet(); },
   parse: () => { const said = (ui.f.text || "").trim();
     if (!said) { ui.f.err = t("e.saySomething"); return render(); }
-    const p = parseUtterance(said);
+    /* 原句解析不出来时才拿历史词表纠一次错 —— 这样它只可能帮忙，不会帮倒忙 */
+    const p = parseUtterance(said) || parseUtterance(fixByHistory(said));
     if (!p) { ui.f.err = t("e.notUnderstood"); return render(); }
     ui.f.parsed = p; ui.f.err = null; render(); },
   commit: () => {
