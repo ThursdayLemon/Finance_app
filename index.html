@@ -6,9 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#fdfcfe">
+<meta name="theme-color" content="#fcfaf5">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -24,36 +25,45 @@
    少用新颜色，多用透明度：按下态、条槽、色阶都是已有色加 alpha。
    ========================================================================== */
 :root{
-  --ink:#303030;            /* 正文、图标 */
-  --ink-muted:#878684;      /* 说明小字 */
-  --ink-faint:#c6c6c6;      /* 占位、禁用、弱图标 */
-  --page:#ece8e5;           /* 页面底 */
-  --surface:#f6f5f3;        /* 卡片、面板、列表 —— 比页面底浅一档 */
-  --sunken:#f7f6f4;         /* 芯片、头像、圆图标钮 */
-  --field:#ffffff;          /* 输入框、分段控件选中那格 —— 稿子里只有它们是纯白 */
-  --edge:#ffffff;           /* 卡片和芯片的白色发丝边：浅底上分层全靠它，不是 --line */
-  --line:#e7e7e7;           /* 卡片内部的分隔线 */
-  --accent:#4a56d4;         /* AI、链接、进度 */
-  --on-accent:#ffffff;      /* 压在 accent 上的字 */
-  --nav:rgba(0,0,0,.8);     /* 悬浮导航栏的底 */
-  --on-nav:#ffffff;         /* 导航栏上的字和图标 */
-  --good:#2cbc00;
-  --warn:#f0c219;           /* 浅色下对比度 1.5:1 —— 已知并接受，它是信号不是正文 */
-  --bad:#e8383b;
-  /* 派生：别手改，改核心色它们自己跟着走 */
-  --good-tint:color-mix(in srgb, var(--good) 12%, transparent);
-  --warn-tint:color-mix(in srgb, var(--warn) 14%, transparent);
-  --bad-tint:color-mix(in srgb, var(--bad) 10%, transparent);
+  /* Say Briefly：森林墨绿是唯一的色彩权威，荧光黄只做涂层和徽章、永远不做按钮 */
+  --ink:#1a3300;            /* Forest Ink —— 正文、图标、主按钮，全场的结构色 */
+  --ink-muted:color-mix(in srgb, var(--ink) 62%, var(--page));  /* 说明小字 */
+  --ink-faint:color-mix(in srgb, var(--ink) 34%, var(--page));  /* 占位、禁用 */
+  --page:#fcfaf5;           /* Cream Paper —— 页面底 */
+  --surface:#fcfaf5;        /* 卡片跟页面底同色：分层靠描边和色块，不靠填充深浅 */
+  --sunken:#fcfaf5;         /* 芯片、头像 —— 同上，靠描边站住 */
+  --field:#fcfaf5;          /* 输入框 */
+  --edge:#b6b6b6;           /* Pencil Gray —— 卡片和芯片的发丝描边 */
+  --line:rgba(182,182,182,.5);  /* 卡片内部的分隔线，比描边再淡一档 */
+  --accent:#1a3300;         /* 主操作就是墨绿本身，不另设第二个品牌色 */
+  --on-accent:#fcfaf5;
+  --nav:#fcfaf5;            /* 导航是奶油胶囊 + 黄光晕，不是深色条 */
+  --on-nav:#1a3300;
+  --mark:#ffe95c;           /* Highlighter Yellow —— 荧光笔涂层、徽章底 */
+  --accent2:#a8e5e5;        /* Sticky Note Teal —— 选中的 tab、即将发生 */
+  /* 判定三态：两个「没问题」的状态安安静静用墨绿，只有「停」才给颜色 */
+  --good:#1a3300;
+  --warn:#1a3300;
+  --bad:#cb5521;            /* Terracotta —— 这套系统唯一的暖色 */
+  --good-tint:#d5f5c2;      /* Sticky Note Mint */
+  --warn-tint:#ffe95c;      /* 荧光黄 */
+  --bad-tint:color-mix(in srgb, var(--bad) 12%, var(--page));
   /* 由核心色派生出来的状态层，不占 token 名额 */
-  --press:color-mix(in srgb, var(--ink) 6%, transparent);
-  --track:color-mix(in srgb, var(--ink) 10%, transparent);
-  --ai-gradient:linear-gradient(135deg,#293cbb,#7178ed);
-  --r-sm:10px; --r:15px; --r-md:20px; --r-lg:28px; --r-pill:100px;
-  --shadow-fab:0 4px 14px -4px rgba(74,86,212,.35);
+  --press:color-mix(in srgb, var(--ink) 8%, transparent);
+  --track:color-mix(in srgb, var(--ink) 14%, transparent);
+  --ai-gradient:#1a3300;    /* 这套系统不许按钮上渐变 */
+  /* 按钮 6、卡片 12、导航和抽屉 16、标签胶囊 —— 稿子里的四档 */
+  --r-sm:6px; --r:12px; --r-md:12px; --r-lg:16px; --r-pill:9999px;
+  --shadow-fab:0 1px 2px 0 rgba(0,0,0,.05);
   --shadow-pill:none;
-  --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.18);
+  /* 导航那圈黄光晕是这套系统的招牌，也是全站唯一一处真阴影 */
+  --shadow-nav:0 33px 72px 0 rgba(255,235,90,.10),0 8px 26px 0 rgba(255,235,90,.35),
+   0 1px 2px 0 rgba(0,0,0,.05);
+  --shadow-sheet:0 1px 3px 0 rgba(0,0,0,.12);
   --font:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
+  --font-display:"Bricolage Grotesque","Archivo Black","PingFang SC",var(--font);
+  --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
 }
 
@@ -62,35 +72,41 @@
    三种状态：跟随系统（不带 data-theme）、明确选浅色、明确选深色。 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { color-scheme: dark;
-  --ink:#f2f2f0; --ink-muted:#98968f; --ink-faint:#5c5a55;
-    --page:#141312; --surface:#1e1d1b; --sunken:#232120; --line:#2f2d2b;
-    --field:#26241f; --edge:rgba(255,255,255,.05);
-    --accent:#7178ed; --on-accent:#ffffff;
-    --nav:rgba(0,0,0,.85); --on-nav:#ffffff;
-    --good:#4ade5c; --warn:#f0c219; --bad:#ff4d4f;
+  --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
+    --page:#14180f; --surface:#14180f; --sunken:#1b2016;
+    --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
+    --accent:#d5f5c2; --on-accent:#14180f;
+    --nav:#1b2016; --on-nav:#edf3e4;
+    --mark:#f5dd4a; --accent2:#8fd4d4;
+    --good:#d5f5c2; --warn:#f5dd4a; --bad:#ff8a5c;
     --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
     --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
     --bad-tint:color-mix(in srgb, var(--bad) 14%, transparent);
+    --ai-gradient:#d5f5c2;
     --press:color-mix(in srgb, var(--ink) 8%, transparent);
     --track:color-mix(in srgb, var(--ink) 14%, transparent);
-    --shadow-fab:0 4px 14px -4px rgba(113,120,237,.45);
+    --shadow-fab:0 1px 2px 0 rgba(0,0,0,.35);
+    --shadow-nav:0 8px 26px 0 rgba(245,221,74,.14),0 1px 2px 0 rgba(0,0,0,.4);
     --shadow-pill:none;
     --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"] { color-scheme: dark;
-  --ink:#f2f2f0; --ink-muted:#98968f; --ink-faint:#5c5a55;
-  --page:#141312; --surface:#1e1d1b; --sunken:#232120; --line:#2f2d2b;
-  --field:#26241f; --edge:rgba(255,255,255,.05);
-  --accent:#7178ed; --on-accent:#ffffff;
-  --nav:rgba(0,0,0,.85); --on-nav:#ffffff;
-  --good:#4ade5c; --warn:#f0c219; --bad:#ff4d4f;
+  --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
+  --page:#14180f; --surface:#14180f; --sunken:#1b2016;
+  --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
+  --accent:#d5f5c2; --on-accent:#14180f;
+  --nav:#1b2016; --on-nav:#edf3e4;
+  --mark:#f5dd4a; --accent2:#8fd4d4;
+  --good:#d5f5c2; --warn:#f5dd4a; --bad:#ff8a5c;
   --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
   --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
   --bad-tint:color-mix(in srgb, var(--bad) 14%, transparent);
+  --ai-gradient:#d5f5c2;
   --press:color-mix(in srgb, var(--ink) 8%, transparent);
   --track:color-mix(in srgb, var(--ink) 14%, transparent);
-  --shadow-fab:0 4px 14px -4px rgba(113,120,237,.45);
+  --shadow-fab:0 1px 2px 0 rgba(0,0,0,.35);
+  --shadow-nav:0 8px 26px 0 rgba(245,221,74,.14),0 1px 2px 0 rgba(0,0,0,.4);
   --shadow-pill:none;
   --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
 }
@@ -117,14 +133,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .side .ex{font-size:12px;color:var(--ink);line-height:1.9;margin:0;padding-left:16px}
 .side .clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted);margin:8px 0 0}
 
-.phone{width:390px;height:844px;border:1px solid var(--line);border-radius:var(--r-lg);
+.phone{width:390px;height:844px;border:1px solid var(--edge);border-radius:34px;
  background:var(--page);
  overflow:hidden;display:flex;flex-direction:column;position:relative;flex-shrink:0;
  box-shadow:var(--shadow-sheet)}
 .inset{height:40px;flex-shrink:0}
 .nav{min-height:50px;display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;
  border-bottom:1px solid var(--line)}
-.navt{font-size:20px;font-weight:var(--w-bold);color:var(--ink);letter-spacing:-.02em}
+.navt{font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
 .body{flex:1;padding:14px 16px 104px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
@@ -136,52 +152,61 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 底部不再是通栏，是一簇悬浮的东西：导航胶囊 + AI 按钮并排，内容从底下滑过去 */
 .dock{position:absolute;right:21px;bottom:30px;display:flex;align-items:center;gap:11px;
  z-index:4}
-.tabs{height:60px;border-radius:45px;background:var(--nav);display:flex;align-items:center;
- gap:15px;padding:6px 8px;backdrop-filter:blur(12px)}
-.tab{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
- justify-content:center;color:var(--on-nav);opacity:.55;cursor:pointer}
-.tab.on{opacity:1;width:48px;height:48px;background:rgba(255,255,255,.18)}
+.tabs{height:58px;border-radius:var(--r-lg);background:var(--nav);border:1px solid var(--edge);
+ display:flex;align-items:center;gap:12px;padding:6px 8px;box-shadow:var(--shadow-nav)}
+.tab{width:44px;height:44px;border-radius:var(--r-sm);display:flex;align-items:center;
+ justify-content:center;color:var(--on-nav);opacity:.45;cursor:pointer}
+.tab.on{opacity:1;background:var(--accent2)}
 .tab:active{transform:scale(.92)}
-.fab{width:56px;height:56px;border-radius:50%;flex-shrink:0;
+.fab{width:56px;height:56px;border-radius:var(--r-sm);flex-shrink:0;
  background:var(--ai-gradient);color:var(--on-accent);display:flex;align-items:center;
  justify-content:center;cursor:pointer;box-shadow:var(--shadow-fab)}
 .fab:active{transform:scale(.94)}
 
-/* 卡片比页面底浅一档，再加一道白发丝边 —— 稿子里就是这么分层的 */
-.card{border:1px solid var(--edge);border-radius:var(--r-sm);background:var(--surface);
- padding:17px 18px}
+/* 卡片跟页面底同色 —— 这套系统的分层是描边和色块，不是填充深浅 */
+.card{border:1px solid var(--edge);border-radius:var(--r);background:var(--surface);
+ padding:18px}
+/* 一页只给一张卡加重描边，当视觉锚点 */
+.card.anchor{border-color:var(--ink)}
 .card.tap{cursor:pointer}
 .card.tap:active{background:var(--page)}
 .lbl,.sub{font-size:12px;color:var(--ink-muted)}
-.h2{font-size:16px;font-weight:var(--w-bold);color:var(--ink)}
-.big{font-size:34px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
- letter-spacing:-.025em}
+/* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
+.meta{font-family:var(--font-mono);font-size:11px;color:var(--ink-muted)}
+.h2{font-size:17px;font-weight:700;color:var(--ink)}
+.big{font-family:var(--font-display);font-size:40px;font-weight:800;line-height:1.1;
+ font-variant-numeric:tabular-nums;letter-spacing:.03em}
+/* 荧光笔那一道 —— 这套系统里数字的重音靠它，不靠红色 */
+.big.mark{background:linear-gradient(var(--mark),var(--mark)) 0 64%/100% 62% no-repeat;
+ padding:0 6px;margin-left:-6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .num{font-size:17px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
  letter-spacing:-.025em}
 /* 金额破例走 500；负字距只给数字，压中文会让字挤在一起 */
 .money{font-variant-numeric:tabular-nums;font-weight:var(--w-bold);letter-spacing:-.025em}
+/* 大数字用 display 字体时，字距字重听 .big 的 */
+.big.money{font-weight:800;letter-spacing:.03em}
 .row{min-height:48px;display:flex;align-items:center;gap:8px;padding:12px 0;
  border-bottom:1px solid var(--line)}
 .card .row:last-child{border-bottom:0}
-.chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:5px 13px;
- font-size:12px;background:var(--sunken);color:var(--ink);
+.chip{border:1px solid var(--ink);border-radius:var(--r-pill);padding:4px 11px;
+ font-family:var(--font-mono);font-size:11px;background:transparent;color:var(--ink);
  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
-.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--on-accent);
  font-weight:var(--w-mid);box-shadow:var(--shadow-pill)}
 .chip.flat{cursor:default}
 /* 自定义分类就是普通标签，只是右边多一个 ×；「新建」是同一个壳子，描边改虚线 */
-.chip.newcat{border-style:dashed;color:var(--ink-muted)}
+.chip.newcat{border-style:dashed;border-color:var(--ink-faint);color:var(--ink-muted)}
 .chip .tag-x{margin:-4px -8px -4px -1px;padding:4px 8px;display:inline-flex;align-items:center;
  color:var(--ink-faint)}
 .chip .tag-x:active{color:var(--ink)}
-.mbtn{min-height:50px;border:1px solid var(--edge);
- border-radius:var(--r-pill);display:flex;align-items:center;
+.mbtn{min-height:50px;border:1px solid var(--ink);
+ border-radius:var(--r-sm);display:flex;align-items:center;
  justify-content:center;gap:7px;font-size:15px;font-weight:500;background:var(--surface);padding:0 14px;
  cursor:pointer;text-align:center;color:var(--ink)}
 .mbtn:active{transform:translateY(1px)}
 .mbtn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
  font-weight:var(--w-bold);box-shadow:var(--shadow-pill)}
-.mbtn.off{color:var(--ink-faint);border-color:var(--ink-faint);background:var(--sunken);cursor:not-allowed}
+.mbtn.off{color:var(--ink-faint);border-color:var(--ink-faint);background:transparent;cursor:not-allowed}
 .mbtn.sm{min-height:40px;font-size:13px}
 .barh{height:8px;background:var(--track);border-radius:var(--r-pill);overflow:hidden}
 .barh>i{display:block;height:100%;background:var(--accent);transition:width .35s ease}
@@ -190,14 +215,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  display:flex;gap:9px;
  align-items:flex-start;line-height:1.45}
 .banner.tap{cursor:pointer}
-.dash{border:1px dashed var(--ink-faint);border-radius:var(--r-pill);
+.dash{border:1px dashed var(--ink-faint);border-radius:var(--r-sm);
  background:var(--surface);min-height:54px;
  display:flex;align-items:center;justify-content:center;gap:7px;color:var(--ink-muted);font-size:14px;
  cursor:pointer}
 .dash:active{background:var(--press)}
 .fld{display:flex;flex-direction:column;gap:5px}
-.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--line);
- background:var(--field);border-radius:var(--r);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
+.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--edge);
+ background:var(--field);border-radius:var(--r-sm);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
  font-family:inherit;color:inherit;width:100%}
 input.fldbox,select.fldbox{-webkit-appearance:none;appearance:none}
 input.fldbox:focus,select.fldbox:focus{outline:none;border-color:var(--ink);border-width:1.5px}
@@ -207,20 +232,19 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 .fldbox.err{border-color:var(--bad);border-width:1.5px}
 .errline{display:flex;gap:7px;font-size:13px;color:var(--bad);align-items:flex-start}
-.seg{display:flex;border:0;border-radius:var(--r-pill);overflow:hidden;
- background:var(--sunken);padding:3px;font-weight:var(--w-mid)}
-.seg>span{flex:1;padding:9px 0;text-align:center;font-size:14px;cursor:pointer;
- border-radius:var(--r-pill);color:var(--ink)}
-.seg>span.on{background:var(--field);color:var(--ink);font-weight:var(--w-bold)}
+.seg{display:flex;border:1px solid var(--ink);border-radius:var(--r-sm);overflow:hidden;
+ background:transparent;font-weight:var(--w-mid)}
+.seg>span{flex:1;padding:9px 0;text-align:center;font-size:14px;cursor:pointer;color:var(--ink)}
+.seg>span.on{background:var(--ink);color:var(--on-accent);font-weight:var(--w-mid)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:var(--r-pill);
  background:var(--track);margin:16px 0 6px}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;
  border-radius:50%;background:var(--page);border:1.5px solid var(--ink);cursor:pointer}
-.toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--line);
- background:var(--sunken);
+.toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--edge);
+ background:transparent;
  position:relative;flex-shrink:0;cursor:pointer;transition:background .2s}
 .toggle>i{position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;
- background:var(--line);transition:left .2s,background .2s}
+ background:var(--edge);transition:left .2s,background .2s}
 .toggle.on{background:var(--accent);border-color:var(--accent)}
 .toggle.on>i{left:21px;background:var(--page)}
 /* 左滑删除：红底垫在下面，内容层往左推 */
@@ -240,7 +264,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 长按拿起来排序：不加把手，不改版式 —— 点还是进详情，左滑还是删除 */
 .srt{transition:transform .16s ease}
 .srt.lift{position:relative;z-index:6;transition:none;
- box-shadow:0 10px 24px -10px rgba(34,32,28,.55);border-radius:var(--r-md)}
+ box-shadow:0 4px 14px -6px rgba(26,51,0,.4);border-radius:var(--r)}
 .srt.lift .sw-body,.srt.lift.card{background:var(--page)}
 .dragging{touch-action:none;user-select:none}
 .card .sw-body{background:var(--surface)}
@@ -255,8 +279,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  margin-bottom:5px;flex-shrink:0}
 .toast.high{bottom:auto;top:52px}
 .toast{position:absolute;left:16px;right:16px;bottom:78px;background:var(--ink);
- color:var(--page);border-radius:var(--r-pill);
- border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;
+ color:var(--on-accent);border-radius:var(--r-sm);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;
  animation:up .2s ease;z-index:5}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -277,37 +300,40 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .listcard .sw-body{background:var(--surface)}
 .daycard{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);
  border:1px solid var(--edge);padding:0 12px;margin-top:-4px}
-.daybar{width:4px;border-radius:var(--r-sm);background:var(--ink);flex-shrink:0;
+.daybar{width:4px;border-radius:var(--r-pill);background:var(--ink);flex-shrink:0;
  margin:12px 0}
 .dayrows{flex:1;min-width:0}
 .dayrows .row{border-bottom:0}
 .daycard .sw-body{background:var(--surface)}
 /* 「我」是个圆形头像按钮，不是文字芯片 */
+/* 头像借用系统里那个黄色 logo 方块的语言，只是做成圆的 */
 .avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;
- align-items:center;justify-content:center;background:var(--sunken);color:var(--ink);
- border:1px solid var(--edge);cursor:pointer}
+ align-items:center;justify-content:center;background:var(--mark);color:var(--ink);
+ cursor:pointer}
 .avatar:active{background:var(--press)}
 /* 即将发生：暖色底的圆角条，和真实流水区分开 */
-.upcoming{display:flex;align-items:center;gap:11px;min-height:34px;padding:7px 12px;
- border-radius:var(--r-md);background:var(--warn-tint);cursor:pointer}
+/* 即将发生：薄荷蓝便利贴，跟真实流水分开 */
+.upcoming{display:flex;align-items:center;gap:11px;min-height:34px;padding:8px 12px;
+ border-radius:var(--r);background:var(--accent2);cursor:pointer}
 .iconbtn{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;
- justify-content:center;background:var(--sunken);color:var(--ink);cursor:pointer;
- border:1px solid var(--edge);flex-shrink:0}
+ justify-content:center;background:transparent;color:var(--ink);cursor:pointer;
+ border:1px solid var(--ink);flex-shrink:0}
 .iconbtn:active{background:var(--press)}
 .wave{display:flex;gap:4px;align-items:center;justify-content:center;height:44px}
-.wave>span{width:3px;background:var(--ink-faint);border-radius:var(--r-sm);height:9px}
+.wave>span{width:3px;background:var(--ink-faint);border-radius:var(--r-pill);height:9px}
 .wave.on>span{background:var(--ink);animation:w .9s ease-in-out infinite}
 /* 输入方式那一排：两个小图标夹着中间的主按钮 */
 .inputbar{display:flex;align-items:center;gap:9px}
-.inputbtn{width:48px;height:48px;border-radius:50%;flex-shrink:0;display:flex;
- align-items:center;justify-content:center;background:var(--sunken);color:var(--ink);
- cursor:pointer}
+.inputbtn{width:48px;height:48px;border-radius:var(--r-sm);flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;background:transparent;color:var(--ink);
+ border:1px solid var(--ink);cursor:pointer}
 .inputbtn:active{background:var(--press)}
-.inputmain{flex:1;height:48px;border-radius:var(--r-pill);background:var(--nav);
- color:var(--on-nav);display:flex;align-items:center;justify-content:center;
+.inputmain{flex:1;height:48px;border-radius:var(--r-sm);background:var(--accent);
+ color:var(--on-accent);display:flex;align-items:center;justify-content:center;
  font-size:15px;font-weight:var(--w-mid);cursor:pointer}
 .inputmain:active{transform:scale(.98)}
-.inputmain.off{background:var(--sunken);color:var(--ink-muted);font-size:13px}
+.inputmain.off{background:transparent;border:1px solid var(--ink-faint);
+ color:var(--ink-muted);font-size:13px}
 @keyframes w{0%,100%{height:9px}50%{height:34px}}
 textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
  align-items:flex-start;display:block}
@@ -2007,9 +2033,9 @@ function yearView() {
         ? '<div class="dash" style="min-height:150px;cursor:default;flex-direction:column;' +
           'gap:6px;padding:0 26px;text-align:center">' + t("yr.empty", { y }) + "<br/>" +
           t("yr.emptyHint") + "</div>"
-        : '<div class="card">' +
+        : '<div class="card anchor">' +
           '<div class="lbl">' + t("yr.headline", { y, neg: net < 0 }) + "</div>" +
-          '<div class="big" style="margin:2px 0;color:' + (net < 0 ? RED : "var(--ink)") + '">' +
+          '<div class="big' + (net < 0 ? " mark" : "") + '" style="margin:2px 0">' +
           (net < 0 ? neg(-net) : plus(net)) + "</div>" +
           '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
           '<div class="sub">' + t("word.income") +
@@ -2149,11 +2175,11 @@ function monthView() {
     body:
       /* 只保留结余 + 收支两个数。固定收支已经计入，所以这三个数自洽 —— 
          「已承诺但还没发生」那一整块因此不再需要。 */
-      '<div class="card">' +
+      '<div class="card anchor">' +
       '<div class="lbl">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) +
       "</div>" +
-      /* 有结余不是警报，用正常墨色；红留给缺口 —— 只有需要注意的才该跳出来 */
-      '<div class="big" style="margin:2px 0;color:' + (net < 0 ? RED : "var(--ink)") + '">' +
+      /* 有结余不是警报，不加涂层；荧光笔只罩缺口 —— 只有需要注意的才该跳出来 */
+      '<div class="big' + (net < 0 ? " mark" : "") + '" style="margin:2px 0">' +
       (net < 0 ? neg(-net) : plus(net)) + "</div>" +
       /* 三段减法摊开写，结余就不会被读成「净资产涨了多少」 */
       '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
