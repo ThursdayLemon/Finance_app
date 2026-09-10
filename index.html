@@ -41,6 +41,7 @@
   --on-nav:#1a3300;
   --mark:#ffe95c;           /* Highlighter Yellow —— 荧光笔涂层、徽章底 */
   --accent2:#a8e5e5;        /* Sticky Note Teal —— 选中的 tab、即将发生 */
+  --on-tint:#1a3300;        /* 压在便利贴（黄/薄荷）上的字：两种主题下都是墨绿 */
   /* 判定三态：两个「没问题」的状态安安静静用墨绿，只有「停」才给颜色 */
   --good:#1a3300;
   --warn:#1a3300;
@@ -77,7 +78,7 @@
     --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
     --accent:#d5f5c2; --on-accent:#14180f;
     --nav:#1b2016; --on-nav:#edf3e4;
-    --mark:#f5dd4a; --accent2:#8fd4d4;
+    --mark:#f5dd4a; --accent2:#8fd4d4; --on-tint:#1a3300;
     --good:#d5f5c2; --warn:#f5dd4a; --bad:#ff8a5c;
     --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
     --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
@@ -97,7 +98,7 @@
   --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
   --accent:#d5f5c2; --on-accent:#14180f;
   --nav:#1b2016; --on-nav:#edf3e4;
-  --mark:#f5dd4a; --accent2:#8fd4d4;
+  --mark:#f5dd4a; --accent2:#8fd4d4; --on-tint:#1a3300;
   --good:#d5f5c2; --warn:#f5dd4a; --bad:#ff8a5c;
   --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
   --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
@@ -156,7 +157,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  display:flex;align-items:center;gap:12px;padding:6px 8px;box-shadow:var(--shadow-nav)}
 .tab{width:44px;height:44px;border-radius:var(--r-sm);display:flex;align-items:center;
  justify-content:center;color:var(--on-nav);opacity:.45;cursor:pointer}
-.tab.on{opacity:1;background:var(--accent2)}
+.tab.on{opacity:1;background:var(--accent2);color:var(--on-tint)}
 .tab:active{transform:scale(.92)}
 .fab{width:56px;height:56px;border-radius:var(--r-sm);flex-shrink:0;
  background:var(--ai-gradient);color:var(--on-accent);display:flex;align-items:center;
@@ -177,7 +178,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .big{font-family:var(--font-display);font-size:40px;font-weight:800;line-height:1.1;
  font-variant-numeric:tabular-nums;letter-spacing:.03em}
 /* 荧光笔那一道 —— 这套系统里数字的重音靠它，不靠红色 */
-.big.mark{background:linear-gradient(var(--mark),var(--mark)) 0 64%/100% 62% no-repeat;
+.big.mark{color:var(--on-tint);
+ background:linear-gradient(var(--mark),var(--mark)) 0 64%/100% 62% no-repeat;
  padding:0 6px;margin-left:-6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .num{font-size:17px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
  letter-spacing:-.025em}
@@ -308,13 +310,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 「我」是个圆形头像按钮，不是文字芯片 */
 /* 头像借用系统里那个黄色 logo 方块的语言，只是做成圆的 */
 .avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;
- align-items:center;justify-content:center;background:var(--mark);color:var(--ink);
+ align-items:center;justify-content:center;background:var(--mark);color:var(--on-tint);
  cursor:pointer}
 .avatar:active{background:var(--press)}
 /* 即将发生：暖色底的圆角条，和真实流水区分开 */
 /* 即将发生：薄荷蓝便利贴，跟真实流水分开 */
 .upcoming{display:flex;align-items:center;gap:11px;min-height:34px;padding:8px 12px;
- border-radius:var(--r);background:var(--accent2);cursor:pointer}
+ border-radius:var(--r);background:var(--accent2);color:var(--on-tint);cursor:pointer}
+/* 便利贴里的次要小字也得跟着变深，不然深色模式下会在浅底上写浅字 */
+.upcoming .sub,.upcoming .lbl{color:color-mix(in srgb, var(--on-tint) 65%, var(--accent2))}
 .iconbtn{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;
  justify-content:center;background:transparent;color:var(--ink);cursor:pointer;
  border:1px solid var(--ink);flex-shrink:0}
