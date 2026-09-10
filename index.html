@@ -333,7 +333,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  border:1px solid var(--ink);cursor:pointer}
 .inputbtn:active{background:var(--press)}
 .inputmain{flex:1;height:48px;border-radius:var(--r-sm);background:var(--accent);
- color:var(--on-accent);display:flex;align-items:center;justify-content:center;
+ color:var(--on-accent);user-select:none;-webkit-user-select:none;
+ -webkit-touch-callout:none;touch-action:manipulation;display:flex;align-items:center;justify-content:center;
  font-size:15px;font-weight:var(--w-mid);cursor:pointer}
 .inputmain:active{transform:scale(.98)}
 .inputmain.off{background:transparent;border:1px solid var(--ink-faint);
@@ -3051,6 +3052,7 @@ let micBase = "", micDone = "", micQuiet = 0;
 
 function micStop() {
   micQuiet = 99;                       /* 让 onend 别再自动接上 */
+  ui.micHold = false;
   if (rec) { try { rec.stop(); } catch (err) { /* 已经停了 */ } rec = null; }
   ui.listening = false;
 }
@@ -3130,7 +3132,8 @@ SHEETS.assistant = () => {
     '<div class="inputbtn" data-a="shoot" title="' + esc(t("as.shoot")) + '">' +
     ic("camera", 20) + "</div>" +
     '<div class="inputmain' + (SR ? "" : " off") + '" data-a="mic">' +
-    (SR ? t(listening ? "as.stop" : "as.listen") : t("as.noMic")) + "</div>" +
+    (SR ? t(listening ? (ui.micHold ? "as.listening" : "as.stop") : "as.listen")
+        : t("as.noMic")) + "</div>" +
     '<div class="inputbtn" data-a="addTx" title="' + esc(t("as.typeIt")) + '">' +
     ic("keyboard", 20) + "</div></div>" +
     errline() + btn(t("as.parse"), "parse", "pri") +
@@ -4282,6 +4285,28 @@ const endSwipe = () => {
 };
 app.addEventListener("pointerup", endSwipe);
 app.addEventListener("pointercancel", endSwipe);
+
+/* ---- 按住说话 -----------------------------------------------------------
+   手一抬就结束，比点两下自然。但按不满 180ms 的算点击，还是走开关模式 ——
+   有人就是习惯点一下，而且点开之后也得有办法点回去。
+   松手的监听挂在 window 上：micStart 会重绘整个抽屉，按钮那个节点早没了。 */
+let holdTimer = null, holding = false;
+app.addEventListener("pointerdown", (e) => {
+  const mic = e.target.closest('[data-a="mic"]');
+  if (!mic || mic.classList.contains("off") || ui.listening) return;
+  holdTimer = setTimeout(() => {
+    holdTimer = null; holding = true; ui.micHold = true; micStart();
+  }, 180);
+});
+const endHold = () => {
+  if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }  /* 没按满，当点击 */
+  if (!holding) return;
+  holding = false;
+  swallowClick = true;               /* 紧跟的那次 click 别再切一遍 */
+  micStop(); render();
+};
+window.addEventListener("pointerup", endHold);
+window.addEventListener("pointercancel", endHold);
 
 /* ---- 长按拖动排序 -------------------------------------------------------
    不做把手：把手要么挤掉一列版式，要么在手机上太小点不中。长按 380ms 拿起来，
