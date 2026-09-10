@@ -1721,28 +1721,64 @@ const EN_D = { zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7,
   eight:8, nine:9, ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14,
   fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20,
   thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90 };
-function enWords(str) {
-  let total = 0, cur = 0, any = false;
-  for (const w of str.toLowerCase().split(/[\s-]+/).filter((x) => x && x !== "and")) {
-    if (EN_D[w] !== undefined) { cur += EN_D[w]; any = true; }
-    else if (w === "hundred") { cur = (cur || 1) * 100; any = true; }
-    else if (w === "thousand") { total += (cur || 1) * 1000; cur = 0; any = true; }
-    else return null;
+/* 数词只能由大到小接（thirty five ✓）。「nine fifty」不是一个数，
+   硬加会变成 59 —— 这种就当成两个数分开处理。 */
+function enWords(words) {
+  let total = 0, cur = 0, last = Infinity, any = false;
+  for (const w of words) {
+    if (w === "and") { if (!any) return null; continue; }
+    if (EN_D[w] !== undefined) {
+      if (EN_D[w] >= last) return null;
+      cur += EN_D[w]; last = EN_D[w]; any = true;
+    } else if (w === "hundred") {
+      if (!any) return null;
+      cur *= 100; last = 100;
+    } else if (w === "thousand") {
+      if (!any) return null;
+      total += cur * 1000; cur = 0; last = 1000;
+    } else return null;
   }
   return any ? total + cur : null;
+}
+/* 一串词里能拆出几个数就拆几个：贪心吃掉最长的合法前缀 */
+function enRun(run) {
+  const words = run.toLowerCase().split(/[\s-]+/).filter(Boolean);
+  const out = [];
+  let i = 0, hit = false;
+  while (i < words.length) {
+    let v = null, len = 0;
+    for (let L = words.length - i; L >= 1; L--) {
+      v = enWords(words.slice(i, i + L));
+      if (v !== null) { len = L; break; }
+    }
+    if (v === null) { out.push(words[i]); i += 1; }
+    else { out.push(String(v)); i += len; hit = true; }
+  }
+  if (!hit) return null;
+  /* 「three fifty」是 £3.50，不是 3 和 50 —— 挨着说出来的两个数，
+     后一个在 10–99 之间时当角分。跨词的（lunch ten taxi nine）碰不到这儿，
+     因为中间的词已经把它们断成两串了。 */
+  for (let k = 0; k + 1 < out.length; k++) {
+    const a = +out[k], b = +out[k + 1];
+    if (out[k].indexOf(".") < 0 && a >= 1 && a <= 999 && b >= 10 && b <= 99) {
+      out.splice(k, 2, a + "." + b); break;
+    }
+  }
+  return out.join(" ");
 }
 const EN_WORD = "(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|" +
   "twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|" +
   "thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|and)";
 const EN_RUN = new RegExp("\\b" + EN_WORD + "(?:[\\s-]+" + EN_WORD + ")*\\b", "gi");
-const EN_MONEY = /^\s*(?:pounds?|quid|dollars?|bucks?|euros?|pence|p)\b/i;
-const EN_VERB = /(?:spent|paid|cost|costs|for|got|earned|made|about|around)\s+$/i;
+/* 反过来做：默认转，只挡住「这是个数量/时间，不是钱」的那些说法。
+   原来只在钱字旁边才转，结果「lunch ten taxi nine」一个都认不出来。 */
+const EN_NOTMONEY = new RegExp("^\\s*(?:more|other|another|of|o'?clock|percent|" +
+  "half|halves|thirds?|quarters?|times?|days?|weeks?|months?|years?|hours?|" +
+  "mins?|minutes?|seconds?|nights?|people|persons?|kids?|guys?|stars?)\\b", "i");
 function en2num(text) {
   return text.replace(EN_RUN, (run, at) => {
-    const after = text.slice(at + run.length);
-    if (!EN_MONEY.test(after) && !EN_VERB.test(text.slice(0, at))) return run;
-    const n = enWords(run);
-    return n === null ? run : String(n);
+    if (EN_NOTMONEY.test(text.slice(at + run.length))) return run;
+    return enRun(run) || run;
   });
 }
 /* 「三块五」「五毛」这类角分的说法，转成小数 */
