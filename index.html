@@ -1444,6 +1444,9 @@ zh: {
   mult: { "万": 10000, "千": 1000, "w": 10000, "W": 10000, "k": 1000, "K": 1000 },
   amount: /(\d+(?:\.\d+)?)\s*(万|千|[wWkK])?/g,
   duration: /^\s*(年|个月|月|周|星期|天|日|小时|分钟|岁)/,
+  /* 量词后面的数字是「几个」不是「几块钱」——「买了2个杯子50」里的 2 得挡掉 */
+  counter: /^\s*(?:个|杯|份|张|件|只|台|双|瓶|碗|盒|箱|本|支|把|套|条|袋|包|次|笔|人|位|间|斤|公斤|克|升|毫升|米)/,
+  tail: /^\s*(?:块钱|元钱|块|元|角|毛)/,
   clause: /[，。、；;,]|(?<!\d)\.(?!\d)|\s+|另外|和|并且|然后/,
   unit: /\d+(?:\.\d+)?\s*(?:万|千|[wWkK])?\s*(?:块钱|元钱|元|块|角|毛)?/g,
   verb: /花了|支出|消费|买了|收入|收到|进账|到账|入账|花费|用去|赚了|赚到|赚/g,
@@ -1537,6 +1540,8 @@ en: {
   /* 允许 £12, 1,250.50, 3k */
   amount: /[£$¥€]?\s*(\d[\d,]*(?:\.\d+)?)(?:\s*([kKmM])(?![a-zA-Z]))?/g,
   duration: /^\s*(?:st|nd|rd|th)?\s*(years?|months?|weeks?|days?|hours?|mins?|minutes?)\b/i,
+  counter: /^\s*(?:x\b|pcs?\b|items?\b|people\b|persons?\b)/i,
+  tail: /^\s*(?:pounds?|quid|dollars?|bucks?|euros?|pence|p)\b/i,
   /* 英文不能像中文那样按空格断句 —— 那会把一句话拆成词 */
   clause: /[,;]|(?<!\d)\.(?!\d)|\s+and\s+|\s+then\s+|\s+plus\s+|\n/i,
   unit: /[£$¥€]?\s*\d[\d,]*(?:\.\d+)?\s*(?:[kKmM]\b|quid|pounds?|dollars?|euros?|p\b)?/g,
@@ -1594,18 +1599,41 @@ const R = () => RULES[lang()] || RULES.zh;
 const has = (t, kws) => { const s2 = lang() === "en" ? t.toLowerCase() : t;
   return kws.some((k) => s2.includes(k)); };
 
-function extractAmounts(text) {
+function extractSpans(text) {
   const out = [];
-  const re = R().amount, mult = R().mult;
+  const re = R().amount, mult = R().mult, tail = R().tail, counter = R().counter;
   let m;
   re.lastIndex = 0;
   while ((m = re.exec(text))) {
-    if (R().duration.test(text.slice(m.index + m[0].length))) continue;
+    const after = text.slice(m.index + m[0].length);
+    if (R().duration.test(after)) continue;
+    if (counter && counter.test(after)) continue;   /* 「2个杯子」的 2 不是钱 */
     const n = m[1].replace(/,/g, "");
     if (!n) continue;
-    out.push(toCents(n) * (m[2] ? mult[m[2]] : 1));
+    /* 「9块」的「块」算进这一笔，否则切开之后它会跑到下一笔的开头 */
+    const t2 = tail ? (after.match(tail) || [""])[0] : "";
+    /* 带货币符号的（£10）说明「这一笔从这儿开始」，跟「10 pounds」不一样 */
+    const pre = /^[£$¥€]/.test(m[0]);
+    out.push({ v: toCents(n) * (m[2] ? mult[m[2]] : 1),
+      start: m.index, end: m.index + m[0].length + t2.length,
+      strong: !!t2 || pre, pre: pre });
   }
   return out;
+}
+function extractAmounts(text) { return extractSpans(text).map((x) => x.v); }
+/* 听写不带标点，四件事会连成一句话。一句里出现好几个金额时，就按金额的位置
+   切开。刀口落在哪边看语序：中文和「lunch 10」是事情在前、钱在后，所以切在
+   金额之后；「£10 lunch」是符号打头、事情在后，得切在下一个符号之前。 */
+function splitByAmounts(text, spans) {
+  const out = [];
+  let from = 0;
+  spans.forEach((sp, i) => {
+    const next = spans[i + 1];
+    const to = !next ? text.length : (next.pre ? next.start : sp.end);
+    out.push({ text: text.slice(from, to).trim(), v: sp.v });
+    from = to;
+  });
+  return out.filter((x) => x.text);
 }
 function classify(text, isIncome) {
   /* 支出分类规则是给支出写的 —— 收入不能套，否则「兼职送外卖赚了300」会变成餐饮 */
@@ -1801,12 +1829,23 @@ function parseUtterance(text) {
     for (const clause of raw.split(R().clause)) {
       const c = (clause || "").trim();
       if (!c) continue;
-      const amts = extractAmounts(c);
-      if (!amts.length) continue;
-      const isIncome = has(c, R().income);
-      const cat = classify(c, isIncome);
-      drafts.push({ type: isIncome ? "in" : "out", amount: amts[0],
-        category: cat, description: cleanDesc(c, cat, isIncome), date: today() });
+      let spans = extractSpans(c);
+      if (!spans.length) continue;
+      /* 英文里钱几乎总带符号或单位（£10 / 10 pounds），所以一旦有带单位的，
+         就只在带单位的地方切 ——「2 coffees 5 pounds」才不会被算成两笔。
+         中文口语里常常一个单位都不带，这条不适用。 */
+      if (spans.length > 1 && lang() === "en" && spans.some((x) => x.strong))
+        spans = spans.filter((x) => x.strong);
+      /* 金额直接取这一段自己的，别再回头 extract 一次 —— 挡掉的那些
+         （量词、没单位的）会重新混进来 */
+      const parts = spans.length > 1 ? splitByAmounts(c, spans)
+        : [{ text: c, v: spans[0].v }];
+      for (const part of parts) {
+        const isIncome = has(part.text, R().income);
+        const cat = classify(part.text, isIncome);
+        drafts.push({ type: isIncome ? "in" : "out", amount: part.v,
+          category: cat, description: cleanDesc(part.text, cat, isIncome), date: today() });
+      }
     }
     if (drafts.length > 1) return { intent: "multi_ledger", raw, drafts };
     if (drafts.length === 1) return { intent: "ledger", raw, drafts };
