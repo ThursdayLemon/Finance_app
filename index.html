@@ -323,6 +323,33 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  justify-content:center;background:transparent;color:var(--ink);cursor:pointer;
  border:1px solid var(--ink);flex-shrink:0}
 .iconbtn:active{background:var(--press)}
+/* ---- AI 抽屉 ----
+   一个大点阵当身份标识，一条通宽胶囊当「按住说话」。全 app 只有这颗按钮是
+   胶囊 —— 圆角的形状本身就在说「可以按住」，这一处值得破例。 */
+.aihead{display:flex;align-items:center;gap:9px;min-height:26px}
+.aihead .t{flex:1;text-align:center;font-size:15px;font-weight:700}
+.aihead .x{cursor:pointer;color:var(--ink);display:flex}
+.aimark{display:flex;align-items:center;justify-content:center;color:var(--ink);
+ padding:18px 0 10px;transition:padding .2s ease}
+.aimark.sm{padding:2px 0 0}
+.aimark.on>svg{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.07);opacity:1}}
+.aitip{font-size:14px;line-height:1.55;color:var(--ink);padding:0 10px}
+.aitip .eg{display:block;margin:8px 0;color:var(--ink);font-weight:var(--w-mid)}
+.aitip .more{display:block;margin-top:10px;color:var(--ink-muted);font-size:13px}
+.aipill{height:55px;border-radius:var(--r-pill);background:var(--accent);
+ color:var(--on-accent);display:flex;align-items:center;justify-content:center;gap:7px;
+ padding:0 20px;font-size:15px;font-weight:var(--w-mid);cursor:pointer;
+ user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+ touch-action:manipulation}
+.aipill.off{background:transparent;border:1px solid var(--ink-faint);color:var(--ink-muted)}
+.aipill .aiicon{display:flex;align-items:center;flex-shrink:0;padding:0 4px;color:inherit}
+.aipill .lbl2{flex:1;min-width:0;text-align:center;white-space:nowrap}
+/* 胶囊里的波形是压在墨绿底上的，得用反色 —— 默认那个灰在深底上看不见 */
+.aipill .wave{flex:1;height:100%}
+.aipill .wave>span,.aipill .wave.on>span{background:var(--on-accent)}
+.airelease{text-align:center;font-size:12px;color:var(--ink-muted);min-height:16px}
+.airelease.cancel{color:var(--bad);font-weight:var(--w-mid)}
 .wave{display:flex;gap:4px;align-items:center;justify-content:center;height:44px}
 .wave>span{width:3px;background:var(--ink-faint);border-radius:var(--r-pill);height:9px}
 .wave.on>span{background:var(--ink);animation:w .9s ease-in-out infinite}
@@ -664,6 +691,13 @@ zh: {
   "as.shoot": "拍小票", "as.typeIt": "自己打",
   "as.shootSoon": "拍小票认账还没接上 —— 先说一句，或者点右边自己打。",
   "as.listen": "按住说话", "as.listening": "在听…", "as.stop": "说完了",
+  "as.title": "AI 记账",
+  "as.tipHi": "说一句就行，比如：",
+  "as.tipEg": "「今天午饭 35，打车 9 块，卖旧衣服赚了 200」",
+  "as.tipMore": "我会自动理成一张清单。也可以拍张小票让我认，或者自己打字。",
+  "as.tipShort": "说一句，或者拍张小票。",
+  "as.release": "松手发送 · 上移取消",
+  "as.cancelUp": "松手取消",
   "as.noMic": "这个浏览器不支持语音输入 —— 直接打字也一样。",
   "as.micDenied": "没拿到麦克风权限。到系统设置里允许一下，或者直接打字。",
   "as.micNothing": "没听清，再说一次？",
@@ -671,6 +705,9 @@ zh: {
   "as.placeholder": "比如：我今天吃饭花了10元，打车花了9元",
   "as.parse": "解析", "as.parseHint": "先给你看，确认之后才写进去。",
   "as.foundN": (v) => "识别到 " + v.n + " 笔",
+  "intent.ledger": "记一笔", "intent.multi_ledger": "记几笔",
+  "intent.transfer": "转账", "intent.deposit": "存入金库",
+  "intent.goal": "攒钱目标", "intent.debt": "固定还贷", "intent.decision": "该不该买",
   "as.previewMeta": (v) => v.sum + " · " + v.date + " · 点任意一笔可以改",
   "as.noAmount": "没听出金额，确认前得补上。",
   "as.commitLedger": "确认记入账本", "as.cancel": "取消",
@@ -1067,6 +1104,13 @@ en: {
   "as.shoot": "Snap a receipt", "as.typeIt": "Type it",
   "as.shootSoon": "Reading receipts isn't wired up yet — say it, or tap the keyboard.",
   "as.listen": "Hold to talk", "as.listening": "Listening…", "as.stop": "Done",
+  "as.title": "AI Note",
+  "as.tipHi": "Hi there — try saying something like:",
+  "as.tipEg": "\u201cI spent \u00a310 on lunch and \u00a315 on dinner, and I earned \u00a320 on Vinted.\u201d",
+  "as.tipMore": "I'll sort it into a list for you. You can also snap a receipt, or type it yourself.",
+  "as.tipShort": "Say it, or snap a receipt.",
+  "as.release": "Release to send \u00b7 slide up to cancel",
+  "as.cancelUp": "Release to cancel",
   "as.noMic": "This browser can't do speech input — typing works just as well.",
   "as.micDenied": "No microphone permission. Allow it in Settings, or just type.",
   "as.micNothing": "Didn't catch that — try again?",
@@ -1074,6 +1118,9 @@ en: {
   "as.placeholder": "e.g. lunch was 10 and the taxi was 9",
   "as.parse": "Read it back", "as.parseHint": "A preview — nothing is saved until you confirm.",
   "as.foundN": (v) => "Heard " + plural(v.n, "entry", "entries"),
+  "intent.ledger": "one entry", "intent.multi_ledger": "a few entries",
+  "intent.transfer": "a transfer", "intent.deposit": "into the vault",
+  "intent.goal": "a savings goal", "intent.debt": "a loan", "intent.decision": "should I buy",
   "as.previewMeta": (v) => v.sum + " · " + v.date + " · tap any line to fix it",
   "as.noAmount": "I couldn't hear an amount — fill it in before confirming.",
   "as.commitLedger": "Save these", "as.cancel": "Cancel",
@@ -1401,9 +1448,11 @@ const catTotals = (s, m) => {
   return [...map.entries()].sort((a, b) => b[1] - a[1]);
 };
 
-/* 时钟：原型里可以快进，冷静期才看得出来在走 */
-let clockOffset = 0;
-const now = () => new Date(Date.UTC(2026, 8, 7, 12, 0) + clockOffset);
+/* 时钟：真机上就是真实时间。pinNow 只给自动化测试用（要可重复），
+   clockOffset 给原型面板上那个「快进」按钮 —— 冷静期才看得出来在走。
+   原来这里写死成 2026-09-07，结果手机上记什么都记到 7 号。 */
+let clockOffset = 0, pinNow = null;
+const now = () => new Date((pinNow === null ? Date.now() : pinNow) + clockOffset);
 const today = () => now().toISOString().slice(0, 10);
 const hoursLeft = (item) => {
   const end = item.addedAt + item.cooldownHours * 3600e3;
@@ -1429,6 +1478,7 @@ zh: {
   ],
   /* 方向比话题重要：出租（不是租）、收房租（不是房租）、收到（不是红包） */
   income: ["收入", "发工资", "工资", "薪水", "月薪", "奖金", "年终奖", "提成",
+    "卖了", "卖掉", "卖出", "赚到", "收了",
     "补贴", "兼职", "外快", "私活", "稿费", "打赏", "分红", "利息", "返现", "中奖",
     "报销", "退款", "退钱", "赔付", "出租", "收房租", "收租",
     "入账", "进账", "到账", "收到", "收款", "赚"],
@@ -1520,6 +1570,9 @@ en: {
     "bonus", "refund", "reimburse", "rebate", "cashback", "cash back", "interest",
     "dividend", "rental income", "rent from", "earned", "earnt", "sold", "income",
     "freelance", "invoice", "won", "received", "came in"],
+  /* 关键词表不出来的：「got 20 from Vinted」是收入，「got a coffee」不是 ——
+     区别在后面有没有 from；「made 30」是收入，「made a booking」不是。 */
+  incomeRe: /\bgot\b[^.]*?[£$€]?\d[^.]*?\bfrom\b|\bmade\s+[£$€]?\d/i,
   salary: ["salary", "payday", "got paid", "paycheck", "pay cheque", "wage", "wages",
     "bonus"],
   nonLedger: ["want to buy", "wanna buy", "thinking of buying", "should i buy",
@@ -1598,6 +1651,8 @@ en: {
 const R = () => RULES[lang()] || RULES.zh;
 const has = (t, kws) => { const s2 = lang() === "en" ? t.toLowerCase() : t;
   return kws.some((k) => s2.includes(k)); };
+const isIncomeText = (txt) => has(txt, R().income) ||
+  (!!R().incomeRe && R().incomeRe.test(txt));
 
 function extractSpans(text) {
   const out = [];
@@ -1877,7 +1932,7 @@ function parseUtterance(text) {
       const parts = spans.length > 1 ? splitByAmounts(c, spans)
         : [{ text: c, v: spans[0].v }];
       for (const part of parts) {
-        const isIncome = has(part.text, R().income);
+        const isIncome = isIncomeText(part.text);
         const cat = classify(part.text, isIncome);
         drafts.push({ type: isIncome ? "in" : "out", amount: part.v,
           category: cat, description: cleanDesc(part.text, cat, isIncome), date: today() });
@@ -1990,6 +2045,19 @@ const catLabel = (c) => { const k = t("cat." + c); return k === "cat." + c ? c :
 const allCats = () => SYS_CATS.concat(S.customCats || []);
 const catOpts = () => allCats().map((c) => [c, catLabel(c)]);
 let uid = 0;
+/* 存盘里已经有 x1…x15 了，uid 却从 0 重新数 —— 新建的东西会拿到别人的 id，
+   于是点新加的那条打开的是老的那条。加载之后必须把 uid 顶到最大值之后。 */
+function syncUid(st) {
+  let max = 0;
+  const scan = (v) => {
+    if (!v || typeof v !== "object") return;
+    if (Array.isArray(v)) return v.forEach(scan);
+    if (typeof v.id === "string" && /^x\d+$/.test(v.id)) max = Math.max(max, +v.id.slice(1));
+    Object.keys(v).forEach((k) => scan(v[k]));
+  };
+  scan(st);
+  if (max > uid) uid = max;
+}
 const id = () => "x" + ++uid;
 
 function seed() {
@@ -2124,6 +2192,7 @@ function exportName() {
 }
 
 let S = load() || seed();
+syncUid(S);
 /* auto 就不打标记，交给 prefers-color-scheme */
 function applyTheme() {
   const el = document.documentElement;
@@ -3117,7 +3186,8 @@ const SHEETS = {};
    拿不到就退回打字 —— 解析本来就是对文本做的，说和打进来是同一条路。
    注意要 https，file:// 和局域网 http 上浏览器直接不给权限。 */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-const micOK = () => !!SR && (location.protocol === "https:" ||
+/* let 不是 const：自动化测试需要把它临时当成「可用」来验空状态的文案 */
+let micOK = () => !!SR && (location.protocol === "https:" ||
   ["localhost", "127.0.0.1"].indexOf(location.hostname) >= 0);
 let rec = null;
 /* 一次「说话」是由好几段识别拼起来的：iOS 只要静音就把 session 掐掉，
@@ -3193,29 +3263,50 @@ function micStart() {
 
 SHEETS.assistant = () => {
   const p = ui.f.parsed;
-  const listening = !!ui.listening;
-  if (!p) return grab + head(t("as.say")) +
-    '<textarea class="fldbox" data-f="text" placeholder="' + esc(t("as.placeholder")) + '">' +
-    esc(ui.f.text || "") + "</textarea>" +
-    '<div class="wave' + (listening ? " on" : "") + '">' +
-    [9, 17, 28, 14, 34, 22, 40, 25, 13, 30, 19, 9].map((h, i) =>
-      '<span style="' + (listening ? "height:" + h + "px;" : "") + "animation-delay:" +
-      (i * 0.07).toFixed(2) + 's"></span>').join("") + "</div>" +
-    /* 三种输入并排：拍小票 / 说话 / 打字。悬浮胶囊上不再有「记一笔」，
-       手动那条路收到这里 —— 否则首页就没有非语音的入口了。 */
-    '<div class="inputbar">' +
-    '<div class="inputbtn" data-a="shoot" title="' + esc(t("as.shoot")) + '">' +
-    ic("camera", 20) + "</div>" +
-    '<div class="inputmain' + (SR ? "" : " off") + '" data-a="mic">' +
-    (SR ? t(listening ? (ui.micHold ? "as.listening" : "as.stop") : "as.listen")
-        : t("as.noMic")) + "</div>" +
-    '<div class="inputbtn" data-a="addTx" title="' + esc(t("as.typeIt")) + '">' +
-    ic("keyboard", 20) + "</div></div>" +
-    errline() + btn(t("as.parse"), "parse", "pri") +
-    '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
-
+  if (!p) {
+    const listening = !!ui.listening;
+    const said = (ui.f.text || "").trim();
+    /* 麦克风用不了的时候（http、老浏览器）必须留一条打字的路，
+       否则用户会被困在这个抽屉里 —— 只有一颗报错的按钮 */
+    const needBox = !!said || !!ui.f.err || !micOK();
+    /* 用熟了就不用再教了 —— 长文案只陪前三次，之后缩成一行 */
+    const green = (S.aiUses || 0) < 3;
+    const tip = needBox ? "" : '<div class="aitip">' + (green
+      ? t("as.tipHi") + '<span class="eg">' + esc(t("as.tipEg")) + "</span>" +
+        '<span class="more">' + t("as.tipMore") + "</span>"
+      : '<span class="more" style="margin:0">' + t("as.tipShort") + "</span>") + "</div>";
+    return '<div class="grab"></div>' +
+      '<div class="aihead"><div class="x" data-a="close">' + ic("close", 18) + "</div>" +
+      '<div class="t">' + t("as.title") + "</div>" +
+      '<div style="width:18px"></div></div>' +
+      /* 点阵在听的时候会呼吸 —— 有内容之后缩小，把地方让给清单 */
+      '<div class="aimark' + (listening ? " on" : "") + (said ? " sm" : "") + '">' +
+      ic("mic", said ? 56 : 128) + "</div>" +
+      tip +
+      (needBox ? '<textarea class="fldbox" data-f="text" placeholder="' +
+        esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" : "") +
+      errline() +
+      '<div class="airelease' + (ui.micCancel ? " cancel" : "") + '">' +
+      (listening ? t(ui.micCancel ? "as.cancelUp" : "as.release") : "") + "</div>" +
+      (listening
+        ? '<div class="aipill"><div class="wave on">' +
+          [9, 17, 28, 14, 34, 22, 40, 25, 13, 30, 19, 9].map((h, i) =>
+            '<span style="height:' + h + "px;animation-delay:" +
+            (i * 0.07).toFixed(2) + 's"></span>').join("") + "</div></div>"
+        /* 三条路并排在同一颗胶囊里：拍小票 / 按住说话 / 自己打字 */
+        : '<div class="aipill' + (SR ? "" : " off") + '" data-a="mic">' +
+          '<div class="aiicon" data-a="shoot" title="' + esc(t("as.shoot")) + '">' +
+          ic("camera", 22) + "</div>" +
+          '<div class="lbl2">' + (SR ? t("as.listen") : t("as.noMic")) + "</div>" +
+          '<div class="aiicon" data-a="addTx" title="' + esc(t("as.typeIt")) + '">' +
+          ic("keyboard", 22) + "</div></div>") +
+      (needBox ? btn(t("as.parse"), "parse", "pri") : "") +
+      '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
+  }
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
-    'background:var(--sunken);border-style:dashed">' + p.intent + "</div>";
+    'background:var(--sunken);border-style:dashed">' +
+    esc(t("intent." + p.intent) === "intent." + p.intent ? p.intent : t("intent." + p.intent)) +
+    "</div>";
   if (p.intent === "ledger" || p.intent === "multi_ledger") {
     /* 一句话里可能同时有进和出 —— 加成一个数是没意义的 */
     const out = p.drafts.filter((d) => d.type === "out").reduce((a, d) => a + d.amount, 0);
@@ -3752,6 +3843,7 @@ const ACT = {
     if (p.intent === "ledger" || p.intent === "multi_ledger") {
       if (p.drafts.some((d) => d.amount <= 0)) { ui.f.err = t("e.amountPos"); return render(); }
       p.drafts.forEach((d) => S.tx.push(Object.assign({ id: id() }, d)));
+      S.aiUses = (S.aiUses || 0) + 1;
       const o = p.drafts.filter((d) => d.type === "out").reduce((a, d) => a + d.amount, 0);
       const i2 = p.drafts.filter((d) => d.type === "in").reduce((a, d) => a + d.amount, 0);
       close(); return toast(t("k.loggedN", { n: p.drafts.length,
@@ -4365,20 +4457,39 @@ app.addEventListener("pointercancel", endSwipe);
    手一抬就结束，比点两下自然。但按不满 180ms 的算点击，还是走开关模式 ——
    有人就是习惯点一下，而且点开之后也得有办法点回去。
    松手的监听挂在 window 上：micStart 会重绘整个抽屉，按钮那个节点早没了。 */
-let holdTimer = null, holding = false;
+let holdTimer = null, holding = false, holdY0 = 0;
 app.addEventListener("pointerdown", (e) => {
+  /* 胶囊两端是拍照和打字，按在那儿不该触发说话 */
+  if (e.target.closest(".aipill .aiicon")) return;
   const mic = e.target.closest('[data-a="mic"]');
   if (!mic || mic.classList.contains("off") || ui.listening) return;
+  holdY0 = e.clientY;
   holdTimer = setTimeout(() => {
-    holdTimer = null; holding = true; ui.micHold = true; micStart();
+    holdTimer = null; holding = true; ui.micHold = true; ui.micCancel = false; micStart();
   }, 180);
+});
+/* 按住的时候往上滑就取消 —— 说错了不用等它录完再删 */
+app.addEventListener("pointermove", (e) => {
+  if (!holding) return;
+  const want = e.clientY - holdY0 < -60;
+  if (want !== !!ui.micCancel) {
+    ui.micCancel = want;
+    const el = app.querySelector(".airelease");
+    if (el) { el.className = "airelease" + (want ? " cancel" : "");
+      el.textContent = t(want ? "as.cancelUp" : "as.release"); }
+  }
 });
 const endHold = () => {
   if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }  /* 没按满，当点击 */
   if (!holding) return;
   holding = false;
   swallowClick = true;               /* 紧跟的那次 click 别再切一遍 */
-  micStop(); render();
+  const cancelled = !!ui.micCancel;
+  micStop();
+  /* 取消 = 把这一轮说的都丢掉，回到开口之前的样子 */
+  if (cancelled) { ui.f.text = micBase; ui.f.err = null; }
+  ui.micCancel = false;
+  render();
 };
 window.addEventListener("pointerup", endHold);
 window.addEventListener("pointercancel", endHold);
