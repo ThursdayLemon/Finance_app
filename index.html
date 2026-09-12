@@ -172,15 +172,24 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .card.tap{cursor:pointer}
 .card.tap:active{background:var(--page)}
 .lbl,.sub{font-size:12px;color:var(--ink-muted)}
+/* 眉标做成黄色徽章（稿子 2080-1013）—— 荧光黄在这套系统里就是「做记号」 */
+.badge{display:inline-flex;align-items:center;align-self:flex-start;
+ background:var(--mark);color:var(--ink);border-radius:var(--r-sm);
+ padding:2px 8px;font-size:12px;line-height:18px;white-space:nowrap}
+.badge.ol{border:1px solid var(--ink)}
+/* 面板里的内嵌信息块：改成薄荷底，不再靠分隔线分区 */
+.block{background:var(--good-tint);border-radius:var(--r-sm);padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
 .meta{font-family:var(--font-mono);font-size:11px;color:var(--ink-muted)}
 .h2{font-size:17px;font-weight:700;color:var(--ink)}
 .big{font-family:var(--font-display);font-size:40px;font-weight:800;line-height:1.1;
  font-variant-numeric:tabular-nums;letter-spacing:.03em}
 /* 荧光笔那一道 —— 这套系统里数字的重音靠它，不靠红色 */
+/* 缺口罩荧光黄、结余罩薄荷绿 —— 两种都是「做记号」，颜色区分方向 */
 .big.mark{color:var(--on-tint);
  background:linear-gradient(var(--mark),var(--mark)) 0 64%/100% 62% no-repeat;
  padding:0 6px;margin-left:-6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.big.mark.good{background-image:linear-gradient(var(--good-tint),var(--good-tint))}
 .num{font-size:17px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
  letter-spacing:-.025em}
 /* 金额破例走 500；负字距只给数字，压中文会让字挤在一起 */
@@ -286,7 +295,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 /* 概览卡底下那四个统计块 */
-.tiles{display:flex;gap:6px;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}
+.tiles{display:flex;gap:6px;margin-top:8px;background:var(--good-tint);
+ border-radius:var(--r-sm)}
 .tile{flex:1;min-width:0;padding:10px 4px;border-radius:var(--r);text-align:center;
  cursor:pointer}
 .tile:active{background:var(--press)}
@@ -2353,8 +2363,8 @@ function yearView() {
           'gap:6px;padding:0 26px;text-align:center">' + t("yr.empty", { y }) + "<br/>" +
           t("yr.emptyHint") + "</div>"
         : '<div class="card anchor">' +
-          '<div class="lbl">' + t("yr.headline", { y, neg: net < 0 }) + "</div>" +
-          '<div class="big' + (net < 0 ? " mark" : "") + '" style="margin:2px 0">' +
+          '<div class="badge">' + t("yr.headline", { y, neg: net < 0 }) + "</div>" +
+          '<div class="big mark' + (net < 0 ? "" : " good") + '" style="margin:2px 0">' +
           (net < 0 ? neg(-net) : plus(net)) + "</div>" +
           '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
           '<div class="sub">' + t("word.income") +
@@ -2495,13 +2505,13 @@ function monthView() {
       /* 只保留结余 + 收支两个数。固定收支已经计入，所以这三个数自洽 —— 
          「已承诺但还没发生」那一整块因此不再需要。 */
       '<div class="card anchor">' +
-      '<div class="lbl">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) +
+      '<div class="badge">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) +
       "</div>" +
-      /* 有结余不是警报，不加涂层；荧光笔只罩缺口 —— 只有需要注意的才该跳出来 */
-      '<div class="big' + (net < 0 ? " mark" : "") + '" style="margin:2px 0">' +
+      /* 缺口罩黄、结余罩绿 —— 都做记号，方向靠颜色分 */
+      '<div class="big mark' + (net < 0 ? "" : " good") + '" style="margin:2px 0">' +
       (net < 0 ? neg(-net) : plus(net)) + "</div>" +
       /* 三段减法摊开写，结余就不会被读成「净资产涨了多少」 */
-      '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
+      '<div class="block" style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
       '<div class="sub">' + t("word.income") +
       ' <span class="money" style="color:var(--ink)">' + yuan(inc) + "</span></div>" +
       '<div class="sub">− ' + t("word.spending") +
@@ -2523,9 +2533,10 @@ function monthView() {
       (() => {
         const need = cur ? stillToSave(S) : 0;
         if (net >= 0 && !need) return "";
-        return '<div style="border-top:1px solid var(--line);margin-top:9px;padding-top:8px" ' +
-          'data-a="route">' +
-          (net < 0 ? '<div style="display:flex;gap:6px;font-size:12px;color:' + RED +
+        /* 分隔线去掉了 —— 上面那两块自己有底色，已经分好区了。
+           提示也不再用砖红：它说的是「你存多了」，不是警报。 */
+        return '<div style="margin-top:9px;padding-top:8px" data-a="route">' +
+          (net < 0 ? '<div style="display:flex;gap:6px;font-size:12px;color:var(--ink)' +
             '"><span style="margin-top:1px">' + ic("warn", 13) + "</span>" +
             "<div>" + t("mo.overSaved") + "</div></div>" : "") +
           (need > 0 ? '<div class="sub" style="font-size:12px' +
@@ -2545,21 +2556,19 @@ function monthView() {
       (future.length
         ? '<div class="upcoming" data-a="toggleFuture">' +
           '<span style="color:var(--ink-muted)">' + ic("clock", 16) + "</span>" +
-          '<div style="flex:1;font-size:13px;color:var(--ink)">' +
-          t("mo.upcoming", { n: future.length }) +
-          (future.some((f) => f.fixed === "in")
-            ? "　" + t("mo.willArrive") + ' <span class="money">' +
-              yuan(future.filter((f) => f.fixed === "in").reduce((a, f) => a + f.amount, 0)) +
-              "</span>" : "") +
-          (future.some((f) => f.fixed === "out")
-            ? "　" + t("mo.willLeave") + ' <span class="money">' +
-              yuan(future.filter((f) => f.fixed === "out").reduce((a, f) => a + f.amount, 0)) +
-              "</span>" : "") +
-          (future.some((f) => f.xfer)
-            ? "　" + t("mo.willMove") + ' <span class="money">' +
-              yuan(future.filter((f) => f.xfer).reduce((a, f) => a + f.amount, 0)) +
-              "</span>" : "") + "</div>" +
-          '<span class="sub" style="font-size:11px">' +
+          '<div class="badge ol" style="font-size:11px">' +
+          t("mo.upcoming", { n: future.length }) + "</div>" +
+          /* 笔数挪进徽章之后，剩下这几段自己 join —— 原来每段前面挂一个
+             全角空格当分隔，第一段会多出一个空格顶在徽章旁边 */
+          '<div style="flex:1;font-size:12px;color:var(--ink)">' +
+          [[future.filter((f) => f.fixed === "in"), "mo.willArrive"],
+           [future.filter((f) => f.fixed === "out"), "mo.willLeave"],
+           [future.filter((f) => f.xfer), "mo.willMove"]]
+            .filter(([list]) => list.length)
+            .map(([list, key]) => t(key) + ' <span class="money">' +
+              yuan(list.reduce((a, f) => a + f.amount, 0)) + "</span>")
+            .join("　") + "</div>" +
+          '<span class="sub" style="font-size:11px;color:var(--ink)">' +
           t(ui.showFuture ? "word.collapse" : "word.expand") + "</span></div>"
         : "") +
       (rows.length
