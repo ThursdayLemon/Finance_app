@@ -37,7 +37,7 @@
   --line:rgba(182,182,182,.5);  /* 卡片内部的分隔线，比描边再淡一档 */
   --accent:#1a3300;         /* 主操作就是墨绿本身，不另设第二个品牌色 */
   --on-accent:#fcfaf5;
-  --nav:#fcfaf5;            /* 导航是奶油胶囊 + 黄光晕，不是深色条 */
+  --nav:color-mix(in srgb, var(--accent2) 30%, var(--page));  /* 导航胶囊的底 */
   --on-nav:#1a3300;
   --mark:#ffe95c;           /* Highlighter Yellow —— 荧光笔涂层、徽章底 */
   --accent2:#a8e5e5;        /* Sticky Note Teal —— 选中的 tab、即将发生 */
@@ -57,9 +57,8 @@
   --r-sm:6px; --r:12px; --r-md:12px; --r-lg:16px; --r-pill:9999px;
   --shadow-fab:0 1px 2px 0 rgba(0,0,0,.05);
   --shadow-pill:none;
-  /* 导航那圈黄光晕是这套系统的招牌，也是全站唯一一处真阴影 */
-  --shadow-nav:0 33px 72px 0 rgba(255,235,90,.10),0 8px 26px 0 rgba(255,235,90,.35),
-   0 1px 2px 0 rgba(0,0,0,.05);
+  /* 稿子 2084-1013 把黄光晕去掉了，只留一层几乎看不见的投影 */
+  --shadow-nav:0 1px 2px 0 rgba(0,0,0,.05);
   --shadow-sheet:0 1px 3px 0 rgba(0,0,0,.12);
   --font:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
@@ -156,15 +155,18 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    所以有它的页面要把这块高度垫出来，不然年视图这种长页面最后一张卡会被压住 */
 .body.hasfab{padding-bottom:104px}
 /* 底部不再是通栏，是一簇悬浮的东西：导航胶囊 + AI 按钮并排，内容从底下滑过去 */
-.dock{position:absolute;right:21px;bottom:30px;display:flex;align-items:center;gap:11px;
+.dock{position:absolute;right:31px;bottom:30px;display:flex;align-items:center;gap:14px;
  z-index:4}
-.tabs{height:58px;border-radius:var(--r-lg);background:var(--nav);border:1px solid var(--edge);
- display:flex;align-items:center;gap:12px;padding:6px 8px;box-shadow:var(--shadow-nav)}
-.tab{width:44px;height:44px;border-radius:var(--r-sm);display:flex;align-items:center;
- justify-content:center;color:var(--on-nav);opacity:.45;cursor:pointer}
-.tab.on{opacity:1;background:var(--accent2);color:var(--on-tint)}
+/* 整条是胶囊，选中那格是正圆 —— 全站只有这两处破 6px 的规矩，
+   因为圆的形状本身在说「这是个可以按的东西」 */
+.tabs{height:58px;border-radius:var(--r-pill);background:var(--nav);border:1px solid var(--edge);
+ display:flex;align-items:center;gap:18px;padding:6px 8px;box-shadow:var(--shadow-nav)}
+/* 没选中的不再压暗 —— 选中态靠那颗薄荷蓝圆点就够了 */
+.tab{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
+ justify-content:center;color:var(--on-nav);cursor:pointer}
+.tab.on{background:var(--accent2);color:var(--on-tint)}
 .tab:active{transform:scale(.92)}
-.fab{width:56px;height:56px;border-radius:var(--r-sm);flex-shrink:0;
+.fab{width:56px;height:56px;border-radius:50%;flex-shrink:0;
  background:var(--ai-gradient);color:var(--on-accent);display:flex;align-items:center;
  justify-content:center;cursor:pointer;box-shadow:var(--shadow-fab)}
 .fab:active{transform:scale(.94)}
