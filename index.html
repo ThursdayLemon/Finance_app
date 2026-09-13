@@ -8,8 +8,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#fcfaf5">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- css2 的多轴写法：每个 tuple 都要把所有轴的值写全。
+     以前写成 opsz,wght@7..72,400;500;600，整条请求 400，Literata 一直没加载过，
+     衬线一路退到宋体 —— 「字体不对」的真正原因在这一行，不在 CSS 里。 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Literata:opsz,wght@7..72,400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -71,6 +75,8 @@
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
   --font-display:"Literata","Songti SC",Georgia,serif;
+  /* 数字自己一套衬线 —— Caslon 的数字比 Literata 的更立得住 */
+  --font-num:"Libre Caslon Text","Literata","Songti SC",Georgia,serif;
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
   --glass:16px;             /* backdrop-filter 的模糊半径，关掉就填 0px */
@@ -114,6 +120,7 @@
   --font:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   --font-display:"Bricolage Grotesque","Archivo Black","PingFang SC",var(--font);
+  --font-num:var(--font);
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
   --glass:0px;
@@ -261,7 +268,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .nav.split{display:grid;grid-template-columns:1fr auto 1fr}
 .nav.split > :first-child{justify-self:start}
 .nav.split > :last-child{justify-self:end}
-.navt{font-family:var(--font-display);font-size:20px;font-weight:var(--w-mid);
+.navt{font-family:var(--font-display);font-size:20px;font-weight:var(--w-body);
  color:var(--ink);letter-spacing:-.01em}
 :root[data-skin="briefly"] .navt{font-family:var(--font);font-weight:700}
 .body{flex:1;padding:14px 16px 104px;display:flex;flex-direction:column;gap:12px;
@@ -323,23 +330,26 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .card.tap:active{background:var(--page)}
 .lbl,.sub{font-size:12px;color:var(--ink-muted)}
 /* ---- 排版 ------------------------------------------------------------------
-   直接抄 Figma（Pearl · Home / Pearl · Analytics）里量到的 type ramp。
-   分工：Literata 管「内容」—— 标题、条目名、所有金额和数字；
-        Onest 管「界面」—— 标签、元信息、按钮文字、坐标轴。
-   字号/行高/字距都是从稿子里读出来的值，不要再凭手感改。 */
-.serif,.rowname,.cardtitle,.wordmark,.secttl,.figure .money,.tileval,
-.tn b,.ta b,.callout{font-family:var(--font-display)}
+   字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
+   三套字各管一摊：
+     Libre Caslon Text —— 所有数字和金额（--font-num）
+     Literata Regular  —— 标题和条目名（--font-display，一律 400，不上粗细）
+     Onest             —— 界面字：标签、元信息、按钮文字、坐标轴
+   不要再凭手感改这些值。 */
+.serif,.rowname,.cardtitle,.wordmark,.secttl,.tn b{font-family:var(--font-display);
+ font-weight:var(--w-body)}
+/* 数字一律 Caslon。只声明字族 —— 字号和字距各处自己写，别在这儿一起设，
+   不然会盖掉后面那些按稿子量出来的值。 */
+.big,.money,.num,.tileval,.ta b,.callout{font-family:var(--font-num)}
 /* 字标 COACH：17/22，字距 +3.7px */
-.wordmark{font-size:17px;font-weight:var(--w-body);letter-spacing:3.7px;
- line-height:22px;text-align:center;color:var(--ink)}
-/* 卡片标题 Total income / Committed：Literata Medium 14/18 */
-.cardtitle{font-size:14px;font-weight:var(--w-mid);line-height:18px;color:var(--ink)}
-/* 分区标题 Transactions：Literata SemiBold 17/22 */
-.secttl{font-size:17px;font-weight:var(--w-bold);line-height:22px;
- letter-spacing:-.34px;color:var(--ink)}
-/* 条目名：Literata Medium 15/20 */
-.rowname,.tn b{font-size:15px;font-weight:var(--w-mid);line-height:20px;
- letter-spacing:-.22px;color:var(--ink)}
+.wordmark{font-size:17px;letter-spacing:3.7px;line-height:22px;
+ text-align:center;color:var(--ink)}
+/* 卡片标题 Total income / Committed：14/18 */
+.cardtitle{font-size:14px;line-height:18px;color:var(--ink)}
+/* 分区标题 Transactions：17/22 */
+.secttl{font-size:17px;line-height:22px;letter-spacing:-.34px;color:var(--ink)}
+/* 条目名：15/20 */
+.rowname,.tn b{font-size:15px;line-height:20px;letter-spacing:-.22px;color:var(--ink)}
 /* 界面字一律 Onest。这几处以前跟着正文走，会被 Literata 带跑。 */
 .hlbl,.dhead,.tn > span,.ta > span,.act,.mochip > span,.sparkl span,.chartax span{
  font-family:var(--font)}
@@ -349,9 +359,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 奶油纸没有 Literata —— 它的性格在 Bricolage + 荧光笔上，衬线一律退回正文字体 */
 :root[data-skin="briefly"] .serif,:root[data-skin="briefly"] .rowname,
 :root[data-skin="briefly"] .cardtitle,:root[data-skin="briefly"] .wordmark,
-:root[data-skin="briefly"] .secttl,:root[data-skin="briefly"] .tileval,
-:root[data-skin="briefly"] .tn b,:root[data-skin="briefly"] .ta b,
-:root[data-skin="briefly"] .callout,:root[data-skin="briefly"] .figure .money{
+:root[data-skin="briefly"] .secttl,:root[data-skin="briefly"] .tn b{
  font-family:var(--font)}
 /* 眉标做成黄色徽章（稿子 2080-1013）—— 荧光黄在这套系统里就是「做记号」 */
 .badge{display:inline-flex;align-items:center;align-self:flex-start;
@@ -433,10 +441,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
 .meta{font-family:var(--font-mono);font-size:11px;color:var(--ink-muted)}
 /* 分区标题，跟 .secttl 同一档（稿子里的 Transactions 就是这个） */
-.h2{font-family:var(--font-display);font-size:17px;font-weight:var(--w-bold);
+.h2{font-family:var(--font-display);font-size:17px;font-weight:var(--w-body);
  line-height:22px;color:var(--ink);letter-spacing:-.34px}
 :root[data-skin="briefly"] .h2{font-family:var(--font);font-weight:700}
-.big{font-family:var(--font-display);font-size:42px;font-weight:var(--w-body);
+.big{font-family:var(--font-num);font-size:42px;font-weight:var(--w-body);
  line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
 :root[data-skin="briefly"] .big{font-size:40px;font-weight:800;letter-spacing:.03em;
  line-height:1.1}
@@ -451,13 +459,15 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  padding:0 6px;margin-left:-6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 /* 结余罩薄荷蓝 —— 缺口黄、结余蓝，方向一眼看得出 */
 .big.mark.pos{background-image:linear-gradient(var(--accent2),var(--accent2))}
-.num{font-family:var(--font-display);font-size:17px;font-weight:var(--w-mid);
+.num{font-family:var(--font-num);font-size:17px;font-weight:var(--w-body);
  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 :root[data-skin="briefly"] .num{font-family:var(--font);font-weight:var(--w-bold)}
-/* 金额破例走 500；负字距只给数字，压中文会让字挤在一起 */
-.money{font-family:var(--font-display);font-variant-numeric:tabular-nums;
- font-weight:var(--w-mid);letter-spacing:-.02em}
-:root[data-skin="briefly"] .money{font-family:var(--font);font-weight:var(--w-bold)}
+/* 负字距只给数字，压中文会让字挤在一起 */
+.money{font-variant-numeric:tabular-nums;font-weight:var(--w-body);
+ letter-spacing:-.02em}
+:root[data-skin="briefly"] .money,:root[data-skin="briefly"] .tileval,
+:root[data-skin="briefly"] .ta b,:root[data-skin="briefly"] .callout{
+ font-family:var(--font);font-weight:var(--w-bold)}
 /* 大数字用 display 字体时，字距字重听 .big 的 */
 .big.money{font-weight:800;letter-spacing:.03em}
 .row{min-height:48px;display:flex;align-items:center;gap:8px;padding:12px 0;
@@ -775,7 +785,9 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    不是常数 100 —— 日元韩元就是 0 位。切换币种只换符号和格式，不做汇率换算：
    这个产品里没有汇率，一个用户就用一种钱。 */
 const CUR = {
-  CNY: { sym: "￥", dec: 2, loc: "zh-CN" },
+  /* 半角 ¥ 不是全角 ￥：数字用的 Libre Caslon Text 没有全角那个码位，
+     用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
+  CNY: { sym: "¥", dec: 2, loc: "zh-CN" },
   USD: { sym: "$",  dec: 2, loc: "en-US" },
   GBP: { sym: "£",  dec: 2, loc: "en-GB" },
 };
