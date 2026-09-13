@@ -64,8 +64,9 @@
   --shadow-nav:0 12px 34px -18px rgba(65,65,64,.45);
   --shadow-card:0 8px 26px -18px rgba(65,65,64,.28);
   --shadow-sheet:0 -8px 30px -18px rgba(65,65,64,.4);
-  /* Roobert 是商业字体，线上退回 Onest；你本机装了 trial，电脑上会用真的 */
-  --font:"Roobert TRIAL","Roobert","Onest","PingFang SC","Hiragino Sans GB",
+  /* 按 Figma：正文 Onest，标题/数字 Literata。两个都从 Google Fonts 来，
+     所以手机和电脑上是同一套，不靠本机装没装。 */
+  --font:"Onest","PingFang SC","Hiragino Sans GB",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
   --font-display:"Literata","Songti SC",Georgia,serif;
@@ -140,8 +141,7 @@
     --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
     --shadow-pill:none;
     --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
-    --surface-solid:#232322;
-  --surface-solid:#232322;
+    --surface-solid:#2a2a29;
   }
   /* briefly 的深色单独留着 */
   :root[data-skin="briefly"]:not([data-theme="light"]) {
@@ -163,7 +163,6 @@
     --shadow-pill:none;
     --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
     --surface-solid:#14180f;
-  --surface-solid:#14180f;
   }
 }
 :root[data-theme="dark"] { color-scheme: dark;
@@ -185,7 +184,7 @@
   --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
   --shadow-pill:none;
   --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
-  --surface-solid:#232322;
+  --surface-solid:#2a2a29;
 }
 :root[data-theme="dark"][data-skin="briefly"] {
   --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
@@ -265,32 +264,47 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 悬浮按钮浮在正文之上（bottom:78 + 56 高 = 盖住标签栏往上 72px），
    所以有它的页面要把这块高度垫出来，不然年视图这种长页面最后一张卡会被压住 */
 .body.hasfab{padding-bottom:104px}
-/* 底部不再是通栏，是一簇悬浮的东西：导航胶囊 + AI 按钮并排，内容从底下滑过去 */
-.dock{position:absolute;right:31px;bottom:30px;display:flex;align-items:center;gap:14px;
- z-index:4}
-.tabs{height:58px;border-radius:var(--r-pill);background:var(--nav);border:1px solid var(--edge);
- display:flex;align-items:center;gap:18px;padding:6px 8px;box-shadow:var(--shadow-nav);
- backdrop-filter:blur(calc(var(--glass) + 4px))}
-/* 没选中的不再压暗 —— 选中态靠那颗薄荷蓝圆点就够了 */
-.tab{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
- justify-content:center;color:var(--on-nav);cursor:pointer}
-.tab.on{background:var(--accent2);color:var(--on-tint)}
-.tab:active{transform:scale(.92)}
-.fab{width:56px;height:56px;border-radius:50%;flex-shrink:0;
- background:var(--ai-gradient);color:var(--on-accent);display:flex;align-items:center;
- justify-content:center;cursor:pointer;box-shadow:var(--shadow-fab)}
-/* Pearl 的语音键是个带字的胶囊，不是圆钮 —— 底栏因此有了「在做事」的语气 */
-:root:not([data-skin="briefly"]) .fab{width:auto;height:46px;border-radius:var(--r-pill);
- padding:0 20px;gap:8px;font-size:15px;font-weight:var(--w-mid);letter-spacing:-.015em}
-:root:not([data-skin="briefly"]) .dock{gap:8px;left:20px;right:20px;
- background:var(--nav);border:1px solid var(--edge);border-radius:var(--r-pill);
- padding:8px;box-shadow:var(--shadow-nav);backdrop-filter:blur(calc(var(--glass) + 4px))}
-:root:not([data-skin="briefly"]) .tabs{background:transparent;border:0;box-shadow:none;
- backdrop-filter:none;height:46px;padding:0;gap:6px;flex:1;justify-content:space-between}
-:root:not([data-skin="briefly"]) .tab{width:46px;height:46px;border-radius:var(--r-pill);
- color:var(--ink);opacity:.45}
-:root:not([data-skin="briefly"]) .tab.on{background:var(--accent2);opacity:1;color:var(--ink)}
-.fab:active{transform:scale(.94)}
+/* 底部不再是通栏，是一簇悬浮的东西：一条玻璃药丸，内容从底下滑过去 */
+.dock{position:absolute;left:20px;right:20px;bottom:30px;z-index:4;
+ display:flex;align-items:center;gap:8px;background:var(--nav);
+ border:1px solid var(--edge);border-radius:var(--r-pill);padding:8px;
+ box-shadow:var(--shadow-nav);backdrop-filter:blur(calc(var(--glass) + 4px))}
+/* ---- 底栏三（四）颗：说一句 · 点阵 · [返回] · 记一笔 ---------------------- */
+.act{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;
+ border-radius:var(--r-pill);font-size:14.5px;font-weight:var(--w-mid);
+ letter-spacing:-.015em;background:var(--accent2);color:var(--ink);cursor:pointer;
+ min-width:0;white-space:nowrap;overflow:hidden}
+.act.dark{background:var(--accent);color:var(--on-accent)}
+.act:active{transform:scale(.97)}
+.gridb{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;background:var(--accent2);color:var(--ink);
+ cursor:pointer;touch-action:none}
+.gridb.open{background:var(--accent);color:var(--on-accent)}
+/* 按住之后扇出来的四个分区 —— Pinterest 那一套：不松手，划过去选，松手落定 */
+.fan{position:absolute;inset:0;z-index:6;pointer-events:none;
+ opacity:0;visibility:hidden;transition:opacity .16s ease,visibility .16s}
+.fan.on{opacity:1;visibility:visible}
+.fanitem{position:absolute;width:58px;margin-left:-29px;margin-top:-29px;
+ display:flex;flex-direction:column;align-items:center;gap:6px;
+ transform:scale(.4);opacity:0;
+ transition:transform .22s cubic-bezier(.2,1.3,.4,1),opacity .16s ease;
+ pointer-events:auto;cursor:pointer}
+.fan.on .fanitem{transform:scale(1);opacity:1}
+.fanitem .fd{width:58px;height:58px;border-radius:50%;background:var(--field);
+ display:flex;align-items:center;justify-content:center;color:var(--ink);
+ box-shadow:0 6px 18px -8px rgba(65,65,64,.55);
+ transition:transform .13s ease,background .13s ease,color .13s ease}
+.fanitem .fl{position:relative;z-index:1;font-size:11px;font-weight:var(--w-mid);
+ letter-spacing:-.01em;color:var(--ink);background:var(--nav);border-radius:var(--r-pill);
+ padding:3px 9px;white-space:nowrap;backdrop-filter:blur(6px);opacity:0;
+ transition:opacity .12s}
+.fanitem.hot{z-index:3}
+.fanitem.hot .fd{transform:scale(1.16);background:var(--accent);color:var(--on-accent)}
+.fanitem.hot .fl{opacity:1}
+.fan.sticky .fanitem .fl{opacity:1}
+.fandim{position:absolute;inset:0;z-index:5;display:none;
+ background:color-mix(in srgb, var(--page) 45%, transparent);backdrop-filter:blur(2px)}
+.fandim.on{display:block}
 
 /* Pearl：白玻璃 + 一圈高光边 + 很软的投影。briefly：跟页面底同色、靠描边分层。 */
 .card{border:1px solid var(--edge);border-radius:var(--r);background:var(--surface);
@@ -300,6 +314,17 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .card.tap{cursor:pointer}
 .card.tap:active{background:var(--page)}
 .lbl,.sub{font-size:12px;color:var(--ink-muted)}
+/* Literata 管「内容」：标题、条目名、金额。Onest 管「界面」：标签、元信息、按钮。
+   这是你 Figma 里的分工，照搬。 */
+.serif,.rowname,.cardtitle,.wordmark{font-family:var(--font-display);
+ letter-spacing:-.01em}
+.rowname{font-size:15px;font-weight:var(--w-mid);color:var(--ink)}
+.cardtitle{font-size:14px;font-weight:var(--w-mid);color:var(--ink)}
+.wordmark{font-size:17px;font-weight:var(--w-mid);letter-spacing:.22em;
+ text-align:center;color:var(--ink)}
+:root[data-skin="briefly"] .serif,:root[data-skin="briefly"] .rowname,
+:root[data-skin="briefly"] .cardtitle,:root[data-skin="briefly"] .wordmark{
+ font-family:var(--font)}
 /* 眉标做成黄色徽章（稿子 2080-1013）—— 荧光黄在这套系统里就是「做记号」 */
 .badge{display:inline-flex;align-items:center;align-self:flex-start;
  background:var(--mark);color:var(--ink-muted);border-radius:var(--r-pill);
@@ -314,6 +339,53 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .badge.ol{border:1px solid var(--ink)}
 /* 面板里的内嵌信息块：改成薄荷底，不再靠分隔线分区 */
 .block{background:var(--sunken);border-radius:var(--r-md);padding:8px 12px}
+/* ---- 首页（按样机 2096-1015）---------------------------------------- */
+.hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
+.mochip{display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.5);
+ border:1px solid var(--edge);border-radius:var(--r-pill);padding:2px 6px;
+ backdrop-filter:blur(8px)}
+.mochip>span{font-size:12.5px;font-weight:var(--w-mid);min-width:78px;text-align:center}
+.hlbl{margin:16px 0 2px;font-size:14px;color:var(--ink-muted)}
+.heroamt{display:flex;align-items:center;gap:8px}
+.heroamt .big{letter-spacing:-.03em}
+.heroamt .eye{color:var(--ink-muted);cursor:pointer;padding:4px;display:flex}
+/* 星号挂在大写高度上，直接替数字会飘在顶上 —— 缩一档再压下来 */
+.mask{display:inline-block;font-size:.6em;letter-spacing:.12em;transform:translateY(-.06em)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.gcard{padding:16px;display:flex;flex-direction:column;cursor:pointer}
+.figure{flex:1;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;padding:6px 0 10px}
+.spark{display:flex;align-items:flex-end;gap:6px;height:50px}
+.spark>i{flex:1;border-radius:1px;
+ background:repeating-linear-gradient(90deg,var(--ink-faint) 0 1px,transparent 1px 4px)}
+.spark>i.on{background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 4px)}
+.sparkl{display:flex;gap:6px;margin-top:6px}
+.sparkl>span{flex:1;text-align:center;font-size:9px;color:var(--ink-faint);
+ letter-spacing:-.02em}
+.sparkl>span.on{color:var(--ink);font-weight:var(--w-mid)}
+/* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
+.chart{padding:18px 0 6px;position:relative}
+.chartrow{display:flex;gap:6px;height:78px;align-items:flex-end}
+.chartrow + .chartax + .chartrow{align-items:flex-start}
+.chartrow>i{flex:1;border-radius:1px;
+ background:repeating-linear-gradient(90deg,var(--ink-faint) 0 1px,transparent 1px 4px)}
+.chartrow>i.on{background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 4px)}
+.chartrow>i.bad{background:repeating-linear-gradient(90deg,var(--bad) 0 1px,transparent 1px 4px)}
+.chartax{display:flex;gap:6px;padding:9px 0}
+.chartax>span{flex:1;text-align:center;font-size:11.5px;color:var(--ink-faint)}
+.chartax>span.on{color:var(--ink);font-weight:var(--w-bold)}
+.callout{text-align:right;font-size:12px;font-weight:var(--w-mid);color:var(--ink);
+ height:16px}
+.callout.bot{color:var(--bad);padding-top:6px}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:14px 8px;flex:1;
+ align-content:center}
+.qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+/* 统一的白圆底：分类图标、快捷入口、行图标都用它 */
+.circ{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;background:var(--field);
+ color:var(--ink);box-shadow:0 2px 8px -4px rgba(65,65,64,.35)}
+:root[data-skin="briefly"] .circ{background:var(--sunken);border:1px solid var(--edge);
+ box-shadow:none}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -420,14 +492,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 跟着里面卡片的圆角裁 —— 否则四个圆角处会透出底下的红色删除面板 */
 /* 外壳裹卡片时要和卡片一样圆（否则四角露出底下那层红）；
    裹通栏行时必须是直角 —— 行的文字从最左边起，圆角会把首字啃掉。 */
-.sw{position:relative;overflow:hidden;border-radius:0}
+/* flex + flex:1：让删除层和内容层高度严格一致。以前两层各自量高，
+   碰上小数行高时底下会漏出一条 1px 的删除色。 */
+.sw{position:relative;overflow:hidden;border-radius:0;display:flex;flex-direction:column}
 .sw.boxed{border-radius:var(--r)}
 /* 自己也圆一下：不然它的直角顶在卡片圆角的抗锯齿边上，会透出一条红发丝 */
 .sw-del{position:absolute;top:0;right:0;bottom:0;width:76px;color:#fff;
  border-radius:inherit;display:flex;
  align-items:center;justify-content:center;cursor:pointer;background:var(--bad)}
 /* 跟外壳一样圆：卡片圆角外那一圈才不会露出底下的红 */
-.sw-body{position:relative;background:var(--page);border-radius:inherit;
+.sw-body{position:relative;flex:1 0 auto;background:var(--page);border-radius:inherit;
  transition:transform .18s ease;touch-action:pan-y}
 /* 长按拿起来排序：不加把手，不改版式 —— 点还是进详情，左滑还是删除 */
 .srt{transition:transform .16s ease}
@@ -469,6 +543,51 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .listcard .sw:not(:last-child) .row{border-bottom:1px solid var(--line)}
 .listcard .sw:last-child .row{border-bottom:0}
 .listcard .sw-body{background:var(--surface-solid)}
+/* ---- 账本：按样机收进一张玻璃卡 ------------------------------------------
+   卡头是「标题 · 放大镜 · 漏斗 · 饼图 · 全部」，下面按天分段。 */
+.txcard{position:relative;margin-top:12px;padding:16px 16px 6px}
+.thead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.thead .cardtitle{flex:1;font-size:17px;letter-spacing:-.02em}
+.rnd{width:32px;height:32px;border-radius:50%;background:var(--field);display:flex;
+ align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;cursor:pointer;
+ box-shadow:0 2px 8px -5px rgba(65,65,64,.5)}
+.rnd.on{background:var(--accent);color:var(--on-accent)}
+.viewall{font-size:12px;font-weight:var(--w-mid);background:var(--field);flex-shrink:0;
+ border-radius:var(--r-pill);padding:7px 14px;cursor:pointer;color:var(--ink);
+ box-shadow:0 2px 8px -5px rgba(65,65,64,.5)}
+.viewall.on{background:var(--accent);color:var(--on-accent)}
+.viewall.off{opacity:.38;pointer-events:none}
+/* 漏斗菜单挂在按钮下面，不占默认状态的地方 */
+.fmenu{position:absolute;right:16px;top:52px;z-index:5;background:var(--field);
+ border-radius:var(--r-md);padding:6px;min-width:132px;border:1px solid var(--edge);
+ box-shadow:var(--shadow-sheet),0 12px 30px -14px rgba(65,65,64,.5)}
+.fmenu div{padding:9px 12px;border-radius:11px;font-size:13.5px;font-weight:var(--w-mid);
+ letter-spacing:-.01em;cursor:pointer;color:var(--ink)}
+.fmenu div.on{background:var(--accent);color:var(--on-accent)}
+/* 搜索条：点放大镜才滑出来 */
+.sbar{overflow:hidden;max-height:0;transition:max-height .2s ease,margin .2s ease}
+.sbar.on{max-height:56px;margin-bottom:6px}
+.sbar input{width:100%;height:40px;border:0;border-radius:var(--r-pill);
+ background:var(--accent2);padding:0 16px;font:var(--w-body) 14px var(--font);
+ color:var(--ink);outline:none;letter-spacing:-.01em}
+.sbar input::placeholder{color:var(--ink-faint)}
+.dhead{font-size:12.5px;color:var(--ink-muted);margin:6px 0 2px}
+.tr{display:flex;align-items:center;gap:12px;padding:11px 0;min-height:62px}
+.tn{flex:1;min-width:0}
+.tn b{display:block;font-size:15px;font-weight:var(--w-mid);letter-spacing:-.015em;
+ color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn > span{display:block;font-size:11.5px;color:var(--ink-muted);margin-top:2px;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ta{text-align:right;white-space:nowrap;flex-shrink:0}
+.ta b{display:block;font-size:15px;font-weight:var(--w-bold);letter-spacing:-.025em;
+ font-variant-numeric:tabular-nums;color:var(--ink)}
+.ta b .dec{font-size:12px;color:var(--ink-faint);font-weight:var(--w-mid)}
+.ta > span{display:block;font-size:11px;margin-top:2px;color:var(--ink-muted)}
+.ta > span.in{color:var(--good)}
+/* 行是通栏的，外壳给圆角的话，抗锯齿会在右边两个角上漏出一条删除色的细边 */
+.txcard .sw{border-radius:0}
+.txcard .sw-body{background:var(--surface-solid)}
+.txempty{text-align:center;color:var(--ink-muted);font-size:13.5px;padding:22px 0 26px}
 .daycard{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);
  border:1px solid var(--edge);padding:0 12px;margin-top:-4px;
  box-shadow:var(--shadow-card);backdrop-filter:blur(var(--glass))}
@@ -495,6 +614,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer;
  border:1px solid var(--edge);box-shadow:var(--shadow-card);
  backdrop-filter:blur(var(--glass))}
+/* 已经在一张玻璃卡里了，再套一层卡就是两层玻璃 —— 压平成一条内嵌的小带子 */
+.txcard .upcoming{background:var(--sunken);border:0;box-shadow:none;backdrop-filter:none;
+ border-radius:var(--r-sm);padding:8px 12px;gap:8px;margin-bottom:2px}
+.txcard .upcoming .amts{flex:1;min-width:0;font-size:12px;color:var(--ink);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* briefly 那边它是薄荷蓝便利贴 */
 :root[data-skin="briefly"] .upcoming{background:var(--accent2);color:var(--on-tint);
  border:0;box-shadow:none;padding:8px 12px}
@@ -653,7 +777,8 @@ const MON3 = MON.map((x) => x.slice(0, 3));
 const STR = {
 zh: {
   "tab.money": "财况", "tab.bills": "账单", "tab.wants": "种草", "tab.vault": "金库",
-  "nav.me": "我", "scope.month": "月", "scope.year": "年",
+  "nav.me": "我", "nav.sections": "分区", "scope.month": "月", "scope.year": "年",
+  "word.back": "返回", "word.addOne": "记一笔",
   "date.month": (v) => v.y + "年" + +v.m + "月",
   "date.monthShort": (v) => +v.m + "月",
   "date.day": (v) => +v.m + "月" + +v.d + "日",
@@ -692,6 +817,13 @@ zh: {
   "mo.overSaved": "储蓄比这个月挣出来的多，差额从以前的存量里出 —— 不是乱花钱。",
   "mo.stillToSave": (v) => "本月还需存 " + v.amt + "（还没确认的不会先扣）",
   "mo.ledger": "本月账本", "mo.rows": (v) => v.n + " 条",
+  "app.wordmark": "储蓄教练",
+  "an.title": "分析", "an.income": "本月收入", "an.expenses": "本月支出",
+  "mo.available": "可用余额", "mo.totalIn": "本月收入", "mo.thisMonth": "这个月",
+  "tx.search": "搜账本", "tx.filter": "筛选", "tx.all": "全部", "tx.less": "收起",
+  "tx.fAll": "全部", "tx.fIn": "进账", "tx.fOut": "花销",
+  "tx.in": "收入", "tx.out": "支出", "tx.noMatch": "没有对得上的记录。",
+  "mo.committed": "固定承诺",
   "mo.upcoming": (v) => "即将 " + v.n + " 笔",
   "mo.willArrive": "到账", "mo.willLeave": "扣款", "mo.willMove": "转存",
   "mo.emptyNow": "这个月还没有账目。按右下角说一句，或者点「记一笔」。",
@@ -1042,7 +1174,8 @@ zh: {
 },
 en: {
   "tab.money": "Money", "tab.bills": "Bills", "tab.wants": "Wants", "tab.vault": "Vault",
-  "nav.me": "Me", "scope.month": "Mo", "scope.year": "Yr",
+  "nav.me": "Me", "nav.sections": "Sections", "scope.month": "Mo", "scope.year": "Yr",
+  "word.back": "Back", "word.addOne": "Add",
   "date.month": (v) => MON[+v.m - 1] + " " + v.y,
   "date.monthShort": (v) => MON3[+v.m - 1],
   "date.day": (v) => MON3[+v.m - 1] + " " + +v.d,
@@ -1086,6 +1219,14 @@ en: {
   "mo.stillToSave": (v) => "Still to put aside this month: " + v.amt +
     " (nothing is taken until you confirm it)",
   "mo.ledger": "This month", "mo.rows": (v) => plural(v.n, "entry", "entries"),
+  "app.wordmark": "COACH",
+  "an.title": "Analytics", "an.income": "My income", "an.expenses": "My expenses",
+  "tx.search": "Search transactions", "tx.filter": "Filter",
+  "tx.all": "View all", "tx.less": "Show less",
+  "tx.fAll": "All", "tx.fIn": "Money in", "tx.fOut": "Money out",
+  "tx.in": "Income", "tx.out": "Spend", "tx.noMatch": "Nothing matches that.",
+  "mo.available": "Available balance", "mo.totalIn": "Total income",
+  "mo.thisMonth": "This month", "mo.committed": "Committed",
   "mo.upcoming": (v) => plural(v.n, "entry", "entries") + " coming up",
   "mo.willArrive": "in", "mo.willLeave": "out", "mo.willMove": "moved",
   "mo.emptyNow": "Nothing logged this month yet. Hold the mic and say it, or tap Add.",
@@ -2183,6 +2324,8 @@ const P = {
   camera: '<rect x="2.6" y="5.4" width="14.8" height="11.2" rx="2"/><circle cx="10" cy="11" r="3.1"/><path d="M7 5.4 8.2 3.4h3.6L13 5.4"/>',
   keyboard: '<rect x="2.4" y="5.6" width="15.2" height="9.6" rx="1.8"/><path d="M5.4 8.4h.01M8 8.4h.01M10.6 8.4h.01M13.2 8.4h.01M6.6 11h6.8"/>',
   plus: '<path d="M10 4.2v11.6M4.2 10h11.6"/>',
+  search: '<circle cx="9" cy="9" r="5.3"/><path d="m13.2 13.2 3.4 3.4"/>',
+  filter: '<path d="M3.4 6h13.2M5.6 10h8.8M8 14h4"/>',
   arrow: '<path d="M4 10h12M11.4 5.4 16 10l-4.6 4.6"/>',
   chev: '<path d="M7.6 4.4 13.2 10l-5.6 5.6"/>',
   back: '<path d="M12.4 4.4 6.8 10l5.6 5.6"/>',
@@ -2195,6 +2338,17 @@ const P = {
   clock: '<circle cx="10" cy="10" r="7.2"/><path d="M10 6.2V10l2.8 1.8"/>',
   trash: '<path d="M4.6 6.2h10.8M8 6.2V4.6h4v1.6M6.1 6.2l.7 9.6h6.4l.7-9.6M8.6 8.8v4.4M11.4 8.8v4.4"/>',
   loop: '<path d="M16.4 9.4a6.4 6.4 0 0 1-11.1 4.2M3.6 10.6a6.4 6.4 0 0 1 11.1-4.2"/><path d="M14.4 3.2v3.4h-3.4M5.6 16.8v-3.4h3.4"/>',
+  eye: '<path d="M1.8 10S4.8 4.8 10 4.8 18.2 10 18.2 10 15.2 15.2 10 15.2 1.8 10 1.8 10z"/><circle cx="10" cy="10" r="2.3"/>',
+  eyeOff: '<path d="M4.2 5.6C2.8 6.9 1.8 8.6 1.8 10c0 0 3 5.2 8.2 5.2 1.5 0 2.8-.4 3.9-1M8 4.9c.6-.1 1.3-.2 2-.2 5.2 0 8.2 5.3 8.2 5.3s-.8 1.4-2.2 2.7"/><path d="M8.3 8.3a2.3 2.3 0 0 0 3.2 3.2"/><path d="m3.4 3.4 13.2 13.2"/>',
+  arrowUp: '<path d="M10 16.2V4.6M6.2 8.4 10 4.6l3.8 3.8"/>',
+  arrowDown: '<path d="M10 3.8v9.4M6.2 9.4 10 13.2l3.8-3.8M4.4 16.4h11.2"/>',
+  card: '<rect x="2.8" y="5" width="14.4" height="10" rx="2.2"/><path d="M2.8 8.4h14.4"/>',
+  /* 外带纸杯：盖子 + 收口的杯身。原来那版把把手画成杯口上方的弧，看着像垃圾桶 */
+  cup: '<path d="M4.9 4.2h10.2l-.45 2.5H5.35z"/><path d="M5.6 6.7h8.8l-.85 8.5a1.7 1.7 0 0 1-1.7 1.5H8.15a1.7 1.7 0 0 1-1.7-1.5z"/>',
+  taxi: '<path d="M3.4 12.6h13.2l-1.1-4a2 2 0 0 0-1.9-1.4H6.4a2 2 0 0 0-1.9 1.4z"/><circle cx="6.4" cy="14.6" r="1.5"/><circle cx="13.6" cy="14.6" r="1.5"/>',
+  house: '<path d="M3.6 9.2 10 4l6.4 5.2v6.8a1 1 0 0 1-1 1H4.6a1 1 0 0 1-1-1z"/><path d="M8 16.8v-5h4v5"/>',
+  gift: '<rect x="3.2" y="8" width="13.6" height="8.8" rx="1.4"/><path d="M2.6 5.6h14.8v2.4H2.6zM10 5.6v11.2"/>',
+  film: '<rect x="3.2" y="5" width="13.6" height="10" rx="2"/><path d="M7.2 5v10M12.8 5v10"/>',
 };
 /* 实心图标 —— 直接来自 Figma 分支导出，[viewBox, 路径]。
    跟 P 里的线性图标分开放：两套的 viewBox 和描边/填充规则都不一样。 */
@@ -2204,6 +2358,9 @@ const PF = {
   sprout: ['9 9 26 26', '<path d="M15.1304 26.257C15.0597 26.2659 14.9882 26.2659 14.9175 26.257L15.6071 31.7912C15.6662 32.1512 15.8525 32.4782 16.1322 32.7125C16.4119 32.9469 16.7663 33.0731 17.1312 33.0683H26.8629C27.234 33.0717 27.5937 32.9394 27.8743 32.6965C28.1549 32.4535 28.3372 32.1164 28.3869 31.7486L29.0766 26.1889C28.9742 26.2325 28.8643 26.2556 28.753 26.257H15.1304ZM29.2298 20.8164C29.0851 20.6522 28.9069 20.5208 28.7071 20.4313C28.5074 20.3417 28.2908 20.2959 28.0719 20.2971H25.5687C25.8492 20.0869 26.1138 19.8564 26.3605 19.6074C26.9251 19.0625 27.3764 18.4115 27.6888 17.6917C27.878 17.3676 27.9594 16.9917 27.9211 16.6183C27.8829 16.2449 27.727 15.8933 27.4759 15.6143C26.6245 14.7628 24.9898 15.2226 23.4828 16.7296C23.1849 17.0255 22.9142 17.3475 22.6739 17.6917C22.5656 17.0061 22.4091 16.329 22.2056 15.6654C21.6607 13.8944 20.6305 11.7829 19.3874 11.1273C19.197 11.0213 18.9863 10.9566 18.7692 10.9375C18.5521 10.9185 18.3334 10.9454 18.1273 11.0166C16.5096 11.5871 16.6118 14.567 17.4462 17.266C17.7563 18.3309 18.2057 19.35 18.7829 20.2971H15.9222C15.7021 20.2963 15.4844 20.3422 15.2833 20.4318C15.0823 20.5213 14.9024 20.6524 14.7557 20.8164C14.6149 20.9766 14.5101 21.1651 14.4484 21.3693C14.3867 21.5735 14.3696 21.7885 14.3981 21.9999L14.7302 24.6819C14.8517 24.6084 14.9888 24.5646 15.1304 24.5541H28.753C28.9353 24.5584 29.1114 24.6211 29.2554 24.7329L29.6044 21.9999C29.6302 21.7873 29.6101 21.5717 29.5454 21.3675C29.4808 21.1634 29.3732 20.9755 29.2298 20.8164Z"/>'],
   vault: ['9 9 26 26', '<path d="M30.2509 21.9424C31.0822 21.2859 31.7114 20.429 32.0962 19.473C32.3612 20.2524 32.5 21.1259 32.5 22.1011C32.5 24.4295 31.678 26.0607 30.835 27.1114C30.4167 27.633 29.9968 28.0075 29.677 28.2544C29.614 28.303 29.5548 28.3467 29.5 28.3858V29.9505C29.5 31.1931 28.4926 32.2005 27.25 32.2005H26.5C25.6715 32.2005 25 31.5288 25 30.7005H22C22 31.5288 21.3285 32.2005 20.5 32.2005H19.75C18.5074 32.2005 17.5 31.1931 17.5 29.9505V29.6305C17.3705 29.5893 17.2255 29.5383 17.0689 29.475C16.469 29.2329 15.6873 28.8082 14.9661 28.0771C14.0779 27.1768 13.5804 26.0502 13.3311 25.3432C13.2495 25.1118 13.086 24.9661 12.9268 24.9211C12.0828 24.6826 11.5 23.9122 11.5 23.0351V21.8442C11.5 20.9803 12.0726 20.2211 12.9031 19.9837C13.0582 19.9393 13.2263 19.7878 13.3091 19.5376C13.5111 18.9268 13.9007 18.0242 14.6147 17.3005C15.1988 16.7084 15.8292 16.2708 16.3077 15.9826C16.4527 15.8953 16.5852 15.8208 16.7 15.7592V12.9429C16.7 12.4126 17.0476 12.0384 17.4212 11.8868C17.7917 11.7364 18.2884 11.7616 18.6599 12.1125C19.0391 12.4707 19.5375 12.8992 20.0706 13.2481C20.6173 13.6059 21.1303 13.8331 21.5486 13.8755L21.5566 13.8763C20.7646 15.052 20.3998 16.4916 20.5694 17.9332C20.7509 19.4755 21.9445 20.403 22.9466 20.818L26.5301 22.302C27.5323 22.717 29.0322 22.9049 30.2509 21.9424ZM17.125 20.9497C17.7463 20.9497 18.25 20.446 18.25 19.8247C18.25 19.2034 17.7463 18.6997 17.125 18.6997C16.5037 18.6997 16 19.2034 16 19.8247C16 20.446 16.5037 20.9497 17.125 20.9497Z"/><path d="M21.3872 15.3841C21.9157 14.0843 22.9637 12.9863 24.3953 12.409C27.2008 11.2776 30.4174 12.5741 31.5798 15.3048C32.5432 17.568 31.7932 20.106 29.9108 21.5528C29.1478 22.1393 28.1 22.0943 27.2017 21.7322L22.823 19.9673C21.9248 19.6052 21.151 18.9159 21.0374 17.9761C20.9819 17.5171 20.9889 17.0583 21.0538 16.6105L21.3872 15.3841ZM21.3872 15.3841L21.1378 16.1668C21.1765 16.002 21.223 15.8393 21.2773 15.6791C21.311 15.5797 21.3476 15.4814 21.3872 15.3841Z"/>'],
   user: ['0 0 20 20', '<path d="M10 10.8333C11.9967 10.8333 13.8125 11.4117 15.1483 12.2258C15.815 12.6342 16.385 13.1133 16.7967 13.6342C17.2017 14.1475 17.5 14.7608 17.5 15.4167C17.5 16.1208 17.1575 16.6758 16.6642 17.0717C16.1975 17.4467 15.5817 17.695 14.9275 17.8683C13.6125 18.2158 11.8575 18.3333 10 18.3333C8.1425 18.3333 6.3875 18.2167 5.0725 17.8683C4.41833 17.695 3.8025 17.4467 3.33583 17.0717C2.84167 16.675 2.5 16.1208 2.5 15.4167C2.5 14.7608 2.79833 14.1475 3.20333 13.6342C3.615 13.1133 4.18417 12.6342 4.85167 12.2258C6.1875 11.4117 8.00417 10.8333 10 10.8333Z"/><path d="M10 1.66667C13.2075 1.66667 15.2125 5.13917 13.6083 7.91667C13.2426 8.55007 12.7167 9.07605 12.0833 9.44175C11.4499 9.80745 10.7314 9.99998 10 10C6.7925 10 4.7875 6.5275 6.39167 3.75C6.75736 3.1166 7.28333 2.59062 7.91673 2.22492C8.55012 1.85922 9.26861 1.66669 10 1.66667Z"/>'],
+  /* 中间那颗按钮：2×2 的点阵 */
+  dots: ['0 0 20 20', '<circle cx="7" cy="7" r="2.1"/><circle cx="13" cy="7" r="2.1"/>' +
+    '<circle cx="7" cy="13" r="2.1"/><circle cx="13" cy="13" r="2.1"/>'],
   pie: ['0 0 16 16', '<path d="M8.66667 1.33334C8.48986 1.33334 8.32029 1.40358 8.19526 1.52861C8.07024 1.65363 8 1.8232 8 2.00001V7.33334C8 7.51015 8.07024 7.67972 8.19526 7.80475C8.32029 7.92977 8.48986 8.00001 8.66667 8.00001H14C14.1768 8.00001 14.3464 7.92977 14.4714 7.80475C14.5964 7.67972 14.6667 7.51015 14.6667 7.33334C14.6667 5.74204 14.0345 4.21592 12.9093 3.0907C11.7841 1.96548 10.258 1.33334 8.66667 1.33334ZM9.33333 6.66668V2.71334C10.3308 2.85709 11.2549 3.31986 11.9675 4.03246C12.6801 4.74507 13.1429 5.66921 13.2867 6.66668H9.33333Z"/><path d="M13.88 9.37333C13.7973 9.34377 13.7095 9.33084 13.6218 9.33529C13.5341 9.33974 13.4481 9.36149 13.3688 9.39928C13.2895 9.43707 13.2184 9.49016 13.1597 9.5555C13.101 9.62083 13.0558 9.69713 13.0267 9.78C12.7262 10.6293 12.2156 11.3886 11.5423 11.9872C10.8691 12.5857 10.0552 13.004 9.17655 13.203C8.29795 13.4019 7.38326 13.3751 6.51782 13.125C5.65239 12.8748 4.86442 12.4096 4.22742 11.7726C3.59042 11.1356 3.12515 10.3476 2.87502 9.48216C2.6249 8.61673 2.59806 7.70204 2.79702 6.82343C2.99598 5.94483 3.41425 5.13093 4.01281 4.45768C4.61137 3.78443 5.37071 3.27377 6.21999 2.97333C6.38707 2.91499 6.52414 2.79265 6.60103 2.63325C6.67792 2.47384 6.68834 2.29042 6.62999 2.12333C6.57164 1.95625 6.44931 1.81918 6.2899 1.74229C6.1305 1.6654 5.94707 1.65499 5.77999 1.71333C4.71802 2.08852 3.76841 2.72664 3.0198 3.56815C2.27119 4.40965 1.74798 5.4271 1.499 6.52554C1.25003 7.62397 1.2834 8.76758 1.59602 9.84963C1.90863 10.9317 2.49028 11.9169 3.2867 12.7133C4.08311 13.5097 5.06832 14.0914 6.15036 14.404C7.23241 14.7166 8.37602 14.75 9.47445 14.501C10.5729 14.252 11.5903 13.7288 12.4318 12.9802C13.2733 12.2316 13.9115 11.282 14.2867 10.22C14.3443 10.0538 14.3339 9.87149 14.2577 9.71289C14.1816 9.55429 14.0458 9.43224 13.88 9.37333Z"/>'],
   mic: ['3 3 24 24', '<path d="M15 8.15391C17.3545 8.15391 19.2633 7.03218 19.2633 5.64844C19.2633 4.26471 17.3545 3.14297 15 3.14297C12.6454 3.14297 10.7367 4.26471 10.7367 5.64844C10.7367 7.03218 12.6454 8.15391 15 8.15391Z"/><path d="M15 26.857C17.3545 26.857 19.2633 25.7353 19.2633 24.3516C19.2633 22.9678 17.3545 21.8461 15 21.8461C12.6454 21.8461 10.7367 22.9678 10.7367 24.3516C10.7367 25.7353 12.6454 26.857 15 26.857Z"/><path d="M9.03385 23.3674C10.2322 22.6755 10.2493 20.4617 9.07201 18.4226C7.89474 16.3835 5.96892 15.2913 4.77057 15.9832C3.57222 16.6751 3.55514 18.8889 4.73241 20.928C5.90968 22.9671 7.8355 24.0593 9.03385 23.3674Z"/><path d="M25.2298 14.0171C26.4281 13.3252 26.4452 11.1113 25.2679 9.07223C24.0907 7.03313 22.1648 5.94099 20.9665 6.63285C19.7681 7.32472 19.7511 9.5386 20.9283 11.5777C22.1056 13.6168 24.0314 14.7089 25.2298 14.0171Z"/><path d="M25.3551 20.8363C26.5324 18.7878 26.5108 16.5664 25.307 15.8745C24.1031 15.1826 22.1729 16.2824 20.9956 18.3308C19.8183 20.3793 19.8399 22.6008 21.0437 23.2926C22.2476 23.9845 24.1778 22.8848 25.3551 20.8363Z"/><path d="M9.07054 11.5771C10.2478 9.53797 10.2307 7.32408 9.03238 6.63222C7.83404 5.94035 5.90822 7.0325 4.73094 9.07159C3.55367 11.1107 3.57076 13.3246 4.7691 14.0164C5.96745 14.7083 7.89327 13.6162 9.07054 11.5771Z"/>'],
 };
@@ -2660,46 +2817,58 @@ function setupCard() {
       '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span></div>").join("") + "</div>";
 }
 
-function monthView() {
+/* 分析页：收入在轴上、支出在轴下，当月挑出来。
+   月度那几个数（三段减法、存多了的提示、还需存多少）从首页搬到了这儿 ——
+   首页开场讲「你有多少」，要看这个月过得怎么样，点左边那张卡进来。 */
+SCREENS.analytics = () => {
   const m = viewMonth(), cur = isThisMonth();
   const inc = incomeIn(S, m), out = outgoIn(S, m), saved = savedIn(m);
-  /* 结余 = 可动用口径：把已确认的固定储蓄也扣掉。
-     它不等于净资产增长（那个是 inc - out）—— 所以下面把三段减法都写出来。 */
   const net = inc - out - saved;
-  const cats = catTotals(S, m);
-  const all = S.tx.filter((t) => monthOf(t.date) === m)
-    .concat(fixedRowsFor(m), transferRowsFor(m));
-  /* 未来的固定收支收拢成一行 —— 否则四条灰色「预计」会压在真实花销上面 */
-  const isFuture = (t) => (t.fixed || t.xfer) && m === thisMonth() && t.date > today();
-  const future = all.filter(isFuture);
-  const rows = ui.showFuture ? all : all.filter((t) => !isFuture(t));
-  const days = {};
-  rows.forEach((t) => { (days[t.date] = days[t.date] || []).push(t); });
-  const dates = Object.keys(days).sort().reverse();
-  const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
-    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
-  return { tab: "dashboard", fab: "both", navSplit: true,
-    /* 月份选择器居中，和右上角的「我」平齐；左边留等宽的空位才真居中 */
-    nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
-      ic("user", 20) + "</div>" +
-      '<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:2px">' +
-      arrow("prev", true) +
-      '<div class="h2" style="min-width:92px;text-align:center;font-size:14px">' +
-      monthName(m) + "</div>" +
-      arrow("next", !cur) + "</div>" +
-      scopeToggle(),
+  const need = cur ? stillToSave(S) : 0;
+  const months = [];
+  let [y, mo] = m.split("-").map(Number);
+  for (let i = 5; i >= 0; i--) {
+    let yy = y, mm = mo - i;
+    while (mm <= 0) { mm += 12; yy--; }
+    months.push(yy + "-" + String(mm).padStart(2, "0"));
+  }
+  const ins = months.map((k) => incomeIn(S, k));
+  const outs = months.map((k) => outgoIn(S, k) + savedIn(k));
+  const top = Math.max.apply(null, ins.concat(outs, [1]));
+  const bars = (vals, sel) => '<div class="chartrow">' + vals.map((v, i) =>
+    '<i style="height:' + Math.max(3, Math.round(v / top * 100)) + '%"' +
+    (months[i] === m ? ' class="' + sel + '"' : "") + "></i>").join("") + "</div>";
+  return { tab: "dashboard", fab: "both",
+    nav: '<div class="iconbtn" data-a="back">' + ic("back", 16) + "</div>" +
+      '<div class="wordmark" style="flex:1;letter-spacing:-.01em;font-size:18px">' +
+      t("an.title") + "</div>" + scopeToggle(),
     body:
-      /* 只保留结余 + 收支两个数。固定收支已经计入，所以这三个数自洽 —— 
-         「已承诺但还没发生」那一整块因此不再需要。 */
-      '<div class="card anchor">' +
-      '<div class="badge">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) +
-      "</div>" +
-      /* 缺口罩黄、结余罩绿 —— 都做记号，方向靠颜色分 */
-      '<div class="big mark' + (net < 0 ? "" : " pos") + '" style="margin:2px 0">' +
+      '<div class="hero" style="padding-top:2px">' +
+      '<div class="mochip"><span>' + monthName(m) + "</span></div>" +
+      '<div class="hlbl">' + t("an.income") + "</div>" +
+      '<div class="heroamt"><span class="big">' + yuan(inc) + "</span></div></div>" +
+
+      '<div class="chart">' +
+      '<div class="callout">' + yuan(inc) + "</div>" +
+      bars(ins, "on") +
+      '<div class="chartax">' + months.map((k) =>
+        '<span' + (k === m ? ' class="on"' : "") + ">" +
+        t("date.monthShort", { m: k.slice(5) }) + "</span>").join("") + "</div>" +
+      bars(outs, "bad") +
+      '<div class="callout bot">' + neg(out + saved) + "</div></div>" +
+
+      '<div class="hero" style="padding-top:14px">' +
+      '<div class="hlbl">' + t("an.expenses") + "</div>" +
+      '<div class="heroamt"><span class="big" style="color:var(--bad)">' +
+      yuan(out + saved) + "</span></div></div>" +
+
+      /* 月度那三段减法和教练的话，从首页搬到这儿 */
+      '<div class="card" style="margin-top:22px">' +
+      '<div class="badge">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) + "</div>" +
+      '<div class="big' + (net < 0 ? " mark" : " mark pos") +
+      '" style="margin:6px 0;font-size:30px">' +
       (net < 0 ? neg(-net) : plus(net)) + "</div>" +
-      /* 三段减法摊开写，结余就不会被读成「净资产涨了多少」 */
-      '<div class="block" style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
+      '<div class="block" style="display:flex;flex-wrap:wrap;gap:4px 14px">' +
       '<div class="sub">' + t("word.income") +
       ' <span class="money" style="color:var(--ink)">' + yuan(inc) + "</span></div>" +
       '<div class="sub">− ' + t("word.spending") +
@@ -2707,82 +2876,207 @@ function monthView() {
       (saved ? '<div class="sub">− ' + t("word.savings") +
         ' <span class="money" style="color:var(--ink)">' + yuan(saved) + "</span></div>"
         : "") + "</div>" +
-      /* 四项各去各的地方 —— 原来一整句只链到「我」，可固定支出和还贷在账单、
-         固定储蓄在金库，点过去全是错的。链接用负 margin 撑开点击区。 */
-      /* 四个固定项各占一块，点进去各去各的页面 —— 比一行下划线好读，也好点 */
-      '<div class="tiles">' +
-      [[t("word.fixedIn"), fixedIn(S), "settings"],
-       [t("word.fixedSave"), goalCommit(S), "toSavings2"],
-       [t("word.fixedOut"), S.fixedOut.reduce((a, x) => a + x.amount, 0), "route:out"],
-       [t("word.debt"), debtCommit(S), "route:debt"]].map(([l, v, a]) =>
-        '<div class="tile" data-a="' + a + '"><div class="money">' + moneyShort(v) + "</div>" +
-        '<div class="sub" style="font-size:11px">' + esc(l) + "</div></div>").join("") +
-      "</div>" +
-      (() => {
-        const need = cur ? stillToSave(S) : 0;
-        if (net >= 0 && !need) return "";
-        /* 分隔线去掉了 —— 上面那两块自己有底色，已经分好区了。
-           提示也不再用砖红：它说的是「你存多了」，不是警报。 */
-        return '<div style="margin-top:9px;padding-top:8px" data-a="route">' +
-          (net < 0 ? '<div style="display:flex;gap:6px;font-size:12px;color:var(--ink)' +
-            '"><span style="margin-top:1px">' + ic("warn", 13) + "</span>" +
-            "<div>" + t("mo.overSaved") + "</div></div>" : "") +
-          (need > 0 ? '<div class="sub" style="font-size:12px' +
-            (net < 0 ? ";margin-top:5px" : "") + '">' +
-            t("mo.stillToSave", { amt: '<span class="money">' + yuan(need) + "</span>" }) +
-            "</div>" : "") + "</div>";
-      })() +
-      "</div>" +
+      (net < 0 ? '<div style="display:flex;gap:6px;font-size:12px;margin-top:10px;' +
+        'color:var(--ink)"><span style="margin-top:1px">' + ic("warn", 13) + "</span>" +
+        "<div>" + t("mo.overSaved") + "</div></div>" : "") +
+      (need > 0 ? '<div class="sub" style="font-size:12px;margin-top:8px">' +
+        t("mo.stillToSave", { amt: '<span class="money">' + yuan(need) + "</span>" }) +
+        "</div>" : "") +
+      "</div>" };
+};
+
+/* 近六个月的收入走势。柱子是一束细线 —— 样机里那个质感全在这儿。 */
+function sparkline(cur) {
+  const months = [];
+  let [y, mo] = cur.split("-").map(Number);
+  for (let i = 5; i >= 0; i--) {
+    let yy = y, mm = mo - i;
+    while (mm <= 0) { mm += 12; yy--; }
+    months.push(yy + "-" + String(mm).padStart(2, "0"));
+  }
+  const vals = months.map((mk) => incomeIn(S, mk));
+  const top = Math.max.apply(null, vals.concat([1]));
+  return '<div class="spark">' + months.map((mk, i) =>
+    '<i style="height:' + Math.max(6, Math.round(vals[i] / top * 100)) + '%"' +
+    (mk === cur ? ' class="on"' : "") + "></i>").join("") + "</div>" +
+    '<div class="sparkl">' + months.map((mk, i) =>
+      '<span' + (mk === cur ? ' class="on"' : "") + ">" +
+      t("date.monthShort", { m: mk.slice(5) }) + "</span>").join("") + "</div>";
+}
+
+function monthView() {
+  const m = viewMonth(), cur = isThisMonth();
+  const inc = incomeIn(S, m), out = outgoIn(S, m);
+  const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
+    ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
+    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
+  return { tab: "dashboard", fab: "both", navSplit: true,
+    /* 顶栏按样机：头像 · 字标 · 月/年。月份的前后翻挪到下面那颗药丸里了。 */
+    nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
+      ic("user", 18) + "</div>" +
+      '<div class="wordmark" style="flex:1">' + t("app.wordmark") + "</div>" +
+      scopeToggle(),
+    body:
+      /* 按样机：月份药丸 → 可用余额 → 两张卡。月度的收支对比整个搬到
+         「分析」页去了（点左边那张卡进去），首页开场是「你有多少」。 */
+      '<div class="hero">' +
+      '<div class="mochip">' + arrow("prev", true) +
+      '<span>' + monthName(m) + "</span>" + arrow("next", !cur) + "</div>" +
+      '<div class="hlbl">' + t("mo.available") + "</div>" +
+      '<div class="heroamt">' +
+      (ui.hideBal ? '<span class="big">' + ccy().sym +
+        '<span class="mask">******</span></span>'
+        : '<span class="big">' + yuan(netAssets(S)) + "</span>") +
+      '<span class="eye" data-a="hideBal">' + ic(ui.hideBal ? "eyeOff" : "eye", 17) +
+      "</span></div></div>" +
+
+      /* 左：本月收入 + 近六个月走势，点进去是分析页。右：四项固定承诺。 */
+      '<div class="duo">' +
+      '<div class="card gcard" data-a="analytics">' +
+      '<div class="cardtitle">' + t("mo.totalIn") + "</div>" +
+      '<div class="figure"><div class="money" style="font-size:19px">' + yuan(inc) + "</div>" +
+      '<div class="sub" style="font-size:11.5px">' + t("mo.thisMonth") + "</div></div>" +
+      sparkline(m) + "</div>" +
+      '<div class="card gcard">' +
+      '<div class="cardtitle">' + t("mo.committed") + "</div>" +
+      '<div class="quick">' +
+      [[t("word.fixedIn"), fixedIn(S), "settings", "arrowUp"],
+       [t("word.fixedSave"), goalCommit(S), "toSavings2", "arrowDown"],
+       [t("word.fixedOut"), S.fixedOut.reduce((a, x) => a + x.amount, 0), "route:out", "bill"],
+       [t("word.debt"), debtCommit(S), "route:debt", "card"]].map(([l, v, a, g]) =>
+        '<div class="qi" data-a="' + a + '"><div class="circ">' + ic(g, 18) + "</div>" +
+        '<div class="money" style="font-size:12.5px">' + moneyShort(v) + "</div>" +
+        '<div class="sub" style="font-size:10px">' + esc(l) + "</div></div>").join("") +
+      "</div></div></div>" +
 
       (cur ? confirmCard() + setupCard() : "") +
-      '<div style="display:flex;align-items:center;gap:9px;margin-top:2px">' +
-      '<div class="h2" style="flex:1">' + t("mo.ledger") + "</div>" +
-      (out > 0 ? '<div class="iconbtn" data-a="cats" title="' + esc(t("word.breakdown")) +
-        '">' + ic("pie", 16) + "</div>" : "") +
-      "</div>" +
-
-      (future.length
-        ? '<div class="upcoming" data-a="toggleFuture">' +
-          '<span style="color:var(--ink-muted)">' + ic("clock", 16) + "</span>" +
-          '<div class="badge ol" style="font-size:11px">' +
-          t("mo.upcoming", { n: future.length }) + "</div>" +
-          /* 笔数挪进徽章之后，剩下这几段自己 join —— 原来每段前面挂一个
-             全角空格当分隔，第一段会多出一个空格顶在徽章旁边 */
-          '<div style="flex:1;font-size:12px;color:var(--ink)">' +
-          [[future.filter((f) => f.fixed === "in"), "mo.willArrive"],
-           [future.filter((f) => f.fixed === "out"), "mo.willLeave"],
-           [future.filter((f) => f.xfer), "mo.willMove"]]
-            .filter(([list]) => list.length)
-            .map(([list, key]) => t(key) + ' <span class="money">' +
-              yuan(list.reduce((a, f) => a + f.amount, 0)) + "</span>")
-            .join("　") + "</div>" +
-          '<span class="sub" style="font-size:11px;color:var(--ink)">' +
-          t(ui.showFuture ? "word.collapse" : "word.expand") + "</span></div>"
-        : "") +
-      (rows.length
-        ? dates.map((d) => {
-            const o = days[d].filter((t) => !t.xfer && t.fixed !== "in" && t.type !== "in")
-              .reduce((a, t) => a + t.amount, 0);
-            const sv = days[d].filter((t) => t.xfer && !isFuture(t))
-              .reduce((a, t) => a + t.amount, 0);
-            return '<div class="lbl" style="margin-top:4px">' + dayLabel(d) +
-              (o ? " · " + t("word.spending") + " " + yuan(o) : "") +
-              (sv ? " · " + t("word.savings") + " " + yuan(sv) : "") + "</div>" +
-              /* 一天一张白卡，左边一条竖杠把这一组圈起来 */
-              '<div class="daycard"><div class="daybar"></div><div class="dayrows">' +
-              days[d].map((t) => (t.fixed || t.xfer)
-                ? passiveRow(t, m)
-                : swipe(listrow(
-                    '<span class="chip flat" style="padding:1px 8px;font-size:11px">' +
-                    esc(catLabel(t.category)) + "</span> " + esc(t.description),
-                    t.type === "out" ? neg(t.amount) : plus(t.amount), null,
-                    "editTx:" + t.id), "delTx:" + t.id)).join("") + "</div></div>";
-          }).join("") + '<div style="height:56px"></div>'
-        : '<div class="dash" style="min-height:120px;cursor:default;flex-direction:column;' +
-          'gap:6px;padding:0 24px;text-align:center">' +
-          (cur ? t("mo.emptyNow") : t("mo.emptyPast", { month: monthName(m) })) +
-          "</div>") };
+      txCard(m, out) };
 };
+
+/* 账本按样机收成一张玻璃卡：卡头有搜索 / 筛选 / 分类 / 全部，下面按天分段。
+   搜索和筛选只改列表那一块，不重绘整页 —— 否则输入框的光标每敲一个字就没了。 */
+const TX_SHORT = 6;                      /* 收起时先露这么多行 */
+function txCard(m, out) {
+  /* 未来的固定收支收拢成一行 —— 否则几条灰色「预计」会压在真实花销上面 */
+  const future = S.tx.filter((x) => monthOf(x.date) === m)
+    .concat(fixedRowsFor(m), transferRowsFor(m))
+    .filter((x) => (x.fixed || x.xfer) && m === thisMonth() && x.date > today());
+  return '<div class="card txcard">' +
+    '<div class="thead">' +
+    '<div class="cardtitle">' + t("mo.ledger") + "</div>" +
+    '<div class="rnd' + (ui.txSearch ? " on" : "") + '" data-a="txSearch" title="' +
+    esc(t("tx.search")) + '">' + ic("search", 14) + "</div>" +
+    '<div class="rnd' + (ui.txFilter ? " on" : "") + '" data-a="txFilter" title="' +
+    esc(t("tx.filter")) + '">' + ic("filter", 14) + "</div>" +
+    (out > 0 ? '<div class="rnd" data-a="cats" title="' + esc(t("word.breakdown")) +
+      '">' + ic("pie", 14) + "</div>" : "") +
+    '<div class="viewall' + (ui.txAll ? " on" : "") +
+    (!ui.txAll && txFiltered(m).list.length <= TX_SHORT ? " off" : "") +
+    '" data-a="txAll">' + t(ui.txAll ? "tx.less" : "tx.all") + "</div></div>" +
+
+    (ui.txFilter
+      ? '<div class="fmenu">' +
+        [["all", "tx.fAll"], ["in", "tx.fIn"], ["out", "tx.fOut"]].map(([k, key]) =>
+          '<div data-a="txF:' + k + '"' +
+          ((ui.txF || "all") === k ? ' class="on"' : "") + ">" + t(key) + "</div>").join("") +
+        "</div>"
+      : "") +
+
+    '<div class="sbar' + (ui.txSearch ? " on" : "") + '">' +
+    '<input data-f="txq" value="' + esc(ui.txq || "") + '" placeholder="' +
+    esc(t("tx.search")) + '"/></div>' +
+
+    (future.length
+      ? '<div class="upcoming" data-a="toggleFuture">' +
+        '<span style="color:var(--ink-muted)">' + ic("clock", 16) + "</span>" +
+        '<div class="badge ol" style="font-size:11px">' +
+        t("mo.upcoming", { n: future.length }) + "</div>" +
+        /* 笔数挪进徽章之后，剩下这几段自己 join —— 原来每段前面挂一个
+           全角空格当分隔，第一段会多出一个空格顶在徽章旁边 */
+        '<div class="amts">' +
+        [[future.filter((f) => f.fixed === "in"), "mo.willArrive"],
+         [future.filter((f) => f.fixed === "out"), "mo.willLeave"],
+         [future.filter((f) => f.xfer), "mo.willMove"]]
+          .filter(([list]) => list.length)
+          .map(([list, key]) => t(key) + ' <span class="money">' +
+            yuan(list.reduce((a, f) => a + f.amount, 0)) + "</span>")
+          .join(" · ") + "</div>" +
+        '<span class="sub" style="font-size:11px;color:var(--ink)">' +
+        t(ui.showFuture ? "word.collapse" : "word.expand") + "</span></div>"
+      : "") +
+    '<div id="txlist">' + txRows(m) + "</div></div>" +
+    '<div style="height:56px"></div>';
+}
+
+/* 一笔属于「进」还是「出」。转存两头都不算，筛「进」「出」时都不出现。 */
+const txDir = (x) => x.xfer ? "move" : (x.fixed === "in" || x.type === "in") ? "in" : "out";
+/* 分类 → 图标。样机里每一行都是白圆底上压一个线描图形。 */
+const TX_GLYPH = { food: "cup", transport: "taxi", fun: "film", shopping: "box",
+  social: "gift", salary: "arrowUp", other: "tag" };
+const txGlyph = (x) => x.xfer ? "vault" : x.fixed === "in" ? "arrowUp"
+  : x.fixed === "out" ? "bill" : TX_GLYPH[x.category] || "tag";
+
+/* 先筛：搜索词 + 进/出 + 要不要带上还没发生的固定项。按日期倒序。 */
+function txFiltered(m) {
+  const isFuture = (x) => (x.fixed || x.xfer) && m === thisMonth() && x.date > today();
+  const q = (ui.txq || "").trim().toLowerCase();
+  const f = ui.txF || "all";
+  let list = S.tx.filter((x) => monthOf(x.date) === m)
+    .concat(fixedRowsFor(m), transferRowsFor(m));
+  if (!ui.showFuture) list = list.filter((x) => !isFuture(x));
+  if (f !== "all") list = list.filter((x) => txDir(x) === f);
+  if (q) list = list.filter((x) => ((x.description || x.name || "") + " " +
+    catLabel(x.category || "") + " " + x.date).toLowerCase().includes(q));
+  list.sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  return { list, isFuture };
+}
+/* 卡片正文：截断 + 按天分段。搜索框打字只重画这一段，整页不动。 */
+function txRows(m) {
+  const { list, isFuture } = txFiltered(m);
+  const q = (ui.txq || "").trim(), f = ui.txF || "all";
+  const shown = ui.txAll ? list : list.slice(0, TX_SHORT);
+  if (!shown.length) return '<div class="txempty">' +
+    (q || f !== "all" ? t("tx.noMatch") : isThisMonth() ? t("mo.emptyNow")
+      : t("mo.emptyPast", { month: monthName(m) })) + "</div>";
+  let day = null, html = "";
+  shown.forEach((x) => {
+    if (x.date !== day) { day = x.date;
+      html += '<div class="dhead">' + dayLabel(day) + "</div>"; }
+    html += (x.fixed || x.xfer) ? txRow(x, isFuture(x))
+      : swipe(txRow(x, false), "delTx:" + x.id);
+  });
+  return html;
+}
+/* 搜一个字重画一次整页的话，输入框的光标每次都会丢 —— 只换列表那一块。 */
+function paintTxList() {
+  const box = app.querySelector("#txlist");
+  if (!box) return;
+  box.innerHTML = txRows(viewMonth());
+  const va = app.querySelector(".viewall");
+  if (va) va.classList.toggle("off", !ui.txAll &&
+    txFiltered(viewMonth()).list.length <= TX_SHORT);
+}
+
+function txRow(x, future) {
+  const name = x.description || x.name || "";
+  const dir = txDir(x);
+  const amt = dir === "move" ? "→ " + yuan(x.amount)
+    : dir === "in" ? plus(x.amount) : neg(x.amount);
+  const sub = x.xfer
+    ? t("px.transfer") + " · " + (future ? t("px.expected") : t("px.savingNotSpend"))
+    : x.fixed ? (future ? t("px.expected") : t("px.fixed"))
+    : catLabel(x.category);
+  /* 小数按样机降一号、压灰 —— 一列数字扫起来只看整数位 */
+  const amtHtml = amt.replace(/([.,]\d{2})$/, '<span class="dec">$1</span>');
+  return '<div class="tr" data-a="' + (x.tap || "editTx:" + x.id) + '" style="cursor:pointer' +
+    (future ? ";opacity:.62" : "") + '">' +
+    '<div class="circ">' + ic(txGlyph(x), 19) + "</div>" +
+    '<div class="tn"><b>' + esc(name) + "</b><span>" + esc(sub) + "</span></div>" +
+    '<div class="ta"><b>' + amtHtml + "</b>" +
+    '<span' + (dir === "in" ? ' class="in"' : "") + ">" +
+    t(dir === "in" ? "tx.in" : dir === "move" ? "word.savings" : "tx.out") +
+    "</span></div></div>";
+}
 
 /* 右上角不是「新建账户」了（正文里有），换成离人生大目标还有多远 */
 function lifeBar() {
@@ -3996,7 +4290,10 @@ const ACT = {
   toQuiz: () => { const it = ui.f.parsed.item;
     ui.quiz = { name: it.name, price: it.price, necessity: it.necessity, dup: it.dup };
     ui.sheet = null; ui.stack = ["decisions"]; render(); },
-  tab: (t) => go(t),
+  tab: (t) => { fanClose(); go(t); },
+  /* 点阵：短按当点击（常驻模式），长按由 pointerdown 那边接管 */
+  fan: () => { if (fanState.open) fanClose(); },
+  fanClose: () => fanClose(),
   seg: (a) => { const [k, v] = a.split(":");
     if (k === "mode") S.saveMode = v === "save";
     else if (k === "txtype") ui.f.type = v;
@@ -4009,6 +4306,16 @@ const ACT = {
   cur: (k) => { S.currency = k; render(); toast(t("k.currencyNow", { code: k })); },
   theme: (k) => { S.theme = k; applyTheme(); render(); },
   skin: (k) => { S.skin = k; applySkin(); render(); },
+  hideBal: () => { ui.hideBal = !ui.hideBal; render(); },
+  /* 账本卡头的三个键。筛选菜单开着的时候再点一次就收起来。 */
+  txSearch: () => { ui.txSearch = !ui.txSearch; if (!ui.txSearch) ui.txq = "";
+    ui.txFilter = false; render();
+    if (ui.txSearch) { const i = app.querySelector('.sbar input'); if (i) i.focus(); } },
+  txFilter: () => { ui.txFilter = !ui.txFilter; render(); },
+  txF: (k) => { ui.txF = k; ui.txFilter = false; render(); },
+  txAll: () => { ui.txAll = !ui.txAll; render(); },
+  back: () => pop(),
+  analytics: () => push("analytics"),
   /* 换语言时顺手把币种也换成常见的那个，省得英文界面配 ￥ */
   lang: (k) => { S.lang = k;
     if (k === "en" && S.currency === "CNY") S.currency = "GBP";
@@ -4461,10 +4768,85 @@ addDebt: () => sheet("addDebt", {}),
    7. 渲染 / 输入 / 启动
    ========================================================================== */
 /* 图标本身就说明了去哪，胶囊里塞文字会挤 —— 选中态靠那圈浅底和放大表示 */
-function tabsHtml(active) {
-  return '<div class="tabs">' + TABS().map(([i, l, k]) =>
-    '<div class="tab ' + (k === active ? "on" : "") + '" data-a="tab:' + k +
-    '" title="' + esc(l) + '">' + ic(i, 24) + "</div>").join("") + "</div>";
+/* 底栏按样机：说一句 · 点阵 · [返回] · 记一笔。
+   四个分区不再常驻，收进点阵那颗按钮后面的扇形里。
+   两套皮肤共用这一套结构 —— 奶油纸现在是这个版式的一次换色，不是另一套版式。 */
+function dockHtml(tab, fab) {
+  const deep = ui.stack.length > 1;
+  return '<div class="fandim" data-a="fanClose"></div>' +
+    '<div class="fan">' + TABS().map(([i, l, k]) =>
+      '<div class="fanitem' + (k === tab ? " cur" : "") + '" data-a="tab:' + k +
+      '" title="' + esc(l) + '">' +
+      '<div class="fd">' + ic(i, 22) + '</div><div class="fl">' + esc(l) + "</div></div>")
+      .join("") + "</div>" +
+    '<div class="dock">' +
+    (fab ? '<div class="act dark" data-a="assistant">' + ic("mic", 17) +
+      "<span>" + t("as.speak") + "</span></div>" : "") +
+    '<div class="gridb" data-a="fan" title="' + esc(t("nav.sections")) + '">' +
+    ic("dots", 17) + "</div>" +
+    (deep ? '<div class="act" data-a="back">' + ic("back", 17) +
+      "<span>" + t("word.back") + "</span></div>" : "") +
+    '<div class="act" data-a="addTx">' + ic("plus", 17) +
+    "<span>" + t("word.addOne") + "</span></div></div>";
+}
+
+/* ---- 中间那颗：Pinterest 那一套 ----------------------------------------
+   按住 200ms 扇出来，手指不用松，划到哪个上面哪个变大，松手落定。
+   短按也开（常驻模式）—— 不是所有人都会去长按，而且短按之后标签是常显的，
+   第一次用的人才知道这四个是什么。 */
+const fanState = { open: false, sticky: false, hold: null, hot: null };
+const fanEls = () => ({ fan: app.querySelector(".fan"), grid: app.querySelector(".gridb"),
+  dim: app.querySelector(".fandim") });
+function fanPlace() {
+  const { fan, grid } = fanEls();
+  if (!fan || !grid) return;
+  const pb = app.getBoundingClientRect(), gb = grid.getBoundingClientRect();
+  const cx = gb.left - pb.left + gb.width / 2, cy = gb.top - pb.top + gb.height / 2;
+  /* 从左上扇到右上，−90° 是正上方 */
+  const ANG = [-142, -108, -72, -38], R = 112;
+  [...fan.children].forEach((el, i) => {
+    const a = ANG[i] * Math.PI / 180;
+    el.style.left = (cx + Math.cos(a) * R) + "px";
+    el.style.top = (cy + Math.sin(a) * R) + "px";
+    el.style.transitionDelay = (fanState.open ? i * 26 : 0) + "ms";
+  });
+}
+function fanOpen(sticky) {
+  const { fan, grid, dim } = fanEls();
+  if (!fan) return;
+  fanState.open = true; fanState.sticky = !!sticky;
+  fanPlace();
+  fan.classList.add("on");
+  fan.classList.toggle("sticky", fanState.sticky);
+  dim.classList.add("on");
+  grid.classList.add("open");
+  fanPlace();
+}
+function fanClose() {
+  const { fan, grid, dim } = fanEls();
+  fanState.open = false; fanState.sticky = false;
+  if (fan) fan.classList.remove("on", "sticky");
+  if (dim) dim.classList.remove("on");
+  if (grid) grid.classList.remove("open");
+  fanHot(null);
+}
+function fanHot(el) {
+  if (fanState.hot === el) return;
+  if (fanState.hot) fanState.hot.classList.remove("hot");
+  fanState.hot = el;
+  if (el) el.classList.add("hot");
+}
+function fanNearest(x, y) {
+  const { fan } = fanEls();
+  if (!fan) return null;
+  let best = null, bd = 52;
+  [...fan.children].forEach((el) => {
+    const b = el.querySelector(".fd").getBoundingClientRect();
+    const dx = x - (b.left + b.width / 2), dy = y - (b.top + b.height / 2);
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < bd) { bd = d; best = el; }
+  });
+  return best;
 }
 /* 自动扣款的目标，到了日子就自己把这个月记上（幂等）。真实实现里这是后端的定时任务。 */
 function settleAutoGoals() {
@@ -4571,12 +4953,7 @@ function render() {
   app.innerHTML = '<div class="inset"></div><div class="nav' +
     (v.navSplit ? " split" : "") + '">' + v.nav + "</div>" +
     '<div class="body' + (v.fab ? " hasfab" : "") + '">' + v.body + "</div>" +
-    (!ui.sheet && (tab || v.fab)
-      ? '<div class="dock">' + (tab ? tabsHtml(tab) : "") +
-        (v.fab ? '<div class="fab" data-a="assistant">' + ic("mic", 22) +
-          (S.skin === "briefly" ? "" : "<span>" + t("as.speak") + "</span>") + "</div>" : "") +
-        "</div>"
-      : "") +
+    (!ui.sheet && (tab || v.fab) ? dockHtml(tab, v.fab) : "") +
     (ui.sheet ? '<div class="dim' + (ui.anim ? " anim" : "") + '" data-a="close"></div>' +
       '<div class="sheet' + (ui.anim ? " anim" : "") + '">' + SHEETS[ui.sheet]() + "</div>" : "") +
     (ui.toast ? '<div class="toast' + (ui.sheet ? " high" : "") + '">' + ic("check", 17) +
@@ -4666,6 +5043,30 @@ app.addEventListener("pointercancel", endSwipe);
    有人就是习惯点一下，而且点开之后也得有办法点回去。
    松手的监听挂在 window 上：micStart 会重绘整个抽屉，按钮那个节点早没了。 */
 let holdTimer = null, holding = false, holdY0 = 0;
+/* 点阵那颗：按住 200ms 扇出来，划过去选，松手落定 */
+app.addEventListener("pointerdown", (e) => {
+  if (!e.target.closest('[data-a="fan"]')) return;
+  e.preventDefault();
+  if (fanState.open) return;
+  fanState.hold = setTimeout(() => { fanState.hold = null; fanOpen(false); }, 200);
+});
+window.addEventListener("pointermove", (e) => {
+  if (!fanState.open || fanState.sticky) return;
+  fanHot(fanNearest(e.clientX, e.clientY));
+});
+window.addEventListener("pointerup", (e) => {
+  if (fanState.hold) {                 /* 没按满 200ms —— 当点击，开常驻模式 */
+    clearTimeout(fanState.hold); fanState.hold = null;
+    if (!fanState.open) fanOpen(true);
+    return;
+  }
+  if (!fanState.open || fanState.sticky) return;
+  const hot = fanState.hot;
+  if (hot) { const k = hot.dataset.a; fanClose(); ACT.tab(k.slice(4)); }
+  else fanClose();
+});
+window.addEventListener("resize", () => { if (fanState.open) fanPlace(); });
+
 app.addEventListener("pointerdown", (e) => {
   /* 胶囊两端是拍照和打字，按在那儿不该触发说话 */
   if (e.target.closest(".aipill .aiicon")) return;
@@ -4802,6 +5203,7 @@ app.addEventListener("input", (e) => {
   const f = e.target.dataset.f;
   if (!f) return;
   const v = e.target.value;
+  if (f === "txq") { ui.txq = v; paintTxList(); return; }
   if (f === "qname") ui.quiz.name = v;
   else if (f === "qprice") ui.quiz.price = num(v);
   else if (f === "qnec") { ui.quiz.necessity = +v; liveLabel(e.target, v + " / 10"); }
