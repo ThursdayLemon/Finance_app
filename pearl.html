@@ -11,7 +11,10 @@
 :root{
   --ink:#414140; --muted:#8e8e8c; --faint:#b9b9b6;
   --paper:#ffffff; --line:#ececea; --green:#38bc37; --red:#f44336;
-  --sans:"Onest","Figtree",-apple-system,"Helvetica Neue",sans-serif;
+  /* 你本机装了 Roobert 的 trial，就排在最前面 —— 电脑上看到的是真字体。
+     手机上取不到（本机装的桌面字体到不了 iOS），退回 Onest。 */
+  --sans:"Roobert TRIAL","Roobert","Onest","Figtree",-apple-system,
+    "Helvetica Neue",sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#e6e6e4;font-family:var(--sans);color:var(--ink);
@@ -381,6 +384,12 @@ tap the <b>middle dot-grid button</b> to see how I'd handle navigation, tap the 
 <div class="hint">Tap the income card · tap the dot-grid · tap Back</div>
 
 <div class="notes">
+  <h2>About the font</h2>
+  <p><b>You're seeing real Roobert on this Mac.</b> The trial you installed sits first in the
+    stack. On the phone it falls back to <b>Onest</b> — a locally installed desktop font can't
+    reach iOS, and a trial licence doesn't cover self-hosting it as a webfont. Real Roobert
+    here, substitute there, until you licence it.</p>
+
   <h2>Your question: what does the middle button do?</h2>
   <p>In the reference it's a dot-grid, and the bar only has two other actions — because
     that app's whole navigation lives <em>behind</em> that button. Yours has four sections
