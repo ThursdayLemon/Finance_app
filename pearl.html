@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f2f1ef">
+<title>Pearl fintech — home &amp; analytics</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ink:#414140; --muted:#8e8e8c; --faint:#b9b9b6;
+  --paper:#ffffff; --line:#ececea; --green:#38bc37; --red:#f44336;
+  --sans:"Onest","Figtree",-apple-system,"Helvetica Neue",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#e6e6e4;font-family:var(--sans);color:var(--ink);
+ -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;
+ align-items:center;gap:18px;padding:34px 20px 60px}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.cap{font-size:15px;color:#6a6a68;max-width:66ch;line-height:1.6;text-align:center}
+.hint{font-size:13px;color:#8a8a88;background:#fff;border-radius:100px;
+ padding:7px 16px;box-shadow:0 4px 14px -10px rgba(0,0,0,.5)}
+
+.ph{width:390px;height:844px;overflow:hidden;position:relative;flex-shrink:0;
+ background:#f2f1ef;display:flex;flex-direction:column;isolation:isolate}
+/* 珠光底 */
+.ph::before{content:"";position:absolute;inset:-22%;z-index:0;pointer-events:none;
+ background:
+  radial-gradient(36% 24% at 20% 10%, rgba(212,228,252,.9), transparent 70%),
+  radial-gradient(32% 22% at 88% 5%,  rgba(255,224,235,.85), transparent 70%),
+  radial-gradient(44% 28% at 72% 30%, rgba(224,246,228,.8), transparent 72%),
+  radial-gradient(38% 24% at 8% 48%,  rgba(255,241,216,.75), transparent 72%),
+  radial-gradient(50% 30% at 46% 82%, rgba(220,226,255,.68), transparent 74%);
+ filter:blur(28px)}
+.ph > *{position:relative;z-index:1}
+.view{display:none;flex:1;flex-direction:column;min-height:0}
+.view.on{display:flex}
+
+/* ---- top bar ---- */
+.bar{display:flex;align-items:center;gap:10px;padding:46px 20px 8px;flex-shrink:0}
+.ava{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;color:#8a8a88;
+ background:linear-gradient(140deg,#dde5f4,#f4dce5);
+ border:1px dashed rgba(65,65,64,.28);padding:2px}
+.brand{flex:1;text-align:center;font-size:17px;font-weight:600;letter-spacing:.22em}
+.icb{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.7);
+ display:flex;align-items:center;justify-content:center;color:var(--ink);
+ border:1px solid rgba(255,255,255,.95);backdrop-filter:blur(8px);flex-shrink:0}
+.scroll{flex:1;overflow-y:auto;padding:0 20px 120px;min-height:0}
+
+/* ---- hero ---- */
+.hero{text-align:center;padding:16px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.75);
+ border:1px solid rgba(255,255,255,.95);border-radius:100px;padding:7px 14px;
+ font-size:12.5px;font-weight:500;backdrop-filter:blur(8px);cursor:pointer}
+.hlbl{margin:18px 0 2px;font-size:15px;color:var(--muted);font-weight:400}
+.big{font-size:42px;font-weight:600;letter-spacing:-.035em;line-height:1.1;
+ display:flex;align-items:baseline;justify-content:center;gap:2px;
+ font-variant-numeric:tabular-nums}
+.big .dec{font-size:26px;font-weight:500;color:var(--faint);letter-spacing:-.02em}
+.big .mask{display:inline-block;font-size:.6em;letter-spacing:.12em;
+ transform:translateY(-.06em)}
+.big .eye{margin-left:10px;color:var(--muted);align-self:center;display:flex;
+ cursor:pointer;padding:4px;margin-right:-4px}
+.neg{color:var(--red)}
+.subline{margin-top:8px;font-size:13.5px;color:var(--muted)}
+.subline b{color:var(--ink);font-weight:500}
+
+/* ---- glass card ---- */
+.card{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.95);
+ border-radius:24px;padding:16px;backdrop-filter:blur(16px);
+ box-shadow:0 8px 26px -18px rgba(65,65,64,.5)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px;
+ align-items:stretch}
+.ctit{font-size:14px;font-weight:500;margin-bottom:12px}
+/* 左卡跟右卡一样高，但内容只有一半 —— 让数字占住中间那段空白 */
+.card.inc{display:flex;flex-direction:column}
+.incmid{flex:1;display:flex;flex-direction:column;justify-content:center;
+ padding:4px 0 10px}
+.cbig{font-size:19px;font-weight:600;letter-spacing:-.025em;text-align:center}
+.cbig .dec{font-size:13px;color:var(--faint);font-weight:500}
+.cwhen{font-size:11.5px;color:var(--muted);text-align:center;margin-top:1px}
+
+/* 条形图是「一束细线」，不是实心块 —— 参考图里的质感全在这儿 */
+.spark{display:flex;align-items:flex-end;gap:6px;height:52px;margin-top:12px}
+.spark i{flex:1;border-radius:1px;
+ background:repeating-linear-gradient(90deg,#cfcfcb 0 1px,transparent 1px 4px)}
+.spark i.on{background:repeating-linear-gradient(90deg,#414140 0 1px,transparent 1px 4px)}
+.sparkl{display:flex;gap:6px;margin-top:6px}
+.sparkl span{flex:1;text-align:center;font-size:9.5px;color:var(--faint)}
+.sparkl span.on{color:var(--ink);font-weight:500}
+
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:14px 8px}
+.qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.qd{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+ justify-content:center;background:#fff;color:var(--ink);
+ box-shadow:0 2px 8px -4px rgba(65,65,64,.35)}
+.qv{font-size:12.5px;font-weight:600;letter-spacing:-.015em}
+.qn{font-size:10px;color:var(--muted)}
+
+/* ---- transactions ---- */
+.thead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.thead h2{flex:1;font-size:17px;font-weight:600;letter-spacing:-.02em}
+.rnd{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;
+ align-items:center;justify-content:center;color:var(--ink);
+ box-shadow:0 2px 8px -5px rgba(65,65,64,.5)}
+.viewall{font-size:12px;font-weight:500;background:#fff;border-radius:100px;
+ padding:7px 14px;box-shadow:0 2px 8px -5px rgba(65,65,64,.5)}
+.dhead{font-size:12.5px;color:var(--muted);margin:2px 0 6px}
+.txcard{position:relative}
+.rnd.on{background:var(--ink);color:#fff}
+.viewall.on{background:var(--ink);color:#fff}
+/* 搜索条：点放大镜才滑出来，不占默认状态的地方 */
+.sbar{overflow:hidden;max-height:0;transition:max-height .2s ease,margin .2s ease}
+.sbar.on{max-height:56px;margin-bottom:6px}
+.sbar input{width:100%;height:40px;border:0;border-radius:100px;background:#f3f3f1;
+ padding:0 16px;font:400 14px var(--sans);color:var(--ink);outline:none;
+ letter-spacing:-.01em}
+.sbar input::placeholder{color:var(--faint)}
+/* 筛选：挂在按钮下面的小菜单 */
+.fmenu{position:absolute;right:78px;top:52px;z-index:5;background:#fff;
+ border-radius:16px;padding:6px;min-width:132px;
+ box-shadow:0 12px 30px -14px rgba(65,65,64,.6);display:none}
+.fmenu.on{display:block}
+.fmenu div{padding:9px 12px;border-radius:11px;font-size:13.5px;font-weight:500;
+ letter-spacing:-.01em;cursor:pointer;display:flex;align-items:center;gap:8px}
+.fmenu div.on{background:var(--ink);color:#fff}
+.empty{text-align:center;color:var(--muted);font-size:13.5px;padding:22px 0 26px}
+.tr{display:flex;align-items:center;gap:12px;padding:11px 0}
+.tr + .dhead{margin-top:10px}
+/* 统一白色圆底，图形压在上面 */
+.tico{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:#fff;
+ display:flex;align-items:center;justify-content:center;
+ box-shadow:0 2px 8px -4px rgba(65,65,64,.4)}
+.tn{flex:1;min-width:0}
+.tn b{display:block;font-size:15px;font-weight:500;letter-spacing:-.015em}
+.tn span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.ta{text-align:right;white-space:nowrap;flex-shrink:0}
+.ta b{display:block;font-size:15px;font-weight:600;letter-spacing:-.025em;
+ white-space:nowrap}
+.ta b .dec{font-size:12px;color:var(--faint);font-weight:500}
+.ta > span{display:block;font-size:11px;margin-top:2px;color:var(--muted)}
+.ta > span.in{color:var(--green)}
+.ta > span.out{color:var(--red)}
+
+/* ---- analytics ---- */
+.anh{text-align:center;padding:10px 0 0}
+.anlbl{font-size:15px;color:var(--muted);margin-bottom:2px}
+.chart{margin:18px 0 6px;position:relative;padding:18px 0}
+.cols{display:flex;gap:6px;align-items:center}
+.col{flex:1;display:flex;flex-direction:column;align-items:stretch;cursor:pointer}
+.up,.dn{height:78px;display:flex}
+.up{align-items:flex-end}
+.dn{align-items:flex-start}
+.up i,.dn i{width:100%;border-radius:1px;
+ background:repeating-linear-gradient(90deg,#d5d5d1 0 1px,transparent 1px 4px)}
+.col.on .up i{background:repeating-linear-gradient(90deg,#414140 0 1px,transparent 1px 4px)}
+.col.on .dn i{background:repeating-linear-gradient(90deg,#f44336 0 1px,transparent 1px 4px)}
+.axis{display:flex;gap:6px;padding:9px 0}
+.axis span{flex:1;text-align:center;font-size:11.5px;color:var(--faint)}
+.axis span.on{color:var(--ink);font-weight:600}
+.callout{position:absolute;font-size:11.5px;font-weight:500;white-space:nowrap}
+.callout.top{top:0;right:0;color:var(--ink)}
+.callout.bot{bottom:0;right:0;color:var(--red)}
+
+/* ---- bottom bar ---- */
+.dock{position:absolute;left:20px;right:20px;bottom:26px;z-index:3;
+ display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.8);
+ border:1px solid rgba(255,255,255,.95);border-radius:100px;padding:8px;
+ backdrop-filter:blur(20px);box-shadow:0 12px 34px -18px rgba(65,65,64,.55)}
+.act{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;
+ border-radius:100px;font-size:14.5px;font-weight:500;letter-spacing:-.015em;
+ background:#f3f3f1;color:var(--ink);cursor:pointer}
+.act.dark{background:var(--ink);color:#fff}
+.actd{display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.grid{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;background:#f3f3f1;color:var(--ink);
+ cursor:pointer}
+.grid.open{background:var(--ink);color:#fff}
+
+/* 中间那颗按住之后扇出来的分区 —— Pinterest 那种：不松手，划过去选，松手落定 */
+.fan{position:absolute;inset:0;z-index:4;pointer-events:none;
+ opacity:0;visibility:hidden;transition:opacity .16s ease,visibility .16s}
+.fan.on{opacity:1;visibility:visible}
+.fanitem{position:absolute;width:58px;margin-left:-29px;margin-top:-29px;
+ display:flex;flex-direction:column;align-items:center;gap:6px;
+ transform:scale(.4);opacity:0;
+ transition:transform .22s cubic-bezier(.2,1.3,.4,1),opacity .16s ease;
+ pointer-events:auto;cursor:pointer}
+.fan.on .fanitem{transform:scale(1);opacity:1}
+.fanitem .fd{width:58px;height:58px;border-radius:50%;background:#fff;
+ display:flex;align-items:center;justify-content:center;color:var(--ink);
+ box-shadow:0 6px 18px -8px rgba(65,65,64,.55);
+ transition:transform .13s ease,background .13s ease,color .13s ease}
+.fanitem .fl{position:relative;z-index:1;
+ font-size:11px;font-weight:500;letter-spacing:-.01em;color:var(--ink);
+ background:rgba(255,255,255,.86);border-radius:100px;padding:3px 9px;
+ white-space:nowrap;backdrop-filter:blur(6px);opacity:0;transition:opacity .12s}
+.fanitem.hot{z-index:3}
+.fanitem.hot .fd{transform:scale(1.16);background:var(--ink);color:#fff}
+.fanitem.hot .fl{opacity:1}
+.fan.sticky .fanitem .fl{opacity:1}
+.dim{position:absolute;inset:0;z-index:2;display:none;
+ background:rgba(246,246,244,.45);backdrop-filter:blur(2px)}
+.dim.on{display:block}
+
+.notes{max-width:620px;background:#fff;border-radius:22px;padding:24px 26px;
+ font-size:14px;line-height:1.65;box-shadow:0 8px 30px -20px rgba(0,0,0,.4)}
+.notes h2{font-size:17px;font-weight:600;margin:0 0 10px;letter-spacing:-.02em}
+.notes h2 + p{margin-top:-4px}
+.notes p{margin-bottom:12px}
+.notes li{margin:0 0 9px 18px}
+.notes code{font-size:12.5px;background:#f3f3f1;padding:1px 5px;border-radius:5px}
+
+/* ---- 真机 ----
+   桌面上是一台画出来的手机 + 下面那张说明卡；真在手机上打开时
+   两样都碍事，所以铺满屏幕、把说明收起来。 */
+@media (max-width:600px), (display-mode:standalone) {
+  body{padding:0;gap:0;background:#f2f1ef;height:100vh;height:100dvh;overflow:hidden}
+  h1,.cap,.hint,.notes{display:none}
+  .ph{width:100%;height:100vh;height:100dvh}
+  .bar{padding-top:calc(18px + env(safe-area-inset-top))}
+  .dock{bottom:max(22px, env(safe-area-inset-bottom))}
+  .scroll{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
+}
+</style></head>
+<body>
+<h1>Pearl fintech — home &amp; analytics</h1>
+<p class="cap">It's clickable. Tap the <b>income card</b> (top-left) to open Analytics,
+tap the <b>middle dot-grid button</b> to see how I'd handle navigation, tap the back arrow to return.</p>
+
+<div class="ph" id="ph">
+
+  <!-- ============ HOME ============ -->
+  <div class="view on" id="vHome">
+    <div class="bar">
+      <div class="ava"><svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="7" r="3.3"/><path d="M4.2 17a5.8 5.8 0 0 1 11.6 0z"/></svg></div>
+      <div class="brand">COACH</div>
+      <div class="icb"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 3.4a4.6 4.6 0 0 0-4.6 4.6c0 3.6-1.4 4.8-1.4 4.8h12s-1.4-1.2-1.4-4.8A4.6 4.6 0 0 0 10 3.4Z"/><path d="M8.6 15.6a1.6 1.6 0 0 0 2.8 0"/></svg></div>
+    </div>
+
+    <div class="scroll">
+      <div class="hero">
+        <div class="chip">SEPTEMBER · 2026
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5.5 8 10 12.5 14.5 8"/></svg></div>
+        <div class="hlbl">Available balance</div>
+        <div class="big" id="bal">
+          <span id="balNum">£96,200<span class="dec">.00</span></span>
+          <span class="eye" id="eye"></span>
+        </div>
+      </div>
+
+      <div class="duo">
+        <!-- 左上：只显示本月 income + 近几个月的走势 -->
+        <div class="card inc" id="incCard" style="cursor:pointer">
+          <div class="ctit">Total income</div>
+          <div class="incmid">
+            <div class="cbig">£8,000<span class="dec">.00</span></div>
+            <div class="cwhen">This month</div>
+          </div>
+          <div class="spark">
+            <i style="height:40%"></i><i style="height:62%"></i><i style="height:34%"></i>
+            <i style="height:55%"></i><i style="height:48%"></i><i class="on" style="height:88%"></i>
+          </div>
+          <div class="sparkl"><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span class="on">Sep</span></div>
+        </div>
+
+        <div class="card">
+          <div class="ctit">Committed</div>
+          <div class="quick">
+            <div class="qi"><div class="qd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16.2V4.6M6.2 8.4 10 4.6l3.8 3.8"/></svg></div><div class="qv">£8,000</div><div class="qn">Income</div></div>
+            <div class="qi"><div class="qd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.8v9.4M6.2 9.4 10 13.2l3.8-3.8M4.4 16.4h11.2"/></svg></div><div class="qv">£11,250</div><div class="qn">Savings</div></div>
+            <div class="qi"><div class="qd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 3.4h9.2v13.2l-2.2-1.3-1.7 1.3-1.7-1.3-1.7 1.3-1.9-1.3z"/><path d="M7.8 7.2h4.4M7.8 10.4h4.4"/></svg></div><div class="qv">£2,450</div><div class="qn">Bills</div></div>
+            <div class="qi"><div class="qd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2.8" y="5" width="14.4" height="10" rx="2.2"/><path d="M2.8 8.4h14.4"/></svg></div><div class="qv">£3,250</div><div class="qn">Debt</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card txcard" style="margin-top:12px;padding:16px 16px 6px">
+        <div class="thead">
+          <h2>Transactions</h2>
+          <div class="rnd" id="btnSearch"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="5.3"/><path d="m13.2 13.2 3.2 3.2"/></svg></div>
+          <div class="rnd" id="btnFilter"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.4 6h13.2M5.6 10h8.8M8 14h4"/></svg></div>
+          <div class="viewall" id="btnAll">View all</div>
+        </div>
+        <div class="fmenu" id="fmenu">
+          <div data-f="all" class="on">All</div>
+          <div data-f="in">Money in</div>
+          <div data-f="out">Money out</div>
+        </div>
+        <div class="sbar" id="sbar"><input id="sinput" placeholder="Search transactions" /></div>
+        <div id="txlist"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANALYTICS ============ -->
+  <div class="view" id="vAn">
+    <div class="bar">
+      <div class="ava"><svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="7" r="3.3"/><path d="M4.2 17a5.8 5.8 0 0 1 11.6 0z"/></svg></div>
+      <div class="brand" style="letter-spacing:-.02em;font-size:18px">Analytics</div>
+      <div class="icb"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 3.4a4.6 4.6 0 0 0-4.6 4.6c0 3.6-1.4 4.8-1.4 4.8h12s-1.4-1.2-1.4-4.8A4.6 4.6 0 0 0 10 3.4Z"/><path d="M8.6 15.6a1.6 1.6 0 0 0 2.8 0"/></svg></div>
+    </div>
+    <div class="scroll">
+      <div class="anh">
+        <div class="chip" style="margin-bottom:22px">This month
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5.5 8 10 12.5 14.5 8"/></svg></div>
+        <div class="anlbl">My income</div>
+        <div class="big">£8,000<span class="dec">.00</span></div>
+      </div>
+
+      <div class="chart">
+        <div class="callout top">£8,000.00</div>
+        <div class="cols" id="cols">
+          <div class="col"><div class="up"><i style="height:44%"></i></div></div>
+          <div class="col"><div class="up"><i style="height:62%"></i></div></div>
+          <div class="col"><div class="up"><i style="height:38%"></i></div></div>
+          <div class="col"><div class="up"><i style="height:56%"></i></div></div>
+          <div class="col"><div class="up"><i style="height:50%"></i></div></div>
+          <div class="col on"><div class="up"><i style="height:96%"></i></div></div>
+          <div class="col"><div class="up"><i style="height:30%"></i></div></div>
+        </div>
+        <div class="axis">
+          <span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+          <span>Aug</span><span class="on">Sep</span><span>Oct</span>
+        </div>
+        <div class="cols">
+          <div class="col"><div class="dn"><i style="height:36%"></i></div></div>
+          <div class="col"><div class="dn"><i style="height:52%"></i></div></div>
+          <div class="col"><div class="dn"><i style="height:44%"></i></div></div>
+          <div class="col"><div class="dn"><i style="height:30%"></i></div></div>
+          <div class="col"><div class="dn"><i style="height:58%"></i></div></div>
+          <div class="col on"><div class="dn"><i style="height:70%"></i></div></div>
+          <div class="col"><div class="dn"><i style="height:22%"></i></div></div>
+        </div>
+        <div class="callout bot">−£5,769.00</div>
+      </div>
+
+      <div class="anh" style="padding-top:22px">
+        <div class="anlbl">My expenses</div>
+        <div class="big neg">£5,769<span class="dec">.00</span></div>
+      </div>
+
+      <div class="card" style="margin-top:26px;padding:16px 16px 6px">
+        <div class="thead">
+          <h2>Transactions</h2>
+          <div class="rnd"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="5.3"/><path d="m13.2 13.2 3.2 3.2"/></svg></div>
+          <div class="viewall">View all</div>
+        </div>
+        <div class="dhead">Today</div>
+        <div class="tr">
+          <div class="tico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#414140" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.6h10l-.8 9.2H5.8z"/><path d="M7.4 6.6a2.6 2.6 0 0 1 5.2 0"/><path d="M10 9.4v3.6"/></svg></div>
+          <div class="tn"><b>Vinted payout</b><span>Sold a jacket · 20:05</span></div>
+          <div class="ta"><b>+£200<span class="dec">.00</span></b><span class="in">Income</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ nav ============ -->
+  <div class="dim" id="dim"></div>
+  <div class="fan" id="fan">
+    <div class="fanitem" data-n="Money"><div class="fd"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7.2"/><path d="M12.8 7.2 8.9 8.9 7.2 12.8 11.1 11.1z" fill="currentColor" stroke="none"/></svg></div><div class="fl">Money</div></div>
+    <div class="fanitem" data-n="Bills"><div class="fd"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 3.4h9.2v13.2l-2.2-1.3-1.7 1.3-1.7-1.3-1.7 1.3-1.9-1.3z"/><path d="M7.8 7.2h4.4M7.8 10.4h4.4"/></svg></div><div class="fl">Bills</div></div>
+    <div class="fanitem" data-n="Should I buy"><div class="fd"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17V8.6"/><path d="M10 11.4S7.4 11.4 6 9.7C4.6 8 5.1 5.4 5.1 5.4s2.6 0 4 1.7c1.4 1.7.9 4.3.9 4.3z"/></svg></div><div class="fl">Should I buy</div></div>
+    <div class="fanitem" data-n="Vault"><div class="fd"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.2" y="4.4" width="13.6" height="11.2" rx="2"/><circle cx="10" cy="10" r="2.8"/></svg></div><div class="fl">Vault</div></div>
+  </div>
+
+  <div class="dock">
+    <div class="act dark" id="speak">
+      <div class="actd"><svg width="17" height="17" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="3.6" r="1.9"/><circle cx="10" cy="16.4" r="1.9"/><circle cx="3.6" cy="6.8" r="1.9"/><circle cx="16.4" cy="6.8" r="1.9"/><circle cx="3.6" cy="13.2" r="1.9"/><circle cx="16.4" cy="13.2" r="1.9"/></svg></div>Speak</div>
+    <div class="grid" id="gridBtn"><svg width="17" height="17" viewBox="0 0 20 20" fill="currentColor"><circle cx="7" cy="7" r="2.1"/><circle cx="13" cy="7" r="2.1"/><circle cx="7" cy="13" r="2.1"/><circle cx="13" cy="13" r="2.1"/></svg></div>
+    <div class="act" id="backBtn">
+      <div class="actd"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10H4.6M9 4.6 4 10l5 5.4"/></svg></div>Back</div>
+    <div class="act" id="addBtn">
+      <div class="actd"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 4.6v10.8M4.6 10h10.8"/></svg></div>Add</div>
+  </div>
+</div>
+
+<div class="hint">Tap the income card · tap the dot-grid · tap Back</div>
+
+<div class="notes">
+  <h2>Your question: what does the middle button do?</h2>
+  <p>In the reference it's a dot-grid, and the bar only has two other actions — because
+    that app's whole navigation lives <em>behind</em> that button. Yours has four sections
+    plus the AI. So there are two honest options:</p>
+  <ul>
+    <li><b>The one I built.</b> The grid opens a small panel with your four sections
+      (Money / Bills / Should I buy / Vault). The bar stays three items wide, which is what
+      makes the reference look calm — a four-tab bar plus an AI button can't. Cost: switching
+      sections is two taps instead of one.</li>
+    <li><b>Keep your current four-tab dock and drop the reference bar.</b> One tap to switch,
+      but the bottom of the screen gets busy again and you lose the "Speak / Add" labels that
+      make the reference read as a <em>doing</em> surface rather than a <em>navigating</em> one.</li>
+  </ul>
+  <p>I'd pick the first, because of how you actually use this app: you open it to
+    <b>say a thing</b> or <b>check this month</b>. Jumping to Vault is a weekly action, not a
+    per-session one. Two taps is the right price for it.</p>
+
+  <h2>The other changes you asked for</h2>
+  <ul>
+    <li><b>Top-left is now just this month's income</b> plus the last six months as a sparkline,
+      with September picked out — same as the reference's "Total Income" card.</li>
+    <li><b>Transaction icons are white circles now</b>, with a line glyph inside instead of a
+      coloured tile. It reads much closer to the reference, and it solves a real problem: you
+      don't have merchant logos, and a coloured initial was pretending you did.</li>
+    <li><b>The bars are struck as thin vertical lines, not solid blocks</b> — that's the detail
+      I'd missed, and it's most of the texture in those screens. Same treatment on the
+      sparkline and the analytics chart.</li>
+    <li><b>Analytics</b>: income above the axis, expenses below in red, month labels on the
+      axis itself, callouts on the selected month. Tapping the income card gets you there;
+      the bar swaps its right-hand action to <b>Back</b>.</li>
+  </ul>
+
+  <h2>The hero is now Available balance</h2>
+  <p>Settled: the hero is your vault total, in ink, with no breakdown under it — and it can be
+    hidden. That is a real change of product, not just of colour. The old home screen opened
+    with <em>how badly this month is going</em>; this one opens with <em>how much you have</em>.
+    The shortfall still exists — it lives in Analytics now, one tap away on the income card,
+    where income and expenses are shown against each other and red actually means something.</p>
+  <p>Two small things that came out of it. The asterisks keep the digit count
+    (<code>£**,***.**</code>), so a hidden balance reads as <em>hidden</em> rather than as
+    <em>empty</em> — and <code>tabular-nums</code> stops the number jumping width when you
+    toggle. And the eye now swaps to a struck-through eye when hidden, so the control says
+    which state you're in rather than which state you're going to.</p>
+</div>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+
+/* 余额可以藏起来 —— 星号保留原来的位数，一眼看得出是「藏了」而不是「没有」 */
+var SHOWN = '£96,200<span class="dec">.00</span>';
+var HIDDEN = '£<span class="mask">******</span>';
+var EYE_ON = '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1.8 10S4.8 4.8 10 4.8 18.2 10 18.2 10 15.2 15.2 10 15.2 1.8 10 1.8 10Z"/><circle cx="10" cy="10" r="2.3"/></svg>';
+var EYE_OFF = '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4.2 5.6C2.8 6.9 1.8 8.6 1.8 10c0 0 3 5.2 8.2 5.2 1.5 0 2.8-.4 3.9-1M8 4.9c.6-.1 1.3-.2 2-.2 5.2 0 8.2 5.3 8.2 5.3s-.8 1.4-2.2 2.7"/><path d="M8.3 8.3a2.3 2.3 0 0 0 3.2 3.2"/><path d="m3.4 3.4 13.2 13.2"/></svg>';
+var hidden = false;
+function paintBal() {
+  $("balNum").innerHTML = hidden ? HIDDEN : SHOWN;
+  $("eye").innerHTML = hidden ? EYE_OFF : EYE_ON;
+}
+$("eye").onclick = function () { hidden = !hidden; paintBal(); };
+paintBal();
+function show(which) {
+  $("vHome").classList.toggle("on", which === "home");
+  $("vAn").classList.toggle("on", which === "an");
+  $("backBtn").style.display = which === "an" ? "flex" : "none";
+  $("addBtn").style.display = which === "an" ? "none" : "flex";
+  closeFan();
+  var s = document.querySelector(".view.on .scroll");
+  if (s) s.scrollTop = 0;
+}
+/* ---- 交易列表：搜索 / 筛选 / 全部，三个都真的在干活 ---------------------- */
+var GL = {
+  food:'<path d="M6 7.2h8l-.8 8.2a1.6 1.6 0 0 1-1.6 1.4H8.4a1.6 1.6 0 0 1-1.6-1.4z"/><path d="M8 7.2V5.4a2 2 0 1 1 4 0v1.8"/>',
+  car:'<path d="M3.4 12.6h13.2l-1.1-4a2 2 0 0 0-1.9-1.4H6.4a2 2 0 0 0-1.9 1.4z"/><circle cx="6.4" cy="14.6" r="1.5"/><circle cx="13.6" cy="14.6" r="1.5"/>',
+  bag:'<path d="M5 6.6h10l-.8 9.2H5.8z"/><path d="M7.4 6.6a2.6 2.6 0 0 1 5.2 0"/>',
+  home:'<path d="M3.6 9.2 10 4l6.4 5.2v6.8a1 1 0 0 1-1 1H4.6a1 1 0 0 1-1-1z"/><path d="M8 16.8v-5h4v5"/>',
+  bill:'<path d="M5.4 3.4h9.2v13.2l-2.2-1.3-1.7 1.3-1.7-1.3-1.7 1.3-1.9-1.3z"/><path d="M7.8 7.2h4.4M7.8 10.4h4.4"/>',
+  film:'<rect x="3.2" y="5" width="13.6" height="10" rx="2"/><path d="M7.2 5v10M12.8 5v10"/>'
+};
+var TX = [
+  { d:"Today",     n:"Lunch",         c:"Food & drink", t:"12:40", a:-1000,  g:"food" },
+  { d:"Today",     n:"Taxi",          c:"Transport",    t:"18:40", a:-900,   g:"car"  },
+  { d:"Today",     n:"Vinted payout", c:"Sold a jacket",t:"20:05", a:20000,  g:"bag"  },
+  { d:"Yesterday", n:"Taxi home",     c:"Transport",    t:"23:30", a:-3500,  g:"car"  },
+  { d:"Yesterday", n:"Ramen",         c:"Food & drink", t:"19:10", a:-1500,  g:"food" },
+  { d:"5 Sep",     n:"Rent",          c:"Fixed cost",   t:"09:00", a:-200000,g:"home" },
+  { d:"5 Sep",     n:"Salary",        c:"Fixed income", t:"08:00", a:800000, g:"bill" },
+  { d:"4 Sep",     n:"Cinema",        c:"Fun",          t:"20:30", a:-6800,  g:"film" },
+  { d:"4 Sep",     n:"Groceries",     c:"Food & drink", t:"17:20", a:-8500,  g:"bag"  },
+  { d:"3 Sep",     n:"Travel pass",   c:"Fixed cost",   t:"07:30", a:-30000, g:"car"  }
+];
+var SHORT = 4;                      /* 收起时只露前四条 */
+var q = "", filt = "all", all = false;
+
+function money(a) {
+  var v = Math.abs(a) / 100;
+  var whole = Math.floor(v).toLocaleString("en-GB");
+  var dec = (v % 1).toFixed(2).slice(1);
+  return (a > 0 ? "+" : "−") + "£" + whole + '<span class="dec">' + dec + "</span>";
+}
+function matches(x) {
+  if (filt === "in" && x.a <= 0) return false;
+  if (filt === "out" && x.a >= 0) return false;
+  if (!q) return true;
+  var hay = (x.n + " " + x.c + " " + x.d).toLowerCase();
+  return hay.indexOf(q.toLowerCase()) >= 0;
+}
+function renderTx() {
+  var hits = TX.filter(matches);
+  var shown = all ? hits : hits.slice(0, SHORT);
+  var html = "", day = null;
+  shown.forEach(function (x) {
+    if (x.d !== day) { day = x.d; html += '<div class="dhead">' + day + "</div>"; }
+    html += '<div class="tr">' +
+      '<div class="tico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" ' +
+      'stroke="#414140" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+      GL[x.g] + "</svg></div>" +
+      '<div class="tn"><b>' + x.n + "</b><span>" + x.c + " · " + x.t + "</span></div>" +
+      '<div class="ta"><b>' + money(x.a) + "</b>" +
+      '<span class="' + (x.a > 0 ? "in" : "out") + '">' +
+      (x.a > 0 ? "Income" : "Spend") + "</span></div></div>";
+  });
+  if (!shown.length) {
+    html = '<div class="empty">Nothing matches “' + (q || filt) + '”.</div>';
+  }
+  $("txlist").innerHTML = html;
+  /* 全部露完了就没必要再让人点「View all」 */
+  var more = hits.length > SHORT;
+  $("btnAll").textContent = all ? "Show less" : "View all";
+  $("btnAll").classList.toggle("on", all);
+  $("btnAll").style.opacity = more ? "1" : ".38";
+  $("btnAll").style.pointerEvents = more ? "auto" : "none";
+}
+$("btnSearch").onclick = function () {
+  var on = $("sbar").classList.toggle("on");
+  $("btnSearch").classList.toggle("on", on);
+  $("fmenu").classList.remove("on"); $("btnFilter").classList.remove("on");
+  if (on) $("sinput").focus();
+  else { q = ""; $("sinput").value = ""; renderTx(); }
+};
+$("sinput").oninput = function () { q = this.value.trim(); renderTx(); };
+$("btnFilter").onclick = function (e) {
+  e.stopPropagation();
+  var on = $("fmenu").classList.toggle("on");
+  $("btnFilter").classList.toggle("on", on);
+};
+[].forEach.call($("fmenu").children, function (el) {
+  el.onclick = function () {
+    filt = el.dataset.f;
+    [].forEach.call($("fmenu").children, function (x) {
+      x.classList.toggle("on", x === el);
+    });
+    $("fmenu").classList.remove("on"); $("btnFilter").classList.remove("on");
+    renderTx();
+  };
+});
+$("btnAll").onclick = function () { all = !all; renderTx(); };
+document.addEventListener("click", function (e) {
+  if (!e.target.closest("#fmenu") && !e.target.closest("#btnFilter")) {
+    $("fmenu").classList.remove("on"); $("btnFilter").classList.remove("on");
+  }
+});
+renderTx();
+
+$("incCard").onclick = function () { show("an"); };
+$("backBtn").onclick = function () { show("home"); };
+
+/* ---- 中间那颗：Pinterest 那一套 ----------------------------------------
+   按住 200ms 扇出来，手指不用松，划到哪个上面哪个变大，松手落定。
+   短按也能开（sticky 模式）—— 不是所有人都会去长按，而且短按之后
+   标签是常显的，第一次用的人才知道这四个是什么。 */
+var fan = $("fan"), grid = $("gridBtn"), dim = $("dim");
+var items = [].slice.call(fan.querySelectorAll(".fanitem"));
+var fanOpen = false, sticky = false, holdT = null, hot = null;
+
+function place() {
+  var pb = $("ph").getBoundingClientRect(), gb = grid.getBoundingClientRect();
+  var cx = gb.left - pb.left + gb.width / 2, cy = gb.top - pb.top + gb.height / 2;
+  /* 从左上扇到右上，−90° 是正上方 */
+  var ANG = [-142, -108, -72, -38], R = 112;
+  items.forEach(function (el, i) {
+    var a = ANG[i] * Math.PI / 180;
+    el.style.left = (cx + Math.cos(a) * R) + "px";
+    el.style.top = (cy + Math.sin(a) * R) + "px";
+    el.style.transitionDelay = (fanOpen ? i * 26 : 0) + "ms";
+  });
+}
+function openFan(isSticky) {
+  fanOpen = true; sticky = !!isSticky;
+  place();
+  fan.classList.add("on");
+  fan.classList.toggle("sticky", sticky);
+  dim.classList.add("on");
+  grid.classList.add("open");
+  place();
+}
+function closeFan() {
+  fanOpen = false; sticky = false;
+  fan.classList.remove("on", "sticky");
+  dim.classList.remove("on");
+  grid.classList.remove("open");
+  setHot(null);
+}
+function setHot(el) {
+  if (hot === el) return;
+  if (hot) hot.classList.remove("hot");
+  hot = el;
+  if (hot) hot.classList.add("hot");
+}
+function nearest(x, y) {
+  var pb = $("ph").getBoundingClientRect(), best = null, bd = 52;
+  items.forEach(function (el) {
+    var b = el.querySelector(".fd").getBoundingClientRect();
+    var dx = x - (b.left + b.width / 2), dy = y - (b.top + b.height / 2);
+    var d = Math.sqrt(dx * dx + dy * dy);
+    if (d < bd) { bd = d; best = el; }
+  });
+  return best;
+}
+function pick(el) {
+  items.forEach(function (x) { x.classList.remove("cur"); });
+  el.classList.add("cur");
+  closeFan();
+}
+
+grid.addEventListener("pointerdown", function (e) {
+  e.preventDefault();
+  if (fanOpen) return closeFan();
+  holdT = setTimeout(function () {
+    holdT = null;
+    openFan(false);            /* 按住模式：标签只在划到的那个上显示 */
+  }, 200);
+});
+window.addEventListener("pointermove", function (e) {
+  if (!fanOpen || sticky) return;
+  setHot(nearest(e.clientX, e.clientY));
+});
+window.addEventListener("pointerup", function (e) {
+  if (holdT) {                 /* 没按满 200ms —— 当点击，开常驻模式 */
+    clearTimeout(holdT); holdT = null;
+    if (!fanOpen) openFan(true);
+    return;
+  }
+  if (!fanOpen || sticky) return;
+  if (hot) pick(hot); else closeFan();
+});
+items.forEach(function (el) {
+  el.addEventListener("click", function () { if (sticky) pick(el); });
+});
+dim.onclick = closeFan;
+window.addEventListener("resize", function () { if (fanOpen) place(); });
+
+show("home");
+</script>
+</body></html>
