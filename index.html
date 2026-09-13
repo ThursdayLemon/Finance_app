@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#fcfaf5">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Literata:opsz,wght@7..72,400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -25,46 +25,96 @@
    少用新颜色，多用透明度：按下态、条槽、色阶都是已有色加 alpha。
    ========================================================================== */
 :root{
-  /* Say Briefly：森林墨绿是唯一的色彩权威，荧光黄只做涂层和徽章、永远不做按钮 */
-  --ink:#1a3300;            /* Forest Ink —— 正文、图标、主按钮，全场的结构色 */
-  --ink-muted:color-mix(in srgb, var(--ink) 62%, var(--page));  /* 说明小字 */
-  --ink-faint:color-mix(in srgb, var(--ink) 34%, var(--page));  /* 占位、禁用 */
-  --page:#fcfaf5;           /* Cream Paper —— 页面底 */
-  --surface:#fcfaf5;        /* 卡片跟页面底同色：分层靠描边和色块，不靠填充深浅 */
-  --sunken:#f1eee5;         /* 内嵌块、只读框 —— 比页面底深一档，不用描边也分得开 */
-  --field:#fcfaf5;          /* 输入框 */
-  --edge:#b6b6b6;           /* Pencil Gray —— 卡片和芯片的发丝描边 */
-  --line:rgba(182,182,182,.5);  /* 卡片内部的分隔线，比描边再淡一档 */
-  --accent:#1a3300;         /* 主操作就是墨绿本身，不另设第二个品牌色 */
+  /* ======================================================================
+     皮肤层。默认 Pearl；Say Briefly 整套留在 [data-skin="briefly"] 里，
+     没删 —— 「我」里能一键切回去，将来也能做成正式的主题选项。
+     组件只认 token，不认皮肤名字，所以换皮不用动任何页面。
+     ====================================================================== */
+
+  /* ---- Pearl：珠光近白 + 一个墨灰 + 绿进红出（按 Figma 2096-1015） ---- */
+  --ink:#414140;            /* 正文、图标、主按钮 */
+  --ink-muted:#8e8e8c;      /* 说明小字 */
+  --ink-faint:#b9b9b6;      /* 占位、禁用 */
+  --page:#f2f1ef;           /* 页面底（上面还铺一层珠光） */
+  --surface:rgba(255,255,255,.72);   /* 玻璃卡 */
+  --sunken:rgba(255,255,255,.5);     /* 内嵌块、只读框 */
+  --field:#ffffff;          /* 输入框 */
+  --edge:rgba(255,255,255,.95);      /* 卡片那圈高光边 */
+  --line:#ececea;           /* 卡片内部的分隔线 */
+  --accent:#414140;
+  --on-accent:#ffffff;
+  --nav:rgba(255,255,255,.8);
+  --on-nav:#414140;
+  --mark:#ffffff;           /* Pearl 里没有荧光笔，退化成白 */
+  --accent2:#f3f3f1;        /* 次级按钮底 */
+  --on-tint:#414140;
+  /* 这一套终于有红有绿了 —— 不用再靠涂层和字号喊话 */
+  --good:#38bc37;
+  --warn:#d37641;
+  --bad:#d37641;            /* 你把 #F44336 改软成了这个 */
+  --good-tint:color-mix(in srgb, var(--good) 12%, #ffffff);
+  --warn-tint:color-mix(in srgb, var(--warn) 12%, #ffffff);
+  --bad-tint:color-mix(in srgb, var(--bad) 10%, #ffffff);
+  --press:color-mix(in srgb, var(--ink) 6%, transparent);
+  --track:color-mix(in srgb, var(--ink) 10%, transparent);
+  --ai-gradient:#414140;
+  --r-sm:12px; --r:24px; --r-md:20px; --r-lg:24px; --r-pill:9999px;
+  --shadow-fab:0 12px 34px -18px rgba(65,65,64,.45);
+  --shadow-pill:none;
+  --shadow-nav:0 12px 34px -18px rgba(65,65,64,.45);
+  --shadow-card:0 8px 26px -18px rgba(65,65,64,.28);
+  --shadow-sheet:0 -8px 30px -18px rgba(65,65,64,.4);
+  /* Roobert 是商业字体，线上退回 Onest；你本机装了 trial，电脑上会用真的 */
+  --font:"Roobert TRIAL","Roobert","Onest","PingFang SC","Hiragino Sans GB",
+    -apple-system,"Helvetica Neue",Helvetica,sans-serif;
+  /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
+  --font-display:"Literata","Songti SC",Georgia,serif;
+  --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --w-body:400; --w-mid:500; --w-bold:600;
+  --glass:16px;             /* backdrop-filter 的模糊半径，关掉就填 0px */
+  --surface-solid:#fbfbfa;  /* 左滑那一层必须实心，否则底下的红会透上来 */
+}
+
+/* ---- Say Briefly：原样留着，切回去就是原来那一版 ---- */
+:root[data-skin="briefly"]{
+  --ink:#1a3300;
+  --ink-muted:color-mix(in srgb, var(--ink) 62%, var(--page));
+  --ink-faint:color-mix(in srgb, var(--ink) 34%, var(--page));
+  --page:#fcfaf5;
+  --surface:#fcfaf5;
+  --sunken:#f1eee5;
+  --field:#fcfaf5;
+  --edge:#b6b6b6;
+  --line:rgba(182,182,182,.5);
+  --accent:#1a3300;
   --on-accent:#fcfaf5;
-  --nav:color-mix(in srgb, var(--accent2) 30%, var(--page));  /* 导航胶囊的底 */
+  --nav:color-mix(in srgb, var(--accent2) 30%, var(--page));
   --on-nav:#1a3300;
-  --mark:#ffe95c;           /* Highlighter Yellow —— 荧光笔涂层、徽章底 */
-  --accent2:#a8e5e5;        /* Sticky Note Teal —— 选中的 tab、即将发生 */
-  --on-tint:#1a3300;        /* 压在便利贴（黄/薄荷）上的字：两种主题下都是墨绿 */
-  /* 判定三态：两个「没问题」的状态安安静静用墨绿，只有「停」才给颜色 */
+  --mark:#ffe95c;
+  --accent2:#a8e5e5;
+  --on-tint:#1a3300;
   --good:#1a3300;
   --warn:#1a3300;
-  --bad:#cb5521;            /* Terracotta —— 这套系统唯一的暖色 */
-  --good-tint:#d5f5c2;      /* Sticky Note Mint */
-  --warn-tint:#ffe95c;      /* 荧光黄 */
+  --bad:#cb5521;
+  --good-tint:#d5f5c2;
+  --warn-tint:#ffe95c;
   --bad-tint:color-mix(in srgb, var(--bad) 12%, var(--page));
-  /* 由核心色派生出来的状态层，不占 token 名额 */
   --press:color-mix(in srgb, var(--ink) 8%, transparent);
   --track:color-mix(in srgb, var(--ink) 14%, transparent);
-  --ai-gradient:#1a3300;    /* 这套系统不许按钮上渐变 */
-  /* 按钮 6、卡片 12、导航和抽屉 16、标签胶囊 —— 稿子里的四档 */
+  --ai-gradient:#1a3300;
   --r-sm:6px; --r:12px; --r-md:12px; --r-lg:16px; --r-pill:9999px;
   --shadow-fab:0 1px 2px 0 rgba(0,0,0,.05);
   --shadow-pill:none;
-  /* 稿子 2084-1013 把黄光晕去掉了，只留一层几乎看不见的投影 */
   --shadow-nav:0 1px 2px 0 rgba(0,0,0,.05);
+  --shadow-card:none;
   --shadow-sheet:0 1px 3px 0 rgba(0,0,0,.12);
   --font:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   --font-display:"Bricolage Grotesque","Archivo Black","PingFang SC",var(--font);
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
+  --glass:0px;
+  --surface-solid:#fcfaf5;
 }
 
 /* ---- 深色 ---------------------------------------------------------------
@@ -72,6 +122,29 @@
    三种状态：跟随系统（不带 data-theme）、明确选浅色、明确选深色。 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { color-scheme: dark;
+  --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
+    --page:#1a1a19; --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
+    --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
+    --accent:#ececeb; --on-accent:#1a1a19;
+    --nav:rgba(40,40,39,.86); --on-nav:#ececeb;
+    --mark:rgba(255,255,255,.1); --accent2:rgba(255,255,255,.1); --on-tint:#ececeb;
+    --good:#4fd04e; --warn:#e08a58; --bad:#e08a58;
+    --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
+    --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
+    --bad-tint:color-mix(in srgb, var(--bad) 14%, transparent);
+    --ai-gradient:#ececeb;
+    --press:color-mix(in srgb, #ffffff 8%, transparent);
+    --track:color-mix(in srgb, #ffffff 14%, transparent);
+    --shadow-fab:0 12px 34px -18px rgba(0,0,0,.7);
+    --shadow-nav:0 12px 34px -18px rgba(0,0,0,.7);
+    --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
+    --shadow-pill:none;
+    --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
+    --surface-solid:#232322;
+  --surface-solid:#232322;
+  }
+  /* briefly 的深色单独留着 */
+  :root[data-skin="briefly"]:not([data-theme="light"]) {
   --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
     --page:#14180f; --surface:#14180f; --sunken:#1b2016;
     --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
@@ -89,9 +162,32 @@
     --shadow-nav:0 8px 26px 0 rgba(245,221,74,.14),0 1px 2px 0 rgba(0,0,0,.4);
     --shadow-pill:none;
     --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
+    --surface-solid:#14180f;
+  --surface-solid:#14180f;
   }
 }
 :root[data-theme="dark"] { color-scheme: dark;
+  --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
+  --page:#1a1a19; --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
+  --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
+  --accent:#ececeb; --on-accent:#1a1a19;
+  --nav:rgba(40,40,39,.86); --on-nav:#ececeb;
+  --mark:rgba(255,255,255,.1); --accent2:rgba(255,255,255,.1); --on-tint:#ececeb;
+  --good:#4fd04e; --warn:#e08a58; --bad:#e08a58;
+  --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
+  --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
+  --bad-tint:color-mix(in srgb, var(--bad) 14%, transparent);
+  --ai-gradient:#ececeb;
+  --press:color-mix(in srgb, #ffffff 8%, transparent);
+  --track:color-mix(in srgb, #ffffff 14%, transparent);
+  --shadow-fab:0 12px 34px -18px rgba(0,0,0,.7);
+  --shadow-nav:0 12px 34px -18px rgba(0,0,0,.7);
+  --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
+  --shadow-pill:none;
+  --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
+  --surface-solid:#232322;
+}
+:root[data-theme="dark"][data-skin="briefly"] {
   --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
   --page:#14180f; --surface:#14180f; --sunken:#1b2016;
   --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
@@ -109,6 +205,7 @@
   --shadow-nav:0 8px 26px 0 rgba(245,221,74,.14),0 1px 2px 0 rgba(0,0,0,.4);
   --shadow-pill:none;
   --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
+  --surface-solid:#14180f;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
@@ -133,6 +230,18 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .side .ex{font-size:12px;color:var(--ink);line-height:1.9;margin:0;padding-left:16px}
 .side .clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted);margin:8px 0 0}
 
+/* Pearl 的珠光底：五团高斯模糊的中性色，压在所有内容下面。
+   换成 briefly 皮肤时整块隐藏。 */
+.phone::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+ background:
+  radial-gradient(38% 26% at 18% 12%, #dcddda, transparent 70%),
+  radial-gradient(34% 24% at 86% 6%,  #d8d9d7, transparent 70%),
+  radial-gradient(46% 30% at 70% 34%, #e6e4dd, transparent 72%),
+  radial-gradient(40% 26% at 10% 52%, rgba(215,215,215,.31), transparent 72%),
+  radial-gradient(52% 30% at 50% 86%, rgba(172,170,165,.29), transparent 74%);
+ filter:blur(28px)}
+:root[data-skin="briefly"] .phone::before{display:none}
+.phone > *{position:relative;z-index:1}
 .phone{width:390px;height:844px;border:1px solid var(--edge);border-radius:34px;
  background:var(--page);
  overflow:hidden;display:flex;flex-direction:column;position:relative;flex-shrink:0;
@@ -145,7 +254,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .nav.split{display:grid;grid-template-columns:1fr auto 1fr}
 .nav.split > :first-child{justify-self:start}
 .nav.split > :last-child{justify-self:end}
-.navt{font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.navt{font-family:var(--font-display);font-size:20px;font-weight:var(--w-mid);
+ color:var(--ink);letter-spacing:-.01em}
+:root[data-skin="briefly"] .navt{font-family:var(--font);font-weight:700}
 .body{flex:1;padding:14px 16px 104px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
@@ -157,10 +268,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 底部不再是通栏，是一簇悬浮的东西：导航胶囊 + AI 按钮并排，内容从底下滑过去 */
 .dock{position:absolute;right:31px;bottom:30px;display:flex;align-items:center;gap:14px;
  z-index:4}
-/* 整条是胶囊，选中那格是正圆 —— 全站只有这两处破 6px 的规矩，
-   因为圆的形状本身在说「这是个可以按的东西」 */
 .tabs{height:58px;border-radius:var(--r-pill);background:var(--nav);border:1px solid var(--edge);
- display:flex;align-items:center;gap:18px;padding:6px 8px;box-shadow:var(--shadow-nav)}
+ display:flex;align-items:center;gap:18px;padding:6px 8px;box-shadow:var(--shadow-nav);
+ backdrop-filter:blur(calc(var(--glass) + 4px))}
 /* 没选中的不再压暗 —— 选中态靠那颗薄荷蓝圆点就够了 */
 .tab{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
  justify-content:center;color:var(--on-nav);cursor:pointer}
@@ -169,11 +279,22 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .fab{width:56px;height:56px;border-radius:50%;flex-shrink:0;
  background:var(--ai-gradient);color:var(--on-accent);display:flex;align-items:center;
  justify-content:center;cursor:pointer;box-shadow:var(--shadow-fab)}
+/* Pearl 的语音键是个带字的胶囊，不是圆钮 —— 底栏因此有了「在做事」的语气 */
+:root:not([data-skin="briefly"]) .fab{width:auto;height:46px;border-radius:var(--r-pill);
+ padding:0 20px;gap:8px;font-size:15px;font-weight:var(--w-mid);letter-spacing:-.015em}
+:root:not([data-skin="briefly"]) .dock{gap:8px;left:20px;right:20px;
+ background:var(--nav);border:1px solid var(--edge);border-radius:var(--r-pill);
+ padding:8px;box-shadow:var(--shadow-nav);backdrop-filter:blur(calc(var(--glass) + 4px))}
+:root:not([data-skin="briefly"]) .tabs{background:transparent;border:0;box-shadow:none;
+ backdrop-filter:none;height:46px;padding:0;gap:6px;flex:1;justify-content:space-between}
+:root:not([data-skin="briefly"]) .tab{width:46px;height:46px;border-radius:var(--r-pill);
+ color:var(--ink);opacity:.45}
+:root:not([data-skin="briefly"]) .tab.on{background:var(--accent2);opacity:1;color:var(--ink)}
 .fab:active{transform:scale(.94)}
 
-/* 卡片跟页面底同色 —— 这套系统的分层是描边和色块，不是填充深浅 */
+/* Pearl：白玻璃 + 一圈高光边 + 很软的投影。briefly：跟页面底同色、靠描边分层。 */
 .card{border:1px solid var(--edge);border-radius:var(--r);background:var(--surface);
- padding:18px}
+ padding:18px;box-shadow:var(--shadow-card);backdrop-filter:blur(var(--glass))}
 /* 一页只给一张卡加重描边，当视觉锚点 */
 .card.anchor{border-color:var(--ink)}
 .card.tap{cursor:pointer}
@@ -181,16 +302,33 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .lbl,.sub{font-size:12px;color:var(--ink-muted)}
 /* 眉标做成黄色徽章（稿子 2080-1013）—— 荧光黄在这套系统里就是「做记号」 */
 .badge{display:inline-flex;align-items:center;align-self:flex-start;
- background:var(--mark);color:var(--ink);border-radius:var(--r-sm);
- padding:2px 8px;font-size:12px;line-height:18px;white-space:nowrap}
+ background:var(--mark);color:var(--ink-muted);border-radius:var(--r-pill);
+ padding:3px 12px;font-size:12px;line-height:18px;white-space:nowrap;
+ border:1px solid var(--edge)}
+/* 不能连 .ol 一起清掉 —— 它的优先级(0,3,0)比 .badge.ol(0,2,0) 高，
+   写成 :not(.ol) 才不会把描边徽章也抹平 */
+:root[data-skin="briefly"] .badge:not(.ol){color:var(--ink);border:0;
+ border-radius:var(--r-sm);padding:2px 8px}
+:root[data-skin="briefly"] .badge.ol{color:var(--ink);border-radius:var(--r-sm);
+ padding:2px 8px}
 .badge.ol{border:1px solid var(--ink)}
 /* 面板里的内嵌信息块：改成薄荷底，不再靠分隔线分区 */
-.block{background:var(--good-tint);border-radius:var(--r-sm);padding:6px 10px}
+.block{background:var(--sunken);border-radius:var(--r-md);padding:8px 12px}
+:root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
+ padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
 .meta{font-family:var(--font-mono);font-size:11px;color:var(--ink-muted)}
-.h2{font-size:17px;font-weight:700;color:var(--ink)}
-.big{font-family:var(--font-display);font-size:40px;font-weight:800;line-height:1.1;
- font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.h2{font-family:var(--font-display);font-size:17px;font-weight:var(--w-bold);
+ color:var(--ink);letter-spacing:-.01em}
+:root[data-skin="briefly"] .h2{font-family:var(--font);font-weight:700}
+.big{font-family:var(--font-display);font-size:42px;font-weight:var(--w-body);
+ line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+:root[data-skin="briefly"] .big{font-size:40px;font-weight:800;letter-spacing:.03em;
+ line-height:1.1}
+/* 涂层是 briefly 的招牌 —— Pearl 里有红有绿，不需要它 */
+:root:not([data-skin="briefly"]) .big.mark{background:none;padding:0;margin-left:0;
+ color:inherit}
+:root:not([data-skin="briefly"]) .big.mark:not(.pos){color:var(--bad)}
 /* 荧光笔那一道 —— 这套系统里数字的重音靠它，不靠红色 */
 /* 缺口罩荧光黄、结余罩薄荷绿 —— 两种都是「做记号」，颜色区分方向 */
 .big.mark{color:var(--on-tint);
@@ -198,18 +336,25 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  padding:0 6px;margin-left:-6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 /* 结余罩薄荷蓝 —— 缺口黄、结余蓝，方向一眼看得出 */
 .big.mark.pos{background-image:linear-gradient(var(--accent2),var(--accent2))}
-.num{font-size:17px;font-weight:var(--w-bold);font-variant-numeric:tabular-nums;
- letter-spacing:-.025em}
+.num{font-family:var(--font-display);font-size:17px;font-weight:var(--w-mid);
+ font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+:root[data-skin="briefly"] .num{font-family:var(--font);font-weight:var(--w-bold)}
 /* 金额破例走 500；负字距只给数字，压中文会让字挤在一起 */
-.money{font-variant-numeric:tabular-nums;font-weight:var(--w-bold);letter-spacing:-.025em}
+.money{font-family:var(--font-display);font-variant-numeric:tabular-nums;
+ font-weight:var(--w-mid);letter-spacing:-.02em}
+:root[data-skin="briefly"] .money{font-family:var(--font);font-weight:var(--w-bold)}
 /* 大数字用 display 字体时，字距字重听 .big 的 */
 .big.money{font-weight:800;letter-spacing:.03em}
 .row{min-height:48px;display:flex;align-items:center;gap:8px;padding:12px 0;
  border-bottom:1px solid var(--line)}
 .card .row:last-child{border-bottom:0}
-.chip{border:1px solid var(--ink);border-radius:var(--r-pill);padding:4px 11px;
- font-family:var(--font-mono);font-size:11px;background:transparent;color:var(--ink);
+.chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:4px 11px;
+ font-size:11px;background:rgba(255,255,255,.6);color:var(--ink);
  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
+:root[data-skin="briefly"] .chip{border-color:var(--ink);background:transparent;
+ font-family:var(--font-mono)}
+:root[data-skin="briefly"] .mbtn{border-color:var(--ink);background:var(--surface);
+ border-radius:var(--r-sm)}
 .chip.on{background:var(--ink);border-color:var(--ink);color:var(--on-accent);
  font-weight:var(--w-mid);box-shadow:var(--shadow-pill)}
 .chip.flat{cursor:default}
@@ -218,8 +363,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .chip .tag-x{margin:-4px -8px -4px -1px;padding:4px 8px;display:inline-flex;align-items:center;
  color:var(--ink-faint)}
 .chip .tag-x:active{color:var(--ink)}
-.mbtn{min-height:50px;border:1px solid var(--ink);
- border-radius:var(--r-sm);display:flex;align-items:center;
+.mbtn{min-height:50px;border:1px solid var(--edge);background:var(--accent2);
+ border-radius:var(--r-pill);display:flex;align-items:center;
  justify-content:center;gap:7px;font-size:15px;font-weight:500;background:var(--surface);padding:0 14px;
  cursor:pointer;text-align:center;color:var(--ink)}
 .mbtn:active{transform:translateY(1px)}
@@ -240,8 +385,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  cursor:pointer}
 .dash:active{background:var(--press)}
 .fld{display:flex;flex-direction:column;gap:5px}
-.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--edge);
- background:var(--field);border-radius:var(--r-sm);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
+.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--line);
+ background:var(--field);border-radius:var(--r-md);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
  font-family:inherit;color:inherit;width:100%}
 input.fldbox,select.fldbox{-webkit-appearance:none;appearance:none}
 input.fldbox:focus,select.fldbox:focus{outline:none;border-color:var(--ink);border-width:1.5px}
@@ -251,8 +396,12 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 .fldbox.err{border-color:var(--bad);border-width:1.5px}
 .errline{display:flex;gap:7px;font-size:13px;color:var(--bad);align-items:flex-start}
-.seg{display:flex;border:1px solid var(--ink);border-radius:var(--r-sm);overflow:hidden;
- background:transparent;font-weight:var(--w-mid)}
+.seg{display:flex;border:1px solid var(--edge);border-radius:var(--r-pill);overflow:hidden;
+ background:var(--accent2);padding:3px;font-weight:var(--w-mid)}
+.seg>span{border-radius:var(--r-pill)}
+:root[data-skin="briefly"] .seg{border-color:var(--ink);background:transparent;
+ padding:0;border-radius:var(--r-sm)}
+:root[data-skin="briefly"] .seg>span{border-radius:0}
 .seg>span{flex:1;padding:9px 0;text-align:center;font-size:14px;cursor:pointer;color:var(--ink)}
 .seg>span.on{background:var(--ink);color:var(--on-accent);font-weight:var(--w-mid)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:var(--r-pill);
@@ -286,7 +435,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  box-shadow:0 4px 14px -6px rgba(26,51,0,.4);border-radius:var(--r)}
 .srt.lift .sw-body,.srt.lift.card{background:var(--page)}
 .dragging{touch-action:none;user-select:none}
-.card .sw-body{background:var(--surface)}
+.card .sw-body{background:var(--surface-solid)}
 .sw.open .sw-body{transform:translateX(-76px)}
 .dim{position:absolute;inset:0;background:rgba(34,32,28,.36)}
 .dim.anim{animation:fade .18s ease}
@@ -304,7 +453,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 @keyframes fade{from{opacity:0}to{opacity:1}}
 /* 概览卡底下那四个统计块 */
 .tiles{display:flex;gap:6px;margin-top:8px;background:var(--sunken);
- border-radius:var(--r-sm)}
+ border-radius:var(--r-md)}
+:root[data-skin="briefly"] .tiles{border-radius:var(--r-sm)}
 .tile{flex:1;min-width:0;padding:10px 4px;border-radius:var(--r);text-align:center;
  cursor:pointer}
 .tile:active{background:var(--press)}
@@ -314,32 +464,47 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 一天一张卡，左边一条竖杠 */
 /* 列表一律装进白卡 —— 光着摆在底色上会散 */
 .listcard{background:var(--surface);border:1px solid var(--edge);
- border-radius:var(--r);padding:4px 16px}
+ border-radius:var(--r);padding:4px 16px;box-shadow:var(--shadow-card);
+ backdrop-filter:blur(var(--glass))}
 .listcard .sw:not(:last-child) .row{border-bottom:1px solid var(--line)}
 .listcard .sw:last-child .row{border-bottom:0}
-.listcard .sw-body{background:var(--surface)}
+.listcard .sw-body{background:var(--surface-solid)}
 .daycard{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);
- border:1px solid var(--edge);padding:0 12px;margin-top:-4px}
+ border:1px solid var(--edge);padding:0 12px;margin-top:-4px;
+ box-shadow:var(--shadow-card);backdrop-filter:blur(var(--glass))}
+/* Pearl 里那条竖杠太硬了 —— 行与行之间已经有分隔线，不需要它 */
+:root:not([data-skin="briefly"]) .daybar{display:none}
+:root:not([data-skin="briefly"]) .daycard{padding:0 16px}
+:root:not([data-skin="briefly"]) .dayrows .row + .row{border-top:1px solid var(--line)}
 .daybar{width:4px;border-radius:var(--r-pill);background:var(--ink);flex-shrink:0;
  margin:12px 0}
 .dayrows{flex:1;min-width:0}
 .dayrows .row{border-bottom:0}
-.daycard .sw-body{background:var(--surface)}
+.daycard .sw-body{background:var(--surface-solid)}
 /* 「我」是个圆形头像按钮，不是文字芯片 */
-/* 头像借用系统里那个黄色 logo 方块的语言，只是做成圆的 */
-.avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;
- align-items:center;justify-content:center;background:var(--mark);color:var(--on-tint);
+.avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;background:rgba(255,255,255,.7);
+ color:var(--ink-muted);border:1px dashed color-mix(in srgb, var(--ink) 28%, transparent);
  cursor:pointer}
+/* briefly 的头像是那个黄方块的语言 */
+:root[data-skin="briefly"] .avatar{width:38px;height:38px;background:var(--mark);
+ color:var(--on-tint);border:0}
 .avatar:active{background:var(--press)}
 /* 即将发生：暖色底的圆角条，和真实流水区分开 */
-/* 即将发生：薄荷蓝便利贴，跟真实流水分开 */
-.upcoming{display:flex;align-items:center;gap:11px;min-height:34px;padding:8px 12px;
- border-radius:var(--r);background:var(--accent2);color:var(--on-tint);cursor:pointer}
+.upcoming{display:flex;align-items:center;gap:11px;min-height:34px;padding:10px 14px;
+ border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer;
+ border:1px solid var(--edge);box-shadow:var(--shadow-card);
+ backdrop-filter:blur(var(--glass))}
+/* briefly 那边它是薄荷蓝便利贴 */
+:root[data-skin="briefly"] .upcoming{background:var(--accent2);color:var(--on-tint);
+ border:0;box-shadow:none;padding:8px 12px}
 /* 便利贴里的次要小字也得跟着变深，不然深色模式下会在浅底上写浅字 */
 .upcoming .sub,.upcoming .lbl{color:color-mix(in srgb, var(--on-tint) 65%, var(--accent2))}
-.iconbtn{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;
- justify-content:center;background:transparent;color:var(--ink);cursor:pointer;
- border:1px solid var(--ink);flex-shrink:0}
+.iconbtn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+ justify-content:center;background:rgba(255,255,255,.7);color:var(--ink);cursor:pointer;
+ border:0;box-shadow:0 2px 8px -5px rgba(65,65,64,.5);flex-shrink:0}
+:root[data-skin="briefly"] .iconbtn{width:31px;height:31px;background:transparent;
+ border:1px solid var(--ink);box-shadow:none}
 .iconbtn:active{background:var(--press)}
 /* ---- AI 抽屉 ----
    一个大点阵当身份标识，一条通宽胶囊当「按住说话」。全 app 只有这颗按钮是
@@ -709,6 +874,7 @@ zh: {
   "as.shoot": "拍小票", "as.typeIt": "自己打",
   "as.shootSoon": "拍小票认账还没接上 —— 先说一句，或者点右边自己打。",
   "as.listen": "按住说话", "as.listening": "在听…", "as.stop": "说完了",
+  "as.speak": "说一句",
   "as.title": "AI 记账",
   "as.tipHi": "说一句就行，比如：",
   "as.tipEg": "「今天午饭 35，打车 9 块，卖旧衣服赚了 200」",
@@ -868,6 +1034,8 @@ zh: {
   "set.export": "导出备份", "set.import": "从备份恢复",
   "set.wipe": "清空，从头开始", "set.demo": "恢复演示数据",
   "set.saved": "这一页的改动都已保存",
+  "set.skin": "风格", "skin.pearl": "珠光", "skin.briefly": "奶油纸",
+  "set.skinHint": "两套完整的视觉。换风格不动数据，随时切回来。",
   "set.theme": "外观", "theme.auto": "跟随系统", "theme.light": "浅色", "theme.dark": "深色",
   "set.currency": "货币",
   "set.language": "语言",
@@ -1122,6 +1290,7 @@ en: {
   "as.shoot": "Snap a receipt", "as.typeIt": "Type it",
   "as.shootSoon": "Reading receipts isn't wired up yet — say it, or tap the keyboard.",
   "as.listen": "Hold to talk", "as.listening": "Listening…", "as.stop": "Done",
+  "as.speak": "Speak",
   "as.title": "AI Note",
   "as.tipHi": "Hi there — try saying something like:",
   "as.tipEg": "\u201cI spent \u00a310 on lunch and \u00a315 on dinner, and I earned \u00a320 on Vinted.\u201d",
@@ -1301,6 +1470,8 @@ en: {
   "set.export": "Export a backup", "set.import": "Restore from a backup",
   "set.wipe": "Clear everything and start over", "set.demo": "Load the demo data",
   "set.saved": "Everything on this page is saved",
+  "set.skin": "Style", "skin.pearl": "Pearl", "skin.briefly": "Cream paper",
+  "set.skinHint": "Two complete looks. Switching changes nothing but the surface.",
   "set.theme": "Appearance", "theme.auto": "System", "theme.light": "Light",
   "theme.dark": "Dark",
   "set.currency": "Currency",
@@ -2211,11 +2382,20 @@ function exportName() {
 
 let S = load() || seed();
 syncUid(S);
+if (!S.skin) S.skin = "pearl";
 /* auto 就不打标记，交给 prefers-color-scheme */
 function applyTheme() {
   const el = document.documentElement;
   if (S.theme === "light" || S.theme === "dark") el.setAttribute("data-theme", S.theme);
   else el.removeAttribute("data-theme");
+}
+/* 皮肤：pearl 是默认（不打标记），briefly 整套还在 CSS 里，打个标记就换回去 */
+function applySkin() {
+  const el = document.documentElement;
+  if (S.skin === "briefly") el.setAttribute("data-skin", "briefly");
+  else el.removeAttribute("data-skin");
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", S.skin === "briefly" ? "#fcfaf5" : "#f2f1ef");
 }
 let ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {} };
 const screen = () => ui.stack[ui.stack.length - 1];
@@ -2842,6 +3022,14 @@ SCREENS.settings = () => {
         '<div class="chip ' + (S.currency === k ? "on" : "") + '" data-a="cur:' + k + '">' +
         CUR[k].sym + " " + k + "</div>").join("") + "</div>" +
       "</div>" +
+
+      '<div class="fld" style="margin-top:6px"><div class="lbl">' + t("set.skin") +
+      "</div>" +
+      '<div style="display:flex;gap:7px">' +
+      [["pearl", "skin.pearl"], ["briefly", "skin.briefly"]]
+        .map(([k, key]) => '<div class="chip ' + ((S.skin || "pearl") === k ? "on" : "") +
+          '" data-a="skin:' + k + '">' + t(key) + "</div>").join("") + "</div>" +
+      '<div class="sub" style="margin-top:5px">' + t("set.skinHint") + "</div></div>" +
 
       '<div class="fld" style="margin-top:6px"><div class="lbl">' + t("set.theme") +
       "</div>" +
@@ -3820,6 +4008,7 @@ const ACT = {
   cool: (h) => { S.cooldownHours = +h; render(); },
   cur: (k) => { S.currency = k; render(); toast(t("k.currencyNow", { code: k })); },
   theme: (k) => { S.theme = k; applyTheme(); render(); },
+  skin: (k) => { S.skin = k; applySkin(); render(); },
   /* 换语言时顺手把币种也换成常见的那个，省得英文界面配 ￥ */
   lang: (k) => { S.lang = k;
     if (k === "en" && S.currency === "CNY") S.currency = "GBP";
@@ -4384,7 +4573,8 @@ function render() {
     '<div class="body' + (v.fab ? " hasfab" : "") + '">' + v.body + "</div>" +
     (!ui.sheet && (tab || v.fab)
       ? '<div class="dock">' + (tab ? tabsHtml(tab) : "") +
-        (v.fab ? '<div class="fab" data-a="assistant">' + ic("mic", 24) + "</div>" : "") +
+        (v.fab ? '<div class="fab" data-a="assistant">' + ic("mic", 22) +
+          (S.skin === "briefly" ? "" : "<span>" + t("as.speak") + "</span>") + "</div>" : "") +
         "</div>"
       : "") +
     (ui.sheet ? '<div class="dim' + (ui.anim ? " anim" : "") + '" data-a="close"></div>' +
@@ -4664,6 +4854,7 @@ document.querySelector(".side").addEventListener("click", (e) => {
 });
 ui.quiz = { name: "", price: 0, necessity: 5, dup: false };
 applyTheme();
+applySkin();
 updateClock();
 render();
 
