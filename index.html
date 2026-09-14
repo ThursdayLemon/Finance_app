@@ -1715,15 +1715,14 @@ const netAssets = (s) => s.accounts.reduce((a, j) => a + j.balance, 0);
    没兑现的那部分只提示「还需存」，不扣 —— 扣了就是把还没走的钱当走了。 */
 const savedIn = (m) => S.goals.reduce((a, g) => a + ((g.marks[m] || {}).amt || 0), 0);
 const stillToSave = (s2) => Math.max(0, goalCommit(s2) - savedIn(thisMonth()));
-/* 首页开场那个数：「这个月还剩多少能花」。不是净资产（那个在金库），
-   也不是月度结余（那个在分析页）。
-   当月 = 可用预算 − 账本里已经花掉的。可用预算就是 budgetInfo 那一套：
-   收入 − 固定支出 − 还贷 − 计划储蓄，计划塞不下时自己降档 —— 全 app 的
-   买不买判定用的就是它，首页开场理应说同一个数。
-   过去的月份没有「预算」可言，就按实际算：收入 − 支出 − 实际存了的。 */
-const availableIn = (m) => m === thisMonth()
-  ? budgetFor(S) - spentIn(S, m)
-  : incomeIn(S, m) - outgoIn(S, m) - savedIn(m);
+/* 首页开场那个数。就是月度结余那一个数，换了个说法叫「可用余额」：
+     这个月进来的 − 这个月出去的（固定 + 还贷 + 账本）− 已经存走的
+   = 结完这个月的账，账户里还能支配的钱。
+   记一笔收入它就得涨，记一笔花销它就得掉 —— 所以用 incomeIn / outgoIn，
+   不能用 budgetFor（那个只看固定收入，账本里的进账进不去，数字会不动）。
+   储蓄只扣「已经确认存走的」：没兑现的那部分钱还在账户里，是能支配的，
+   只在分析页提示「本月还需存」。 */
+const availableIn = (m) => incomeIn(S, m) - outgoIn(S, m) - savedIn(m);
 
 /* 一个账户里有多少钱已经被目标预留 */
 const lifePct = () => S.lifeGoal && S.lifeGoal.target > 0
@@ -2983,7 +2982,7 @@ function sparkline(cur) {
 
 function monthView() {
   const m = viewMonth(), cur = isThisMonth();
-  const inc = incomeIn(S, m), out = outgoIn(S, m);
+  const inc = incomeIn(S, m), out = outgoIn(S, m), avail = availableIn(m);
   const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
@@ -3003,7 +3002,8 @@ function monthView() {
       '<div class="heroamt">' +
       (ui.hideBal ? '<span class="big">' + ccy().sym +
         '<span class="mask">******</span></span>'
-        : '<span class="big">' + withDec(yuan(availableIn(m))) + "</span>") +
+        : '<span class="big">' + withDec(avail < 0 ? neg(-avail) : yuan(avail)) +
+          "</span>") +
       '<span class="eye" data-a="hideBal">' + ic(ui.hideBal ? "eyeOff" : "eye", 17) +
       "</span></div></div>" +
 
