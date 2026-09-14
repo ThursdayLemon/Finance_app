@@ -13,7 +13,7 @@
      drive.mjs 里有一条断言专门请求这几条 URL 验 200。 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Bona+Nova:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Literata:opsz,wght@7..72,400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -74,7 +74,7 @@
   --font:"Onest","PingFang SC","Hiragino Sans GB",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
-  --font-display:"Bona Nova","Songti SC",Georgia,serif;
+  --font-display:"Literata","Songti SC",Georgia,serif;
   /* 数字和标题现在是同一支。留着这个 token —— 想给数字单独换一支时
      只改这一行，全 app 的金额跟着走。 */
   --font-num:var(--font-display);
@@ -333,7 +333,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* ---- 排版 ------------------------------------------------------------------
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
    两套字各管一摊：
-     Bona Nova Regular —— 标题、条目名、所有数字和金额
+     Literata Regular  —— 标题、条目名、所有数字和金额
                           （--font-display / --font-num，一律 400，不上粗细）
      Onest             —— 界面字：标签、元信息、按钮文字、坐标轴
    不要再凭手感改这些值。 */
@@ -341,8 +341,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  font-weight:var(--w-body)}
 /* 数字统一走 --font-num。只声明字族 —— 字号和字距各处自己写，别在这儿一起设，
    不然会盖掉后面那些按稿子量出来的值。
-   Bona Nova 默认是旧式数字：4、5、7、9 掉到基线以下，而且宽度不等。
-   当书里的正文好看，当一列金额就是灾难 —— 所以显式要 lnum + tnum。 */
+   数字一律要 lnum + tnum：等高、等宽，金额列才对得齐。
+   （Literata 本来就是等高数字，没有 lnum 这个 feature，写上也无害；
+   换成旧式数字的衬线 —— Bona Nova 那种 —— 时它就是救命的那一条。） */
 .big,.money,.num,.tileval,.ta b,.callout{font-family:var(--font-num);
  font-variant-numeric:lining-nums tabular-nums}
 /* 字标 COACH：17/22，字距 +3.7px */
@@ -472,8 +473,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 :root[data-skin="briefly"] .money,:root[data-skin="briefly"] .tileval,
 :root[data-skin="briefly"] .ta b,:root[data-skin="briefly"] .callout{
  font-family:var(--font);font-weight:var(--w-bold)}
-/* 大数字用 display 字体时，字距字重听 .big 的 */
-.big.money{font-weight:800;letter-spacing:.03em}
+/* 这条 800 + 正字距是奶油纸（Bricolage）那一套。以前没限定皮肤，
+   Pearl 的衬线也跟着被拉到 800 —— 只请求 400 的字重时浏览器会伪粗。 */
+:root[data-skin="briefly"] .big.money{font-weight:800;letter-spacing:.03em}
 .row{min-height:48px;display:flex;align-items:center;gap:8px;padding:12px 0;
  border-bottom:1px solid var(--line)}
 .card .row:last-child{border-bottom:0}
@@ -789,7 +791,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    不是常数 100 —— 日元韩元就是 0 位。切换币种只换符号和格式，不做汇率换算：
    这个产品里没有汇率，一个用户就用一种钱。 */
 const CUR = {
-  /* 半角 ¥ 不是全角 ￥：拉丁衬线（Bona Nova / Caslon 这类）都没有全角那个码位，
+  /* 半角 ¥ 不是全角 ￥：拉丁衬线（Literata / Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
   CNY: { sym: "¥", dec: 2, loc: "zh-CN" },
   USD: { sym: "$",  dec: 2, loc: "en-US" },
@@ -3307,7 +3309,7 @@ SCREENS.route = () => {
     nav: '<div class="navt" style="flex:1">' + BILLS() + "</div>" +
       '<div style="text-align:right"><div class="sub" style="font-size:10px">' +
       t("bi.total") + "</div>" +
-      '<div class="money" style="font-size:15px;font-weight:600;margin-top:-2px">' +
+      '<div class="money" style="font-size:15px;margin-top:-2px">' +
       yuan(fixedTotal + debtCommit(S)) + "</div></div>" + navRight(),
     body: seg("route", [[t("bi.tabOut"), "out"], [t("bi.tabDebt"), "debt"]], tab) +
       (tab === "out"
