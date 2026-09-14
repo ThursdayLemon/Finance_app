@@ -282,14 +282,16 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .navt{font-family:var(--font-display);font-size:20px;font-weight:var(--w-body);
  color:var(--ink);letter-spacing:-.01em}
 :root[data-skin="briefly"] .navt{font-family:var(--font);font-weight:700}
-.body{flex:1;padding:14px 16px 120px;display:flex;flex-direction:column;gap:12px;
+.body{flex:1;padding:14px 16px 148px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
    一律不许收缩，超出就滚动 */
 .body > *{flex-shrink:0}
 /* 悬浮按钮浮在正文之上（bottom:78 + 56 高 = 盖住标签栏往上 72px），
    所以有它的页面要把这块高度垫出来，不然年视图这种长页面最后一张卡会被压住 */
-.body.hasfab{padding-bottom:120px}
+/* 底栏浮在正文上面，占掉 30(离底) + 62(高) = 92。滚到底时再留 56 的余量，
+   最后一行不会贴着底栏的投影。年视图和账单页原来就差这一口。 */
+.body.hasfab{padding-bottom:148px}
 /* 底部不再是通栏，是一簇悬浮的东西：一条玻璃药丸，内容从底下滑过去 */
 .dock{position:absolute;left:20px;right:20px;bottom:30px;z-index:4;
  display:flex;align-items:center;gap:8px;background:var(--nav);
@@ -348,8 +350,6 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* Pearl：白玻璃 + 一圈高光边 + 很软的投影。briefly：跟页面底同色、靠描边分层。 */
 .card{border:1px solid var(--edge);border-radius:var(--r);background:var(--surface);
  padding:18px;box-shadow:var(--shadow-card);backdrop-filter:blur(var(--glass))}
-/* 一页只给一张卡加重描边，当视觉锚点 */
-.card.anchor{border-color:var(--ink)}
 .card.tap{cursor:pointer}
 .card.tap:active{background:var(--page)}
 .lbl,.sub{font-size:12px;color:var(--ink-muted)}
@@ -825,7 +825,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
      又垫了一层，簇会整个飘起来。别去改胶囊自己的高度，那会把它撑变形。 */
   .dock{bottom:max(30px, env(safe-area-inset-bottom))}
   .toast{bottom:calc(72px + max(30px, env(safe-area-inset-bottom)))}
-  .body,.body.hasfab{padding-bottom:calc(90px + max(30px, env(safe-area-inset-bottom)))}
+  .body,.body.hasfab{padding-bottom:calc(118px + max(30px, env(safe-area-inset-bottom)))}
   .sheet{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
   .toast.high{bottom:auto}
 }
@@ -2528,7 +2528,12 @@ const PF = {
   /* ---- 底栏四个分区（Figma 2122:9390 的 Bottom bar，22 的画布）-------- */
   navMoney: ['0 0 22 22', '<path d="M19.25 17.417v-6.172a3.7 3.7 0 0 0-1.141-2.659l-5.846-5.552a1.83 1.83 0 0 0-2.526 0L3.891 8.586a3.7 3.7 0 0 0-1.141 2.659v6.172c0 .486.193.952.537 1.296.344.344.81.537 1.296.537h12.834c.486 0 .952-.193 1.296-.537.344-.344.537-.81.537-1.296Z"/><path d="M8.25 13.75c0-.486.193-.952.537-1.296.344-.344.81-.537 1.296-.537h1.834c.486 0 .952.193 1.296.537.344.344.537.81.537 1.296v5.5h-5.5v-5.5Z"/>', "stroke", 1.5],
   navBills: ['0 0 22 22', '<path d="M10.084 10.083h-2.75M12.834 6.417h-5.5M3.667 17.092V7.383c0-2.616 0-3.923.806-4.736.805-.813 2.102-.813 4.694-.813h3.667c2.592 0 3.889 0 4.694.813.806.812.806 2.12.806 4.736v9.709c0 1.385 0 2.078-.424 2.351-.692.446-1.762-.489-2.3-.828-.444-.281-.666-.42-.914-.428-.265-.01-.492.125-.972.427l-1.752 1.105c-.473.298-.709.447-.972.447s-.498-.149-.971-.447l-1.751-1.105c-.446-.28-.667-.42-.914-.428-.267-.009-.493.126-.974.428-.538.339-1.607 1.274-2.3.828-.423-.273-.423-.965-.423-2.351Z"/>', "stroke", 1.5],
-  navWants: ['13 5 18 18', '<path d="M24 14a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0m4 0h7m-11 0h-7"/><path d="M31 14a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>', "stroke", 1.5],
+  /* 稿子里这个是画在 44×28 的框里、偏在中间的。原来直接把 viewBox 卡在
+     圆的外接框上（13 5 18 18）—— 那正好等于几何边界，1.5 的描边有一半在框外，
+     四周就被裁掉了。改成挪进 22 的方框里，留出 2 的余量。 */
+  navWants: ['0 0 22 22', '<g transform="translate(-11,-3)">' +
+    '<path d="M24 14a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0m4 0h7m-11 0h-7"/>' +
+    '<path d="M31 14a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></g>', "stroke", 1.5],
   navVault: ['0 0 22 22', '<path d="M9.404 12.324a3.17 3.17 0 0 0 3.191 0 3.17 3.17 0 0 0 1.196-1.34c.165-.48.561-.901 1.067-.901 2.16 0 3.24 0 3.912.671.671.671.671 1.752.671 3.913s0 3.24-.671 3.912c-.672.671-1.752.671-3.912.671H7.333c-2.163 0-3.242 0-3.912-.671-.671-.672-.671-1.752-.671-3.913s0-3.241.671-3.912c.671-.671 1.752-.671 3.912-.671.506 0 .902.421 1.067.9a3.17 3.17 0 0 0 1.004 1.341Z"/><path d="M19.25 15.583V11c0-2.16 0-3.241-.671-3.912-.672-.671-1.752-.671-3.912-.671H7.333c-2.16 0-3.241 0-3.912.671C2.75 7.759 2.75 8.839 2.75 11v4.583"/><path d="M19.25 11.917V7.333c0-2.16 0-3.241-.671-3.912-.672-.671-1.752-.671-3.912-.671H7.333c-2.16 0-3.241 0-3.912.671-.671.671-.671 1.752-.671 3.912v4.584"/>', "stroke", 1.5],
   /* ---- 账本行里的分类图标（Figma 2122:10454，24 的画布）----------------
      一半填充一半描边，跟着稿子来，没有统一成一种。 */
@@ -2905,20 +2910,22 @@ function yearView() {
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
   return { tab: "dashboard", fab: "both", navSplit: true,
+    /* 顶栏跟月视图一模一样：头像 · 字标 · 月/年。
+       年份的前后翻和月份一样，挪进正文顶上那颗药丸里 —— 两个口径长一个样。 */
     nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
-      ic("user", 20) + "</div>" +
-      '<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:2px">' +
-      arrow("prev", true) +
-      '<div class="h2" style="min-width:78px;text-align:center">' +
-      t("date.year", { y }) + "</div>" +
-      arrow("next", +y < +thisMonth().slice(0, 4)) + "</div>" +
-      scopeToggle(),
+      ic("user", 18) + "</div>" +
+      '<div class="wordmark" style="flex:1">' + t("app.wordmark") + "</div>" +
+      navRight(),
     body:
+      '<div class="hero" style="padding-bottom:6px">' +
+      '<div class="mochip">' + arrow("prev", true) +
+      "<span>" + t("date.year", { y }) + "</span>" +
+      arrow("next", +y < +thisMonth().slice(0, 4)) + "</div></div>" +
       (n === 0
         ? '<div class="dash" style="min-height:150px;cursor:default;flex-direction:column;' +
           'gap:6px;padding:0 26px;text-align:center">' + t("yr.empty", { y }) + "<br/>" +
           t("yr.emptyHint") + "</div>"
-        : '<div class="card anchor">' +
+        : '<div class="card">' +
           '<div class="badge">' + t("yr.headline", { y, neg: net < 0 }) + "</div>" +
           '<div class="big mark' + (net < 0 ? "" : " pos") + '" style="margin:2px 0">' +
           (net < 0 ? neg(-net) : plus(net)) + "</div>" +
