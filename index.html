@@ -272,15 +272,25 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  overflow:hidden;display:flex;flex-direction:column;position:relative;flex-shrink:0;
  box-shadow:var(--shadow-sheet)}
 .inset{height:40px;flex-shrink:0}
-.nav{min-height:50px;display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;
- border-bottom:1px solid var(--line)}
+/* 标题脱离了文档流（见 .navt），所以剩下的两边要靠 space-between 撑开，
+   否则右边那堆（合计 / 进度条 / 清单）会缩到返回键旁边去。 */
+.nav{min-height:50px;display:flex;align-items:center;justify-content:space-between;
+ gap:8px;padding:0 12px;flex-shrink:0;border-bottom:1px solid var(--line)}
 /* 左右两栏等宽，中间那栏才是真居中 —— 头像 38、月/年 70，
    靠 flex 的话日期会被挤偏；1fr auto 1fr 不管两边多宽都对称。 */
 .nav.split{display:grid;grid-template-columns:1fr auto 1fr}
 .nav.split > :first-child{justify-self:start}
 .nav.split > :last-child{justify-self:end}
+/* 标题绝对居中：靠 flex 的话，左边返回键和右边那堆东西宽度不一样，
+   标题就会偏（量出来最多偏了 36px）。脱离文档流钉在正中最稳，
+   pointer-events:none 保证它不会挡住两边的按钮。 */
+.nav{position:relative}
 .navt{font-family:var(--font-display);font-size:20px;font-weight:var(--w-body);
- color:var(--ink);letter-spacing:-.01em}
+ color:var(--ink);letter-spacing:-.01em;
+ position:absolute;left:56px;right:56px;text-align:center;pointer-events:none;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 顶栏里的字标（首页）本来就是居中的，别被上面那条带跑 */
+.nav.split .navt{position:static;left:auto;right:auto}
 :root[data-skin="briefly"] .navt{font-family:var(--font);font-weight:700}
 .body{flex:1;padding:14px 16px 148px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
@@ -455,8 +465,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .callout{text-align:right;font-size:12px;font-weight:var(--w-body);line-height:16px;
  color:var(--ink);height:16px}
 .callout.bot{color:var(--bad);padding-top:6px}
-.quick{display:grid;grid-template-columns:1fr 1fr;gap:14px 8px;flex:1;
- align-content:center}
+/* 稿子：标题 →(12)→ 网格，两行之间 12，一行里两个之间 8，图标 36。
+   align-content 不能用 center —— 那样标题到图标的距离会随卡片高度变。 */
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;flex:1;
+ align-content:start;margin-top:12px}
+.quick .circ{width:36px;height:36px}
 .qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
 /* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
@@ -732,6 +745,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 返回：光一个箭头，不套白圆。热区照样 44（.tapout 撑的） */
 .navback{display:flex;align-items:center;justify-content:center;color:var(--ink);
  cursor:pointer;flex-shrink:0;margin-right:2px}
+/* 返回是每一页都要按的那颗，热区给到 56 —— 比通用的 44 再宽一圈 */
+.navback::after{width:56px;height:56px}
 .navback:active{opacity:.55}
 /* ---- AI 抽屉 ----
    一个大点阵当身份标识，一条通宽胶囊当「按住说话」。全 app 只有这颗按钮是
@@ -865,6 +880,9 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
 /* 金额一律存「最小单位」的整数（分 / cent / penny）。几位小数由币种决定，
    不是常数 100 —— 日元韩元就是 0 位。切换币种只换符号和格式，不做汇率换算：
    这个产品里没有汇率，一个用户就用一种钱。 */
+/* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
+   和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
+const BUILD = "v19";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Literata / Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2904,8 +2922,11 @@ function yearView() {
     'padding:6px 0;border-bottom:1px dotted var(--line)">' +
     '<div class="sub" style="flex:1">' + name + "</div>" +
     '<div class="money" style="font-size:14px">' + yuan(v) + "</div></div>";
+  /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
+     降部的空隙，箭头就比中间那行字高出一两像素。 */
   const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
+    ' style="padding:6px;display:flex;align-items:center;justify-content:center;cursor:' +
+    (on ? "pointer" : "default") + ";color:" +
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
@@ -3125,8 +3146,11 @@ function sparkline(cur) {
 function monthView() {
   const m = viewMonth(), cur = isThisMonth();
   const inc = incomeIn(S, m), out = outgoIn(S, m), avail = availableIn(m);
+  /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
+     降部的空隙，箭头就比中间那行字高出一两像素。 */
   const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
+    ' style="padding:6px;display:flex;align-items:center;justify-content:center;cursor:' +
+    (on ? "pointer" : "default") + ";color:" +
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   return { tab: "dashboard", fab: "both", navSplit: true,
     /* 顶栏按样机：头像 · 字标 · 月/年。月份的前后翻挪到下面那颗药丸里了。 */
@@ -3582,7 +3606,8 @@ SCREENS.settings = () => {
       '<div style="display:flex;align-items:center;justify-content:center;gap:7px;' +
       'padding:14px 0 2px;color:var(--ink-muted);font-size:12px">' + ic("check", 14) +
       " " + t("set.saved") + "</div>" +
-      '<div class="sub" style="font-size:11px;text-align:center">' + lastSavedLine() +
+      '<div class="sub" style="font-size:11px;text-align:center">' + BUILD + " · " +
+      lastSavedLine() +
       "</div>" };
 };
 
