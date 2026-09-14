@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<!-- interactive-widget=resizes-content：键盘弹出时让「布局视口」自己变矮。
+     支持这条的浏览器上 100dvh 会跟着缩，抽屉贴在底上就自动落在键盘上面，
+     一行 JS 都不用。不支持的退回下面 --kb 那套。 -->
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -276,7 +279,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .phone > *{position:relative;z-index:1}
 .phone{width:390px;height:844px;border:1px solid var(--edge);border-radius:34px;
  background:var(--page);
- overflow:hidden;display:flex;flex-direction:column;position:relative;flex-shrink:0;
+ /* clip 不是 hidden：hidden 会让它变成一个「可滚动容器」—— 底图那层往外扩了
+    18%，正好把滚动区撑出去 165px，于是输入框一聚焦，浏览器为了露出光标
+    就把整个 .phone 滚上去，抽屉跟着飞到半空。clip 根本不可滚，断了根。 */
+ overflow:hidden;overflow:clip;
+ display:flex;flex-direction:column;position:relative;flex-shrink:0;
  box-shadow:var(--shadow-sheet)}
 .inset{height:40px;flex-shrink:0}
 /* 标题脱离了文档流（见 .navt），所以剩下的两边要靠 space-between 撑开，
@@ -647,7 +654,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  border-top:0;border-radius:var(--r-lg) var(--r-lg) 0 0;
  padding:10px 16px max(12px, calc(20px - var(--kb,0px)));
  display:flex;flex-direction:column;gap:11px;
- max-height:calc(88% - var(--kb,0px));overflow-y:auto;
+ max-height:calc(100% - var(--kb,0px) - 56px);overflow-y:auto;
  overscroll-behavior:contain;touch-action:pan-y}
 /* 出场曲线：默认是「快出慢停」的五次缓出，收尾长、几乎不刹车感。
    语音和打字那两张给一条会过冲的曲线 —— 弹一下再落回来，像被推上来的。 */
@@ -914,7 +921,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v22";
+const BUILD = "v23";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Literata / Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -5395,18 +5402,33 @@ app.addEventListener("pointercancel", endSwipe);
    面上打架，先不做了；ACT.mic → micStart()，micStart 里已经带了开关语义。 */
 
 /* ---- 软键盘把抽屉顶上去 -------------------------------------------------
-   iOS 上键盘弹出来不会改变 window.innerHeight，只会把 visualViewport 压矮。
-   抽屉是 position:absolute; bottom:0，于是整个躺在键盘底下：底部的按钮够不着，
-   人也「滑不下去」。把差值写进 --kb，抽屉照着上移。 */
+   iOS 上键盘弹出来不一定会改 window.innerHeight，只会把 visualViewport 压矮。
+   抽屉是 position:absolute; bottom:0，于是整个躺在键盘底下。把差值写进 --kb，
+   抽屉照着上移。
+
+   两个坑，都踩过：
+   1. 差值里**不能**减 vv.offsetTop。offsetTop 是「视觉视口被滚上去了多少」，
+      不是键盘高度。减掉它会少算，而且它和第 2 条叠在一起就是输入框乱飞。
+   2. iOS 会为了露出光标，自己把整个窗口往上滚一段。抽屉已经被 --kb 抬到
+      键盘上面了，这一滚就是第二次位移 —— 输入框直接飞到屏幕顶上。
+      所以只要发现窗口被滚了（offsetTop > 0），就原样滚回去。
+   如果浏览器认 interactive-widget=resizes-content，innerHeight 会跟着 vv 一起
+   变矮，这里算出来的 kb 自然就是 0，不会重复补偿 —— 这套是自洽的。 */
+/* 双保险：老浏览器不认 overflow:clip 的话，被滚了就滚回去 */
+app.addEventListener("scroll", () => { if (app.scrollTop) app.scrollTop = 0; });
 const vv = window.visualViewport;
 if (vv) {
   const syncKb = () => {
-    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    const kb = Math.max(0, window.innerHeight - vv.height);
     /* 一两像素的抖动别往上写，会让抽屉发颤 */
     app.style.setProperty("--kb", (kb > 24 ? kb : 0) + "px");
+    /* 别让系统再替我们滚一次 */
+    if (vv.offsetTop > 0 || window.scrollY > 0) window.scrollTo(0, 0);
+    if (app.scrollTop) app.scrollTop = 0;
   };
   vv.addEventListener("resize", syncKb);
   vv.addEventListener("scroll", syncKb);
+  syncKb();
 }
 
 /* ---- 抽屉往下拖就关掉 ---------------------------------------------------
