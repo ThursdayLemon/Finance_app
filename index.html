@@ -40,7 +40,7 @@
   --ink-muted:#8e8e8c;      /* 说明小字 */
   --ink-faint:#b9b9b6;      /* 占位、禁用 */
   --page:#f2f1ef;           /* 页面底（上面还铺一层珠光） */
-  --surface:rgba(255,255,255,.72);   /* 玻璃卡 */
+  --surface:rgba(255,255,255,.4);    /* 玻璃卡（稿子 40%） */
   --sunken:rgba(255,255,255,.5);     /* 内嵌块、只读框 */
   --field:#ffffff;          /* 输入框 */
   --edge:rgba(255,255,255,.95);      /* 卡片那圈高光边 */
@@ -50,8 +50,10 @@
   --nav:rgba(255,255,255,.8);
   --on-nav:#414140;
   --mark:#ffffff;           /* Pearl 里没有荧光笔，退化成白 */
-  --icon-bg:rgba(255,255,255,.4);   /* 图标底的白圆（稿子 40%），不带投影 */
-  --btn-bg:rgba(255,255,255,.7);    /* 顶栏那两颗：稿子 70% */
+  /* 图标底的白圆：40% 白 + 0.5px 纯白描边，不带投影。顶栏那两颗一样。 */
+  --icon-bg:rgba(255,255,255,.4);
+  --btn-bg:rgba(255,255,255,.4);
+  --icon-edge:#ffffff;
   --accent2:#f3f3f1;        /* 次级按钮底 */
   --on-tint:#414140;
   /* 这一套终于有红有绿了 —— 不用再靠涂层和字号喊话 */
@@ -81,7 +83,7 @@
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
   --glass:16px;             /* backdrop-filter 的模糊半径，关掉就填 0px */
-  --surface-solid:#fbfbfa;  /* 左滑那一层必须实心，否则底下的红会透上来 */
+  --surface-solid:#f8f7f5;  /* 左滑那一层必须实心，否则底下的红会透上来 */
 }
 
 /* ---- Say Briefly：原样留着，切回去就是原来那一版 ---- */
@@ -101,7 +103,8 @@
   --on-nav:#1a3300;
   --mark:#ffe95c;
   --icon-bg:rgba(255,255,255,.4);
-  --btn-bg:rgba(255,255,255,.7);
+  --btn-bg:rgba(255,255,255,.4);
+  --icon-edge:#ffffff;
   --accent2:#a8e5e5;
   --on-tint:#1a3300;
   --good:#1a3300;
@@ -142,6 +145,7 @@
     --mark:rgba(255,255,255,.1); --accent2:rgba(255,255,255,.1); --on-tint:#ececeb;
     --icon-bg:rgba(255,255,255,.1);
     --btn-bg:rgba(255,255,255,.14);
+    --icon-edge:rgba(255,255,255,.22);
     --good:#4fd04e; --warn:#e08a58; --bad:#e08a58;
     --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
     --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
@@ -166,6 +170,7 @@
     --mark:#f5dd4a; --accent2:#8fd4d4; --on-tint:#1a3300;
     --icon-bg:rgba(255,255,255,.1);
     --btn-bg:rgba(255,255,255,.14);
+    --icon-edge:rgba(255,255,255,.22);
     --good:#d5f5c2; --warn:#f5dd4a; --bad:#ff8a5c;
     --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
     --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
@@ -189,6 +194,7 @@
   --mark:rgba(255,255,255,.1); --accent2:rgba(255,255,255,.1); --on-tint:#ececeb;
   --icon-bg:rgba(255,255,255,.1);
   --btn-bg:rgba(255,255,255,.14);
+  --icon-edge:rgba(255,255,255,.22);
   --good:#4fd04e; --warn:#e08a58; --bad:#e08a58;
   --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
   --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
@@ -212,6 +218,7 @@
   --mark:#f5dd4a; --accent2:#8fd4d4; --on-tint:#1a3300;
   --icon-bg:rgba(255,255,255,.1);
   --btn-bg:rgba(255,255,255,.14);
+  --icon-edge:rgba(255,255,255,.22);
   --good:#d5f5c2; --warn:#f5dd4a; --bad:#ff8a5c;
   --good-tint:color-mix(in srgb, var(--good) 16%, transparent);
   --warn-tint:color-mix(in srgb, var(--warn) 16%, transparent);
@@ -292,17 +299,20 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .act{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;
  border-radius:var(--r-pill);font-size:14.5px;font-weight:var(--w-mid);
  letter-spacing:-.015em;background:var(--accent2);color:var(--ink);cursor:pointer;
- min-width:0;white-space:nowrap;overflow:hidden}
+ border:1px solid var(--icon-edge);min-width:0;white-space:nowrap;overflow:hidden}
 .act.dark{background:var(--accent);color:var(--on-accent)}
 .act:active{transform:scale(.97)}
+/* 默认是黑的（底栏正露着四个分区）；点一下换出动作键，它才变成白底 */
 .gridb{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;
- align-items:center;justify-content:center;background:var(--accent2);color:var(--ink);
+ align-items:center;justify-content:center;background:var(--accent);
+ color:var(--on-accent);border:1px solid var(--icon-edge);
  cursor:pointer;touch-action:none}
-.gridb.open{background:var(--accent);color:var(--on-accent)}
+.gridb.open{background:var(--accent2);color:var(--ink)}
 /* 展开时，两颗药丸里各坐两个分区。按样机：药丸和收起时的 .act 同底，
    药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
 .navpill{flex:1;min-width:0;height:46px;border-radius:var(--r-pill);
- background:var(--accent2);display:flex;align-items:center;justify-content:space-around}
+ background:var(--accent2);border:1px solid var(--icon-edge);
+ display:flex;align-items:center;justify-content:space-around}
 .navb{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;color:var(--ink);opacity:.5;cursor:pointer}
 .navb.on{opacity:1}
@@ -395,9 +405,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .block{background:var(--sunken);border-radius:var(--r-md);padding:8px 12px}
 /* ---- 首页（按样机 2096-1015）---------------------------------------- */
 .hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
-.mochip{display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.5);
- border:3px solid color-mix(in srgb, #acacac 30%, transparent);
- border-radius:var(--r-pill);padding:2px 6px;backdrop-filter:blur(8px)}
+.mochip{display:inline-flex;align-items:center;gap:2px;background:var(--icon-bg);
+ border:.5px solid var(--icon-edge);border-radius:var(--r-pill);padding:2px 6px;
+ backdrop-filter:blur(8px)}
 .mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
  min-width:78px;text-align:center}
 .heroamt{display:flex;align-items:center;gap:8px}
@@ -450,10 +460,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  letter-spacing:-.19px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .tilelbl{font-family:var(--font);font-size:10px;line-height:13px;color:var(--ink-muted)}
 /* 统一的白圆底：分类图标、快捷入口、行图标都用它。
-   按稿子：70% 白、不带投影 —— 玻璃卡上再叠投影会糊成一团。 */
+   按稿子：40% 白 + 0.5px 纯白描边，不带投影 —— 玻璃卡上再叠投影会糊成一团。 */
 .circ{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--icon-bg);
- color:var(--ink)}
+ border:.5px solid var(--icon-edge);color:var(--ink)}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -634,7 +644,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .thead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .thead .secttl{flex:1}
 .rnd{width:36px;height:36px;border-radius:50%;background:var(--icon-bg);display:flex;
- align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;cursor:pointer}
+ align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;cursor:pointer;
+ border:.5px solid var(--icon-edge)}
 .rnd.on{background:var(--accent);color:var(--on-accent)}
 /* 漏斗菜单挂在按钮下面，不占默认状态的地方 */
 .fmenu{position:absolute;right:16px;top:52px;z-index:5;background:var(--field);
@@ -688,7 +699,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 「我」是个圆形头像按钮，不是文字芯片 */
 .avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--btn-bg);
- color:var(--ink-muted);border:1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+ color:var(--ink-muted);border:.5px solid var(--icon-edge);
  cursor:pointer}
 /* briefly 的头像是那个黄方块的语言 */
 :root[data-skin="briefly"] .avatar{width:38px;height:38px;background:var(--mark);
@@ -709,9 +720,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  border:0;box-shadow:none;padding:8px 12px}
 /* 便利贴里的次要小字也得跟着变深，不然深色模式下会在浅底上写浅字 */
 .upcoming .sub,.upcoming .lbl{color:color-mix(in srgb, var(--on-tint) 65%, var(--accent2))}
-.iconbtn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
- justify-content:center;background:var(--icon-bg);color:var(--ink);cursor:pointer;
- border:0;flex-shrink:0}
+.iconbtn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+ justify-content:center;background:var(--btn-bg);color:var(--ink);cursor:pointer;
+ border:.5px solid var(--icon-edge);flex-shrink:0}
 :root[data-skin="briefly"] .iconbtn{width:31px;height:31px;background:transparent;
  border:1px solid var(--ink)}
 .iconbtn:active{background:var(--press)}
@@ -2504,7 +2515,10 @@ const P = {
    跟 P 里的线性图标分开放：两套的 viewBox 和描边/填充规则都不一样。 */
 const PF = {
   compass: ['0 0 24 24', '<path d="M18.25 2.76001H5.75C3.68 2.76001 2 4.44001 2 6.51001V17.49C2 19.56 3.68 21.24 5.75 21.24H18.25C20.32 21.24 22 19.56 22 17.49V6.51001C22 4.44001 20.32 2.76001 18.25 2.76001ZM5.75 4.26001H18.25C19.49 4.26001 20.5 5.27001 20.5 6.51001V6.53001C19.87 6.05001 19.1 5.76001 18.25 5.76001H5.75C4.9 5.76001 4.13 6.05001 3.5 6.53001V6.51001C3.5 5.27001 4.51 4.26001 5.75 4.26001ZM5.1 8.82001C5.03 8.83001 4.97 8.85001 4.9 8.87001C4.76 8.90001 4.62 8.93001 4.49 8.98001C4.41 9.01001 4.34 9.04001 4.27 9.07001C4.15 9.12001 4.04 9.17001 3.93 9.23001C3.85 9.27001 3.78 9.32001 3.71 9.37001C3.64 9.41001 3.57 9.45001 3.51 9.50001C3.51 8.26001 4.52 7.26001 5.76 7.26001H18.26C19.5 7.26001 20.51 8.27001 20.51 9.50001C20.45 9.45001 20.37 9.41001 20.3 9.37001C20.23 9.32001 20.16 9.28001 20.08 9.23001C19.97 9.17001 19.85 9.12001 19.74 9.07001C19.66 9.04001 19.59 9.00001 19.51 8.97001C19.38 8.92001 19.24 8.89001 19.1 8.86001C19.03 8.84001 18.96 8.82001 18.89 8.81001C18.68 8.77001 18.46 8.75001 18.24 8.75001H5.75C5.53 8.75001 5.31 8.77001 5.1 8.81001V8.82001ZM20.5 17.49C20.5 18.73 19.49 19.74 18.25 19.74H5.75C4.51 19.74 3.5 18.73 3.5 17.49V12.51C3.5 12.36 3.5 12.26 3.54 12.12C3.72 11.04 4.65 10.26 5.75 10.26H18.25C19.35 10.26 20.28 11.04 20.47 12.17C20.49 12.26 20.5 12.36 20.5 12.51V17.49Z"/><path d="M6.79 14.25H5.75C5.34 14.25 5 14.59 5 15C5 15.41 5.34 15.75 5.75 15.75H6.79C7.2 15.75 7.54 15.41 7.54 15C7.54 14.59 7.2 14.25 6.79 14.25ZM18.25 14.25H17.21C16.8 14.25 16.46 14.59 16.46 15C16.46 15.41 16.8 15.75 17.21 15.75H18.25C18.66 15.75 19 15.41 19 15C19 14.59 18.66 14.25 18.25 14.25ZM12 11.3C9.96 11.3 8.3 12.96 8.3 15C8.3 17.04 9.96 18.7 12 18.7C14.04 18.7 15.7 17.04 15.7 15C15.7 12.96 14.04 11.3 12 11.3ZM12 17.3C10.73 17.3 9.7 16.27 9.7 15C9.7 13.73 10.73 12.7 12 12.7C13.27 12.7 14.3 13.73 14.3 15C14.3 16.27 13.27 17.3 12 17.3Z"/>'],
-  bill: ['9 9 26 26', '<path d="M31.75 9.88818H12.25C11.8522 9.88818 11.4706 10.0462 11.1893 10.3275C10.908 10.6088 10.75 10.9904 10.75 11.3882V13.2632C10.75 13.661 10.908 14.0425 11.1893 14.3238C11.4706 14.6051 11.8522 14.7632 12.25 14.7632H13.75V13.6382C13.75 13.0414 13.9871 12.4692 14.409 12.0472C14.831 11.6252 15.4033 11.3882 16 11.3882H28C28.5967 11.3882 29.169 11.6252 29.591 12.0472C30.0129 12.4692 30.25 13.0414 30.25 13.6382V14.7632H31.75C32.1478 14.7632 32.5294 14.6051 32.8107 14.3238C33.092 14.0425 33.25 13.661 33.25 13.2632V11.3882C33.25 10.9904 33.092 10.6088 32.8107 10.3275C32.5294 10.0462 32.1478 9.88818 31.75 9.88818Z"/><path d="M28 14.7632H16C15.8011 14.7632 15.6103 14.8422 15.4697 14.9829C15.329 15.1235 15.25 15.3143 15.25 15.5132V32.8607C15.2496 32.9967 15.2861 33.1302 15.3557 33.247C15.4253 33.3638 15.5254 33.4595 15.6452 33.5238C15.765 33.5881 15.9 33.6187 16.0358 33.6122C16.1716 33.6057 16.3031 33.5624 16.4163 33.4869L17.0838 33.0407C17.207 32.9585 17.3518 32.9146 17.5 32.9146C17.6482 32.9146 17.793 32.9585 17.9163 33.0407L19.3338 33.9857C19.457 34.0679 19.6018 34.1118 19.75 34.1118C19.8982 34.1118 20.043 34.0679 20.1663 33.9857L21.58 33.0407C21.7033 32.9585 21.8481 32.9146 21.9963 32.9146C22.1444 32.9146 22.2893 32.9585 22.4125 33.0407L23.83 33.9857C23.9533 34.0679 24.0981 34.1118 24.2463 34.1118C24.3944 34.1118 24.5393 34.0679 24.6625 33.9857L26.0838 33.0407C26.2066 32.9592 26.3507 32.9158 26.4981 32.9158C26.6455 32.9158 26.7896 32.9592 26.9125 33.0407L27.5838 33.4869C27.6966 33.5622 27.8278 33.6055 27.9632 33.6121C28.0987 33.6188 28.2335 33.5886 28.3532 33.5247C28.4728 33.4608 28.573 33.3657 28.6428 33.2494C28.7127 33.1331 28.7498 33.0001 28.75 32.8644V15.5132C28.75 15.3143 28.671 15.1235 28.5303 14.9829C28.3897 14.8422 28.1989 14.7632 28 14.7632ZM22 29.0132C21.8517 29.0132 21.7067 28.9692 21.5833 28.8868C21.46 28.8044 21.3639 28.6872 21.3071 28.5502C21.2503 28.4132 21.2355 28.2624 21.2644 28.1169C21.2934 27.9714 21.3648 27.8377 21.4697 27.7329C21.5746 27.628 21.7082 27.5565 21.8537 27.5276C21.9992 27.4987 22.15 27.5135 22.287 27.5703C22.4241 27.627 22.5412 27.7232 22.6236 27.8465C22.706 27.9698 22.75 28.1148 22.75 28.2632C22.75 28.4621 22.671 28.6529 22.5303 28.7935C22.3897 28.9342 22.1989 29.0132 22 29.0132ZM22 26.0132C21.8517 26.0132 21.7067 25.9692 21.5833 25.8868C21.46 25.8044 21.3639 25.6872 21.3071 25.5502C21.2503 25.4132 21.2355 25.2624 21.2644 25.1169C21.2934 24.9714 21.3648 24.8377 21.4697 24.7329C21.5746 24.628 21.7082 24.5565 21.8537 24.5276C21.9992 24.4987 22.15 24.5135 22.287 24.5703C22.4241 24.627 22.5412 24.7232 22.6236 24.8465C22.706 24.9698 22.75 25.1148 22.75 25.2632C22.75 25.4621 22.671 25.6529 22.5303 25.7935C22.3897 25.9342 22.1989 26.0132 22 26.0132ZM25 23.0132H18.25C18.0511 23.0132 17.8603 22.9342 17.7197 22.7935C17.579 22.6529 17.5 22.4621 17.5 22.2632C17.5 22.0643 17.579 21.8735 17.7197 21.7329C17.8603 21.5922 18.0511 21.5132 18.25 21.5132H25C25.1989 21.5132 25.3897 21.5922 25.5303 21.7329C25.671 21.8735 25.75 22.0643 25.75 22.2632C25.75 22.4621 25.671 22.6529 25.5303 22.7935C25.3897 22.9342 25.1989 23.0132 25 23.0132ZM25 20.0132H18.25C18.0511 20.0132 17.8603 19.9342 17.7197 19.7935C17.579 19.6529 17.5 19.4621 17.5 19.2632C17.5 19.0643 17.579 18.8735 17.7197 18.7329C17.8603 18.5922 18.0511 18.5132 18.25 18.5132H25C25.1989 18.5132 25.3897 18.5922 25.5303 18.7329C25.671 18.8735 25.75 19.0643 25.75 19.2632C25.75 19.4621 25.671 19.6529 25.5303 19.7935C25.3897 19.9342 25.1989 20.0132 25 20.0132Z"/>'],
+  /* 账单：稿子里换成线描的票据（viewBox 24，描边而不是填充） */
+  bill: ['0 0 24 24',
+    '<path d="M6.48 4.08h11.04V19.92l-2.64-1.56-2.04 1.56-2.04-1.56-2.04 1.56-2.28-1.56z"/>' +
+    '<path d="M9.36 8.64h5.28M9.36 12.48h5.28"/>', "stroke", 1.26],
   sprout: ['9 9 26 26', '<path d="M15.1304 26.257C15.0597 26.2659 14.9882 26.2659 14.9175 26.257L15.6071 31.7912C15.6662 32.1512 15.8525 32.4782 16.1322 32.7125C16.4119 32.9469 16.7663 33.0731 17.1312 33.0683H26.8629C27.234 33.0717 27.5937 32.9394 27.8743 32.6965C28.1549 32.4535 28.3372 32.1164 28.3869 31.7486L29.0766 26.1889C28.9742 26.2325 28.8643 26.2556 28.753 26.257H15.1304ZM29.2298 20.8164C29.0851 20.6522 28.9069 20.5208 28.7071 20.4313C28.5074 20.3417 28.2908 20.2959 28.0719 20.2971H25.5687C25.8492 20.0869 26.1138 19.8564 26.3605 19.6074C26.9251 19.0625 27.3764 18.4115 27.6888 17.6917C27.878 17.3676 27.9594 16.9917 27.9211 16.6183C27.8829 16.2449 27.727 15.8933 27.4759 15.6143C26.6245 14.7628 24.9898 15.2226 23.4828 16.7296C23.1849 17.0255 22.9142 17.3475 22.6739 17.6917C22.5656 17.0061 22.4091 16.329 22.2056 15.6654C21.6607 13.8944 20.6305 11.7829 19.3874 11.1273C19.197 11.0213 18.9863 10.9566 18.7692 10.9375C18.5521 10.9185 18.3334 10.9454 18.1273 11.0166C16.5096 11.5871 16.6118 14.567 17.4462 17.266C17.7563 18.3309 18.2057 19.35 18.7829 20.2971H15.9222C15.7021 20.2963 15.4844 20.3422 15.2833 20.4318C15.0823 20.5213 14.9024 20.6524 14.7557 20.8164C14.6149 20.9766 14.5101 21.1651 14.4484 21.3693C14.3867 21.5735 14.3696 21.7885 14.3981 21.9999L14.7302 24.6819C14.8517 24.6084 14.9888 24.5646 15.1304 24.5541H28.753C28.9353 24.5584 29.1114 24.6211 29.2554 24.7329L29.6044 21.9999C29.6302 21.7873 29.6101 21.5717 29.5454 21.3675C29.4808 21.1634 29.3732 20.9755 29.2298 20.8164Z"/>'],
   vault: ['9 9 26 26', '<path d="M30.2509 21.9424C31.0822 21.2859 31.7114 20.429 32.0962 19.473C32.3612 20.2524 32.5 21.1259 32.5 22.1011C32.5 24.4295 31.678 26.0607 30.835 27.1114C30.4167 27.633 29.9968 28.0075 29.677 28.2544C29.614 28.303 29.5548 28.3467 29.5 28.3858V29.9505C29.5 31.1931 28.4926 32.2005 27.25 32.2005H26.5C25.6715 32.2005 25 31.5288 25 30.7005H22C22 31.5288 21.3285 32.2005 20.5 32.2005H19.75C18.5074 32.2005 17.5 31.1931 17.5 29.9505V29.6305C17.3705 29.5893 17.2255 29.5383 17.0689 29.475C16.469 29.2329 15.6873 28.8082 14.9661 28.0771C14.0779 27.1768 13.5804 26.0502 13.3311 25.3432C13.2495 25.1118 13.086 24.9661 12.9268 24.9211C12.0828 24.6826 11.5 23.9122 11.5 23.0351V21.8442C11.5 20.9803 12.0726 20.2211 12.9031 19.9837C13.0582 19.9393 13.2263 19.7878 13.3091 19.5376C13.5111 18.9268 13.9007 18.0242 14.6147 17.3005C15.1988 16.7084 15.8292 16.2708 16.3077 15.9826C16.4527 15.8953 16.5852 15.8208 16.7 15.7592V12.9429C16.7 12.4126 17.0476 12.0384 17.4212 11.8868C17.7917 11.7364 18.2884 11.7616 18.6599 12.1125C19.0391 12.4707 19.5375 12.8992 20.0706 13.2481C20.6173 13.6059 21.1303 13.8331 21.5486 13.8755L21.5566 13.8763C20.7646 15.052 20.3998 16.4916 20.5694 17.9332C20.7509 19.4755 21.9445 20.403 22.9466 20.818L26.5301 22.302C27.5323 22.717 29.0322 22.9049 30.2509 21.9424ZM17.125 20.9497C17.7463 20.9497 18.25 20.446 18.25 19.8247C18.25 19.2034 17.7463 18.6997 17.125 18.6997C16.5037 18.6997 16 19.2034 16 19.8247C16 20.446 16.5037 20.9497 17.125 20.9497Z"/><path d="M21.3872 15.3841C21.9157 14.0843 22.9637 12.9863 24.3953 12.409C27.2008 11.2776 30.4174 12.5741 31.5798 15.3048C32.5432 17.568 31.7932 20.106 29.9108 21.5528C29.1478 22.1393 28.1 22.0943 27.2017 21.7322L22.823 19.9673C21.9248 19.6052 21.151 18.9159 21.0374 17.9761C20.9819 17.5171 20.9889 17.0583 21.0538 16.6105L21.3872 15.3841ZM21.3872 15.3841L21.1378 16.1668C21.1765 16.002 21.223 15.8393 21.2773 15.6791C21.311 15.5797 21.3476 15.4814 21.3872 15.3841Z"/>'],
   user: ['0 0 20 20', '<path d="M10 10.8333C11.9967 10.8333 13.8125 11.4117 15.1483 12.2258C15.815 12.6342 16.385 13.1133 16.7967 13.6342C17.2017 14.1475 17.5 14.7608 17.5 15.4167C17.5 16.1208 17.1575 16.6758 16.6642 17.0717C16.1975 17.4467 15.5817 17.695 14.9275 17.8683C13.6125 18.2158 11.8575 18.3333 10 18.3333C8.1425 18.3333 6.3875 18.2167 5.0725 17.8683C4.41833 17.695 3.8025 17.4467 3.33583 17.0717C2.84167 16.675 2.5 16.1208 2.5 15.4167C2.5 14.7608 2.79833 14.1475 3.20333 13.6342C3.615 13.1133 4.18417 12.6342 4.85167 12.2258C6.1875 11.4117 8.00417 10.8333 10 10.8333Z"/><path d="M10 1.66667C13.2075 1.66667 15.2125 5.13917 13.6083 7.91667C13.2426 8.55007 12.7167 9.07605 12.0833 9.44175C11.4499 9.80745 10.7314 9.99998 10 10C6.7925 10 4.7875 6.5275 6.39167 3.75C6.75736 3.1166 7.28333 2.59062 7.91673 2.22492C8.55012 1.85922 9.26861 1.66669 10 1.66667Z"/>'],
@@ -2520,6 +2534,11 @@ const PF = {
 const ic = (n, s = 20, c) => {
   const st = 'flex-shrink:0' + (c ? ";color:" + c : "");
   const f = PF[n];
+  /* PF 默认是填充型；第三项写 "stroke" 的那几个走描边，第四项是线宽 */
+  if (f && f[2] === "stroke") return '<svg width="' + s + '" height="' + s +
+    '" viewBox="' + f[0] + '" fill="none" stroke="currentColor" stroke-width="' +
+    (f[3] || 1.5) + '" stroke-linecap="round" stroke-linejoin="round" style="' + st +
+    '">' + f[1] + "</svg>";
   if (f) return '<svg width="' + s + '" height="' + s + '" viewBox="' + f[0] +
     '" fill="currentColor" style="' + st + '">' + f[1] + "</svg>";
   return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 20 20" ' +
