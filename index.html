@@ -2677,6 +2677,14 @@ function push(s) { ui.stack.push(s); ui.sheet = null; ui.f = {}; ui.fStack = [];
 function pop() { if (ui.stack.length > 1) ui.stack.pop(); ui.f = {}; ui.sheet = null; render(); }
 function go(tab) { ui.stack = [tab]; ui.sheet = null; ui.f = {}; render(); }
 function sheet(name, init) { ui.sheet = name; ui.f = init || {}; ui.anim = true; render(); }
+/* 「记一笔」点开就该能打字。focus 必须留在这一次点击的任务里 ——
+   放进 setTimeout 的话 iOS 不认，键盘不会弹。 */
+function focusJot() {
+  const ta = app.querySelector('.sheet textarea[data-f="text"]');
+  if (!ta) return;
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
 function close() {
   /* 抽屉关了麦克风也得关，不然它在后台一直听着 */
   if (typeof micStop === "function") micStop();
@@ -2691,6 +2699,7 @@ function popSheet(patch) {
   const prev = (ui.fStack || []).pop();
   if (!prev) return close();
   ui.sheet = prev.sheet; ui.f = Object.assign(prev.f, patch || {}); ui.anim = true; render();
+  if (ui.sheet === "jot") focusJot();
 }
 let toastTimer = null;
 function toast(msg) {
@@ -3779,7 +3788,12 @@ SCREENS.wishItem = () => {
 const grab = '<div class="grab"></div>';
 const head = (title, extra) => '<div style="display:flex;align-items:center;gap:9px">' +
   '<div class="h2" style="flex:1">' + title + "</div>" + (extra || "") +
-  '<div data-a="close" style="cursor:pointer;color:var(--ink-muted)">' + ic("close", 18) + "</div></div>";
+  /* 压在别的抽屉上面时给返回：叉会把底下那一层填的东西一起丢掉 */
+  ((ui.fStack || []).length
+    ? '<div data-a="popSheet" style="cursor:pointer;color:var(--ink-muted)">' +
+      ic("back", 18) + "</div>"
+    : '<div data-a="close" style="cursor:pointer;color:var(--ink-muted)">' +
+      ic("close", 18) + "</div>") + "</div>";
 const errline = () => ui.f.err
   ? '<div class="errline"><span style="margin-top:2px">' + ic("warn", 14) + "</span><div>" +
     ui.f.err + "</div></div>" : "";
@@ -3902,7 +3916,7 @@ SHEETS.jot = () => {
     '<div class="asbox"><textarea data-f="text" autofocus placeholder="' +
     esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" +
     '<div class="asrow">' +
-    '<div class="asmini round" data-a="addTx" title="' + esc(t("as.manual")) + '">' +
+    '<div class="asmini round" data-a="detail" title="' + esc(t("as.manual")) + '">' +
     ic("ellipsis", 15) + '</div><div class="sp"></div>' +
     (micOK() ? '<div class="asmini" data-a="assistant">' + ic("mic", 13) +
       "<span>" + t("as.speak") + "</span></div>" : "") +
@@ -4449,7 +4463,21 @@ const ACT = {
   mic: () => micStart(),
   /* 重录：把这一轮说的丢掉，重新开口 */
   redo: () => { micStop(); ui.f.text = ""; ui.f.err = null; micStart(); },
-  jot: () => { micStop(); sheet("jot", { text: "" }); },
+  jot: () => { micStop(); sheet("jot", { text: "" }); focusJot(); },
+  /* 左下那颗「更多」：先拿解析器猜一遍，能猜到就把表单填好，猜不到
+     至少把这句话放进描述里 —— 这一步是「要更多细节」，不是从头再来。 */
+  detail: () => {
+    const said = (ui.f.text || "").trim();
+    const p = said ? (parseUtterance(said) || parseUtterance(fixByHistory(said))) : null;
+    const d = p && (p.intent === "ledger" || p.intent === "multi_ledger")
+      ? p.drafts[0] : null;
+    pushSheet("addTx", d
+      ? { type: d.type, amount: (d.amount / 100).toFixed(2), category: d.category,
+          description: d.description, date: d.date }
+      : { type: "out", category: "food", description: said,
+          date: isThisMonth() ? today() : lastDayOf(viewMonth()) });
+  },
+  popSheet: () => popSheet(),
   shoot: () => { ui.f.err = t("as.shootSoon"); render(); },
   editDraft: (i) => { const d = ui.f.parsed.drafts[+i];
     pushSheet("editDraft", { i: +i, type: d.type, amount: (d.amount / 100).toFixed(2),
