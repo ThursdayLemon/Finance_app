@@ -296,31 +296,16 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  align-items:center;justify-content:center;background:var(--accent2);color:var(--ink);
  cursor:pointer;touch-action:none}
 .gridb.open{background:var(--accent);color:var(--on-accent)}
-/* 按住之后扇出来的四个分区 —— Pinterest 那一套：不松手，划过去选，松手落定 */
-.fan{position:absolute;inset:0;z-index:6;pointer-events:none;
- opacity:0;visibility:hidden;transition:opacity .16s ease,visibility .16s}
-.fan.on{opacity:1;visibility:visible}
-.fanitem{position:absolute;width:58px;margin-left:-29px;margin-top:-29px;
- display:flex;flex-direction:column;align-items:center;gap:6px;
- transform:scale(.4);opacity:0;
- transition:transform .22s cubic-bezier(.2,1.3,.4,1),opacity .16s ease;
- pointer-events:auto;cursor:pointer}
-.fan.on .fanitem{transform:scale(1);opacity:1}
-.fanitem .fd{width:58px;height:58px;border-radius:50%;background:var(--icon-bg);
- display:flex;align-items:center;justify-content:center;color:var(--ink);
- backdrop-filter:blur(10px);
- transition:transform .13s ease,background .13s ease,color .13s ease}
-.fanitem .fl{position:relative;z-index:1;font-family:var(--font);font-size:11px;
- font-weight:var(--w-mid);letter-spacing:-.01em;color:var(--ink);background:var(--nav);
- border-radius:var(--r-pill);padding:3px 9px;white-space:nowrap;backdrop-filter:blur(6px);
- opacity:0;transition:opacity .12s}
-/* 点击式的扇形一打开标签就全显 —— 不然第一次用的人不知道这四个是什么 */
-.fan.on .fanitem .fl{opacity:1}
-.fanitem:active .fd{transform:scale(1.12);background:var(--accent);color:var(--on-accent)}
-.fanitem.cur .fd{background:var(--accent);color:var(--on-accent)}
-.fandim{position:absolute;inset:0;z-index:5;display:none;
- background:color-mix(in srgb, var(--page) 45%, transparent);backdrop-filter:blur(2px)}
-.fandim.on{display:block}
+/* 展开时，两颗药丸里各坐两个分区。按样机：药丸和收起时的 .act 同底，
+   药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
+.navpill{flex:1;min-width:0;height:46px;border-radius:var(--r-pill);
+ background:var(--accent2);display:flex;align-items:center;justify-content:space-around}
+.navb{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;color:var(--ink);opacity:.5;cursor:pointer}
+.navb.on{opacity:1}
+.navb:active{transform:scale(.92)}
+/* 收起时如果这一页没有语音键，左边留一颗同宽的空药丸，点阵才不会跑偏 */
+.act.ghost{background:transparent;pointer-events:none}
 
 /* Pearl：白玻璃 + 一圈高光边 + 很软的投影。briefly：跟页面底同色、靠描边分层。 */
 .card{border:1px solid var(--edge);border-radius:var(--r);background:var(--surface);
@@ -4364,9 +4349,8 @@ const ACT = {
   toQuiz: () => { const it = ui.f.parsed.item;
     ui.quiz = { name: it.name, price: it.price, necessity: it.necessity, dup: it.dup };
     ui.sheet = null; ui.stack = ["decisions"]; render(); },
-  tab: (t) => { fanClose(); go(t); },
-  fan: () => { if (fanState.open) fanClose(); else fanOpen(); },
-  fanClose: () => fanClose(),
+  tab: (t) => { ui.navOpen = false; go(t); },
+  nav: () => { ui.navOpen = !ui.navOpen; render(); },
   seg: (a) => { const [k, v] = a.split(":");
     if (k === "mode") S.saveMode = v === "save";
     else if (k === "txtype") ui.f.type = v;
@@ -4843,56 +4827,28 @@ addDebt: () => sheet("addDebt", {}),
    四个分区不再常驻，收进点阵那颗按钮后面的扇形里。
    两套皮肤共用这一套结构 —— 奶油纸现在是这个版式的一次换色，不是另一套版式。 */
 function dockHtml(tab, fab) {
-  return '<div class="fandim" data-a="fanClose"></div>' +
-    '<div class="fan">' + TABS().map(([i, l, k]) =>
-      '<div class="fanitem' + (k === tab ? " cur" : "") + '" data-a="tab:' + k +
-      '" title="' + esc(l) + '">' +
-      '<div class="fd">' + ic(i, 22) + '</div><div class="fl">' + esc(l) + "</div></div>")
-      .join("") + "</div>" +
-    '<div class="dock">' +
-    (fab ? '<div class="act dark" data-a="assistant">' + ic("mic", 17) +
-      "<span>" + t("as.speak") + "</span></div>" : "") +
-    '<div class="gridb" data-a="fan" title="' + esc(t("nav.sections")) + '">' +
-    ic("dots", 17) + "</div>" +
-    '<div class="act" data-a="addTx">' + ic("plus", 17) +
-    "<span>" + t("word.addOne") + "</span></div></div>";
-}
-
-/* ---- 中间那颗点阵：点一下扇出四个分区，再点一下（或点别处）收回去 ----------
-   本来做成长按的，但长按是个没人知道要去试的手势 —— 改成点击。 */
-const fanState = { open: false };
-const fanEls = () => ({ fan: app.querySelector(".fan"), grid: app.querySelector(".gridb"),
-  dim: app.querySelector(".fandim") });
-function fanPlace() {
-  const { fan, grid } = fanEls();
-  if (!fan || !grid) return;
-  const pb = app.getBoundingClientRect(), gb = grid.getBoundingClientRect();
-  const cx = gb.left - pb.left + gb.width / 2, cy = gb.top - pb.top + gb.height / 2;
-  /* 从左上扇到右上，−90° 是正上方 */
-  const ANG = [-142, -108, -72, -38], R = 112;
-  [...fan.children].forEach((el, i) => {
-    const a = ANG[i] * Math.PI / 180;
-    el.style.left = (cx + Math.cos(a) * R) + "px";
-    el.style.top = (cy + Math.sin(a) * R) + "px";
-    el.style.transitionDelay = (fanState.open ? i * 26 : 0) + "ms";
-  });
-}
-function fanOpen() {
-  const { fan, grid, dim } = fanEls();
-  if (!fan) return;
-  fanState.open = true;
-  fanPlace();
-  fan.classList.add("on");
-  dim.classList.add("on");
-  grid.classList.add("open");
-  fanPlace();
-}
-function fanClose() {
-  const { fan, grid, dim } = fanEls();
-  fanState.open = false;
-  if (fan) fan.classList.remove("on");
-  if (dim) dim.classList.remove("on");
-  if (grid) grid.classList.remove("open");
+  /* 底栏两种状态，就地互换，不弹浮层：
+       收起 —— 说一句 · 点阵 · 记一笔
+       展开 —— 四个分区分坐两颗药丸里，点阵变深表示「正在选分区」
+     上一版是按点阵扇出一个弧形浮层（Pinterest 那种）：手势要教，还得盖一层
+     蒙版把正文压暗。就地换掉不用教，也不挡内容。 */
+  const secs = TABS();
+  const half = (from, to) => '<div class="navpill">' +
+    secs.slice(from, to).map(([i, l, k]) =>
+      '<div class="navb' + (k === tab ? " on" : "") + '" data-a="tab:' + k +
+      '" title="' + esc(l) + '">' + ic(i, 22) + "</div>").join("") + "</div>";
+  return '<div class="dock">' +
+    (ui.navOpen
+      ? half(0, 2)
+      : (fab ? '<div class="act dark" data-a="assistant">' + ic("mic", 17) +
+          "<span>" + t("as.speak") + "</span></div>" : '<div class="act ghost"></div>')) +
+    '<div class="gridb' + (ui.navOpen ? " open" : "") + '" data-a="nav" title="' +
+    esc(t("nav.sections")) + '">' + ic("dots", 17) + "</div>" +
+    (ui.navOpen
+      ? half(2, 4)
+      : '<div class="act" data-a="addTx">' + ic("plus", 17) +
+        "<span>" + t("word.addOne") + "</span></div>") +
+    "</div>";
 }
 
 /* 自动扣款的目标，到了日子就自己把这个月记上（幂等）。真实实现里这是后端的定时任务。 */
@@ -5018,6 +4974,8 @@ function render() {
 }
 app.addEventListener("click", (e) => {
   if (swallowClick) { swallowClick = false; e.stopPropagation(); return; }
+  /* 分区展开着的时候点别处 —— 收起来。没有蒙版可点，只能在这儿兜。 */
+  if (ui.navOpen && !e.target.closest(".dock")) { ui.navOpen = false; render(); }
   const el = e.target.closest("[data-a]");
   if (!el || el.classList.contains("off")) {
     if (el && el.classList.contains("off")) return;
@@ -5093,7 +5051,6 @@ app.addEventListener("pointercancel", endSwipe);
    有人就是习惯点一下，而且点开之后也得有办法点回去。
    松手的监听挂在 window 上：micStart 会重绘整个抽屉，按钮那个节点早没了。 */
 let holdTimer = null, holding = false, holdY0 = 0;
-window.addEventListener("resize", () => { if (fanState.open) fanPlace(); });
 
 app.addEventListener("pointerdown", (e) => {
   /* 胶囊两端是拍照和打字，按在那儿不该触发说话 */
