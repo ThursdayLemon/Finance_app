@@ -8,12 +8,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#fcfaf5">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- css2 的多轴写法：每个 tuple 都要把所有轴的值写全。
-     以前写成 opsz,wght@7..72,400;500;600，整条请求 400，Literata 一直没加载过，
-     衬线一路退到宋体 —— 「字体不对」的真正原因在这一行，不在 CSS 里。 -->
+<!-- 字体请求一旦写错是静默失败的：整条 css2 返回 400，六个字体一个都不下来，
+     页面看着「字体不对」，但 CSS 是对的。之前 Literata 就是这么挂了一路。
+     drive.mjs 里有一条断言专门请求这几条 URL 验 200。 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Bona+Nova:ital,wght@0,400;0,700;1,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -69,14 +69,14 @@
   --shadow-nav:0 12px 34px -18px rgba(65,65,64,.45);
   --shadow-card:0 8px 26px -18px rgba(65,65,64,.28);
   --shadow-sheet:0 -8px 30px -18px rgba(65,65,64,.4);
-  /* 按 Figma：正文 Onest，标题/数字 Literata。两个都从 Google Fonts 来，
+  /* 正文 Onest。两个都从 Google Fonts 来，
      所以手机和电脑上是同一套，不靠本机装没装。 */
   --font:"Onest","PingFang SC","Hiragino Sans GB",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
-  --font-display:"Literata","Songti SC",Georgia,serif;
-  /* 数字自己一套衬线 —— Caslon 的数字比 Literata 的更立得住 */
-  --font-num:"Libre Caslon Text","Literata","Songti SC",Georgia,serif;
+  --font-display:"Bona Nova","Songti SC",Georgia,serif;
+  /* 标题一套衬线、数字另一套 —— Caslon 的数字比标题那支更立得住 */
+  --font-num:"Libre Caslon Text","Bona Nova","Songti SC",Georgia,serif;
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
   --glass:16px;             /* backdrop-filter 的模糊半径，关掉就填 0px */
@@ -333,7 +333,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
    三套字各管一摊：
      Libre Caslon Text —— 所有数字和金额（--font-num）
-     Literata Regular  —— 标题和条目名（--font-display，一律 400，不上粗细）
+     Bona Nova Regular —— 标题和条目名（--font-display，一律 400，不上粗细）
      Onest             —— 界面字：标签、元信息、按钮文字、坐标轴
    不要再凭手感改这些值。 */
 .serif,.rowname,.cardtitle,.wordmark,.secttl,.tn b{font-family:var(--font-display);
@@ -350,13 +350,13 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .secttl{font-size:17px;line-height:22px;letter-spacing:-.34px;color:var(--ink)}
 /* 条目名：15/20 */
 .rowname,.tn b{font-size:15px;line-height:20px;letter-spacing:-.22px;color:var(--ink)}
-/* 界面字一律 Onest。这几处以前跟着正文走，会被 Literata 带跑。 */
+/* 界面字一律 Onest。这几处以前跟着正文走，会被衬线带跑。 */
 .hlbl,.dhead,.tn > span,.ta > span,.act,.mochip > span,.sparkl span,.chartax span{
  font-family:var(--font)}
 .hlbl{margin:16px 0 2px;font-size:14px;font-weight:var(--w-body);line-height:20px;
  color:var(--ink-muted)}
 .dhead{font-size:12.5px;line-height:16px;color:var(--ink-muted);margin:6px 0 2px}
-/* 奶油纸没有 Literata —— 它的性格在 Bricolage + 荧光笔上，衬线一律退回正文字体 */
+/* 奶油纸不用衬线 —— 它的性格在 Bricolage + 荧光笔上，衬线一律退回正文字体 */
 :root[data-skin="briefly"] .serif,:root[data-skin="briefly"] .rowname,
 :root[data-skin="briefly"] .cardtitle,:root[data-skin="briefly"] .wordmark,
 :root[data-skin="briefly"] .secttl,:root[data-skin="briefly"] .tn b{
@@ -383,7 +383,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
  min-width:78px;text-align:center}
 .heroamt{display:flex;align-items:center;gap:8px}
-/* 主数字：Literata 42/46，字距 −1.47px；小数同号但压灰 */
+/* 主数字：42/46，字距 −1.47px；小数同号但压灰 */
 .heroamt .big{font-size:42px;line-height:46px;letter-spacing:-1.47px}
 .heroamt .big .dec{color:var(--ink-faint)}
 /* 分析页那两个大数：小数降到 26；支出那个整串同色 */
@@ -397,7 +397,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .gcard{padding:16px;display:flex;flex-direction:column;cursor:pointer}
 .figure{flex:1;display:flex;flex-direction:column;align-items:center;
  justify-content:center;padding:6px 0 10px}
-/* 卡内那个数：Literata 19/24，小数降到 13 并压灰 */
+/* 卡内那个数：19/24，小数降到 13 并压灰 */
 .figure .money{font-size:19px;font-weight:var(--w-body);line-height:24px;
  letter-spacing:-.48px}
 .figure .money .dec{font-size:13px;color:var(--ink-faint)}
@@ -427,7 +427,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:14px 8px;flex:1;
  align-content:center}
 .qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
-/* 小块：数字 Literata 12.5/16，标签 Onest 10/13 */
+/* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
  letter-spacing:-.19px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .tilelbl{font-family:var(--font);font-size:10px;line-height:13px;color:var(--ink-muted)}
@@ -624,7 +624,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .tn > span{display:block;font-size:11.5px;line-height:15px;color:var(--ink-muted);
  margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ta{text-align:right;white-space:nowrap;flex-shrink:0}
-/* 金额：Literata 15/20，字距 −0.37px；小数降到 12 并压灰 */
+/* 金额：15/20，字距 −0.37px；小数降到 12 并压灰 */
 .ta b{display:block;font-size:15px;font-weight:var(--w-body);line-height:20px;
  letter-spacing:-.37px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .ta b .dec{font-size:12px;color:var(--ink-faint)}
