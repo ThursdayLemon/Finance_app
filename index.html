@@ -50,7 +50,7 @@
   --nav:rgba(255,255,255,.8);
   --on-nav:#414140;
   --mark:#ffffff;           /* Pearl 里没有荧光笔，退化成白 */
-  /* 图标底的白圆：40% 白 + 0.5px 纯白描边，不带投影。顶栏那两颗一样。 */
+  /* 图标底的白圆：40% 白 + 1px 纯白描边，不带投影。顶栏那两颗一样。 */
   --icon-bg:rgba(255,255,255,.4);
   --btn-bg:rgba(255,255,255,.4);
   --icon-edge:#ffffff;
@@ -406,7 +406,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* ---- 首页（按样机 2096-1015）---------------------------------------- */
 .hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
 .mochip{display:inline-flex;align-items:center;gap:2px;background:var(--icon-bg);
- border:.5px solid var(--icon-edge);border-radius:var(--r-pill);padding:2px 6px;
+ border:1px solid var(--icon-edge);border-radius:var(--r-pill);padding:2px 6px;
  backdrop-filter:blur(8px)}
 .mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
  min-width:78px;text-align:center}
@@ -421,7 +421,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .heroamt .eye{color:var(--ink-muted);cursor:pointer;padding:4px;display:flex}
 /* 星号挂在大写高度上，直接替数字会飘在顶上 —— 缩一档再压下来 */
 .mask{display:inline-block;font-size:.6em;letter-spacing:.12em;transform:translateY(-.06em)}
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:20px}
+/* 稿子里 Body 的间距是拿空 frame 摆出来的：余额→两张卡 22，
+   两张卡→账本 6 —— 跟两张卡之间那道缝一样宽。
+   .body 自己有 12 的 gap，所以这两块各自补差值。 */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
 .gcard{padding:16px;display:flex;flex-direction:column;cursor:pointer}
 .figure{flex:1;display:flex;flex-direction:column;align-items:center;
  justify-content:center;padding:6px 0 10px}
@@ -460,10 +463,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  letter-spacing:-.19px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .tilelbl{font-family:var(--font);font-size:10px;line-height:13px;color:var(--ink-muted)}
 /* 统一的白圆底：分类图标、快捷入口、行图标都用它。
-   按稿子：40% 白 + 0.5px 纯白描边，不带投影 —— 玻璃卡上再叠投影会糊成一团。 */
+   按稿子：40% 白 + 1px 纯白描边，不带投影 —— 玻璃卡上再叠投影会糊成一团。 */
 .circ{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--icon-bg);
- border:.5px solid var(--icon-edge);color:var(--ink)}
+ border:1px solid var(--icon-edge);color:var(--ink)}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -640,12 +643,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .listcard .sw-body{background:var(--surface-solid)}
 /* ---- 账本：按样机收进一张玻璃卡 ------------------------------------------
    卡头是「标题 · 放大镜 · 漏斗 · 饼图 · 全部」，下面按天分段。 */
-.txcard{position:relative;margin-top:12px;padding:16px 16px 6px}
+.txcard{position:relative;margin-top:-6px;padding:16px 16px 6px}
 .thead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .thead .secttl{flex:1}
 .rnd{width:36px;height:36px;border-radius:50%;background:var(--icon-bg);display:flex;
  align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;cursor:pointer;
- border:.5px solid var(--icon-edge)}
+ border:1px solid var(--icon-edge)}
 .rnd.on{background:var(--accent);color:var(--on-accent)}
 /* 漏斗菜单挂在按钮下面，不占默认状态的地方 */
 .fmenu{position:absolute;right:16px;top:52px;z-index:5;background:var(--field);
@@ -699,7 +702,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 「我」是个圆形头像按钮，不是文字芯片 */
 .avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--btn-bg);
- color:var(--ink-muted);border:.5px solid var(--icon-edge);
+ color:var(--ink-muted);border:1px solid var(--icon-edge);
  cursor:pointer}
 /* briefly 的头像是那个黄方块的语言 */
 :root[data-skin="briefly"] .avatar{width:38px;height:38px;background:var(--mark);
@@ -722,7 +725,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .upcoming .sub,.upcoming .lbl{color:color-mix(in srgb, var(--on-tint) 65%, var(--accent2))}
 .iconbtn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
  justify-content:center;background:var(--btn-bg);color:var(--ink);cursor:pointer;
- border:.5px solid var(--icon-edge);flex-shrink:0}
+ border:1px solid var(--icon-edge);flex-shrink:0}
 :root[data-skin="briefly"] .iconbtn{width:31px;height:31px;background:transparent;
  border:1px solid var(--ink)}
 .iconbtn:active{background:var(--press)}
