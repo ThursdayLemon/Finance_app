@@ -13,7 +13,7 @@
      drive.mjs 里有一条断言专门请求这几条 URL 验 200。 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Bona+Nova:ital,wght@0,400;0,700;1,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Bona+Nova:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -75,8 +75,9 @@
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
   --font-display:"Bona Nova","Songti SC",Georgia,serif;
-  /* 标题一套衬线、数字另一套 —— Caslon 的数字比标题那支更立得住 */
-  --font-num:"Libre Caslon Text","Bona Nova","Songti SC",Georgia,serif;
+  /* 数字和标题现在是同一支。留着这个 token —— 想给数字单独换一支时
+     只改这一行，全 app 的金额跟着走。 */
+  --font-num:var(--font-display);
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
   --glass:16px;             /* backdrop-filter 的模糊半径，关掉就填 0px */
@@ -242,7 +243,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .side .hint{font-family:"Caveat",cursive;font-size:16px;color:var(--ink-muted);background:var(--sunken);
  border:1px dashed var(--line);border-radius:var(--r-sm);padding:8px 11px;line-height:1.35}
 .side .ex{font-size:12px;color:var(--ink);line-height:1.9;margin:0;padding-left:16px}
-.side .clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted);margin:8px 0 0}
+.side .clock{font-variant-numeric:lining-nums tabular-nums;font-size:12px;color:var(--ink-muted);margin:8px 0 0}
 
 /* Pearl 的珠光底：五团高斯模糊的中性色，压在所有内容下面。
    换成 briefly 皮肤时整块隐藏。 */
@@ -331,16 +332,19 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .lbl,.sub{font-size:12px;color:var(--ink-muted)}
 /* ---- 排版 ------------------------------------------------------------------
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
-   三套字各管一摊：
-     Libre Caslon Text —— 所有数字和金额（--font-num）
-     Bona Nova Regular —— 标题和条目名（--font-display，一律 400，不上粗细）
+   两套字各管一摊：
+     Bona Nova Regular —— 标题、条目名、所有数字和金额
+                          （--font-display / --font-num，一律 400，不上粗细）
      Onest             —— 界面字：标签、元信息、按钮文字、坐标轴
    不要再凭手感改这些值。 */
 .serif,.rowname,.cardtitle,.wordmark,.secttl,.tn b{font-family:var(--font-display);
  font-weight:var(--w-body)}
-/* 数字一律 Caslon。只声明字族 —— 字号和字距各处自己写，别在这儿一起设，
-   不然会盖掉后面那些按稿子量出来的值。 */
-.big,.money,.num,.tileval,.ta b,.callout{font-family:var(--font-num)}
+/* 数字统一走 --font-num。只声明字族 —— 字号和字距各处自己写，别在这儿一起设，
+   不然会盖掉后面那些按稿子量出来的值。
+   Bona Nova 默认是旧式数字：4、5、7、9 掉到基线以下，而且宽度不等。
+   当书里的正文好看，当一列金额就是灾难 —— 所以显式要 lnum + tnum。 */
+.big,.money,.num,.tileval,.ta b,.callout{font-family:var(--font-num);
+ font-variant-numeric:lining-nums tabular-nums}
 /* 字标 COACH：17/22，字距 +3.7px */
 .wordmark{font-size:17px;letter-spacing:3.7px;line-height:22px;
  text-align:center;color:var(--ink)}
@@ -429,7 +433,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
 /* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
- letter-spacing:-.19px;font-variant-numeric:tabular-nums;color:var(--ink)}
+ letter-spacing:-.19px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .tilelbl{font-family:var(--font);font-size:10px;line-height:13px;color:var(--ink-muted)}
 /* 统一的白圆底：分类图标、快捷入口、行图标都用它。
    按稿子：70% 白、不带投影 —— 玻璃卡上再叠投影会糊成一团。 */
@@ -445,7 +449,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  line-height:22px;color:var(--ink);letter-spacing:-.34px}
 :root[data-skin="briefly"] .h2{font-family:var(--font);font-weight:700}
 .big{font-family:var(--font-num);font-size:42px;font-weight:var(--w-body);
- line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+ line-height:1.15;font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.03em}
 :root[data-skin="briefly"] .big{font-size:40px;font-weight:800;letter-spacing:.03em;
  line-height:1.1}
 /* 涂层是 briefly 的招牌 —— Pearl 里有红有绿，不需要它 */
@@ -460,10 +464,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 结余罩薄荷蓝 —— 缺口黄、结余蓝，方向一眼看得出 */
 .big.mark.pos{background-image:linear-gradient(var(--accent2),var(--accent2))}
 .num{font-family:var(--font-num);font-size:17px;font-weight:var(--w-body);
- font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+ font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.02em}
 :root[data-skin="briefly"] .num{font-family:var(--font);font-weight:var(--w-bold)}
 /* 负字距只给数字，压中文会让字挤在一起 */
-.money{font-variant-numeric:tabular-nums;font-weight:var(--w-body);
+.money{font-variant-numeric:lining-nums tabular-nums;font-weight:var(--w-body);
  letter-spacing:-.02em}
 :root[data-skin="briefly"] .money,:root[data-skin="briefly"] .tileval,
 :root[data-skin="briefly"] .ta b,:root[data-skin="briefly"] .callout{
@@ -626,7 +630,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .ta{text-align:right;white-space:nowrap;flex-shrink:0}
 /* 金额：15/20，字距 −0.37px；小数降到 12 并压灰 */
 .ta b{display:block;font-size:15px;font-weight:var(--w-body);line-height:20px;
- letter-spacing:-.37px;font-variant-numeric:tabular-nums;color:var(--ink)}
+ letter-spacing:-.37px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .ta b .dec{font-size:12px;color:var(--ink-faint)}
 /* 收入绿、支出砖橙 —— 稿子里就是这两个色，用的是判定色 token */
 .ta > span{display:block;font-size:11px;line-height:15px;margin-top:2px;
@@ -785,7 +789,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    不是常数 100 —— 日元韩元就是 0 位。切换币种只换符号和格式，不做汇率换算：
    这个产品里没有汇率，一个用户就用一种钱。 */
 const CUR = {
-  /* 半角 ¥ 不是全角 ￥：数字用的 Libre Caslon Text 没有全角那个码位，
+  /* 半角 ¥ 不是全角 ￥：拉丁衬线（Bona Nova / Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
   CNY: { sym: "¥", dec: 2, loc: "zh-CN" },
   USD: { sym: "$",  dec: 2, loc: "en-US" },
@@ -3156,7 +3160,7 @@ function lifeBar() {
   const pct = lifePct();
   return '<div data-a="lifeGoal" style="cursor:pointer;display:flex;align-items:center;' +
     'gap:8px"><div class="barh" style="width:58px"><i style="width:' + pct + '%"></i></div>' +
-    '<div style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">' +
+    '<div style="font-size:13px;font-weight:600;font-variant-numeric:lining-nums tabular-nums">' +
     Math.round(pct) + "%</div></div>";
 }
 
