@@ -40,7 +40,7 @@
   --ink-muted:#8e8e8c;      /* 说明小字 */
   --ink-faint:#b9b9b6;      /* 占位、禁用 */
   --page:#f2f1ef;           /* 页面底（上面还铺一层珠光） */
-  --surface:rgba(255,255,255,.4);    /* 玻璃卡（稿子 40%） */
+  --surface:rgba(255,255,255,.6);    /* 玻璃卡 */
   --sunken:rgba(255,255,255,.5);     /* 内嵌块、只读框 */
   --field:#ffffff;          /* 输入框 */
   --edge:rgba(255,255,255,.95);      /* 卡片那圈高光边 */
@@ -83,7 +83,6 @@
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
   --glass:16px;             /* backdrop-filter 的模糊半径，关掉就填 0px */
-  --surface-solid:#f8f7f5;  /* 左滑那一层必须实心，否则底下的红会透上来 */
 }
 
 /* ---- Say Briefly：原样留着，切回去就是原来那一版 ---- */
@@ -129,7 +128,6 @@
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-body:400; --w-mid:500; --w-bold:600;
   --glass:0px;
-  --surface-solid:#fcfaf5;
 }
 
 /* ---- 深色 ---------------------------------------------------------------
@@ -158,7 +156,6 @@
     --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
     --shadow-pill:none;
     --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
-    --surface-solid:#2a2a29;
   }
   /* briefly 的深色单独留着 */
   :root[data-skin="briefly"]:not([data-theme="light"]) {
@@ -182,7 +179,6 @@
     --shadow-nav:0 8px 26px 0 rgba(245,221,74,.14),0 1px 2px 0 rgba(0,0,0,.4);
     --shadow-pill:none;
     --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
-    --surface-solid:#14180f;
   }
 }
 :root[data-theme="dark"] { color-scheme: dark;
@@ -207,7 +203,6 @@
   --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
   --shadow-pill:none;
   --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
-  --surface-solid:#2a2a29;
 }
 :root[data-theme="dark"][data-skin="briefly"] {
   --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
@@ -230,7 +225,6 @@
   --shadow-nav:0 8px 26px 0 rgba(245,221,74,.14),0 1px 2px 0 rgba(0,0,0,.4);
   --shadow-pill:none;
   --shadow-sheet:0 -8px 28px -12px rgba(0,0,0,.6);
-  --surface-solid:#14180f;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
@@ -331,7 +325,13 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .gridb{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--accent);
  color:var(--on-accent);border:1px solid var(--icon-edge);
- cursor:pointer;touch-action:none}
+ cursor:pointer;touch-action:none;
+ transition:background-color .3s cubic-bezier(.32,1.35,.5,1),color .2s ease}
+/* 两侧的槽：换内容的时候淡出淡入，不要硬切 */
+.dockside{flex:1;min-width:0;display:flex;
+ transition:opacity .11s ease,transform .11s ease}
+.dockside.swapping{opacity:0;transform:scale(.97)}
+.dockside > *{flex:1;min-width:0}
 .gridb.open{background:rgba(232,232,232,.2);color:var(--ink)}
 /* 展开时，两颗药丸里各坐两个分区。按样机：药丸和收起时的 .act 同底，
    药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
@@ -579,14 +579,22 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 .fldbox.err{border-color:var(--bad);border-width:1.5px}
 .errline{display:flex;gap:7px;font-size:13px;color:var(--bad);align-items:flex-start}
-.seg{display:flex;border:1px solid var(--edge);border-radius:var(--r-pill);overflow:hidden;
- background:var(--icon-bg);padding:3px;font-weight:var(--w-mid)}
-.seg>span{border-radius:var(--r-pill)}
-:root[data-skin="briefly"] .seg{border-color:var(--ink);background:transparent;
- padding:0;border-radius:var(--r-sm)}
+.seg{--segpad:3px;position:relative;display:flex;border:1px solid var(--edge);
+ border-radius:var(--r-pill);overflow:hidden;
+ background:var(--icon-bg);padding:var(--segpad);font-weight:var(--w-mid)}
+/* 滑块：带一点过冲的曲线，切过去的时候有「重量」 */
+.segpill{position:absolute;top:var(--segpad);bottom:var(--segpad);
+ border-radius:var(--r-pill);
+ background:var(--accent);z-index:0;
+ transition:left .34s cubic-bezier(.32,1.35,.5,1),width .34s cubic-bezier(.32,1.35,.5,1)}
+.seg>span{position:relative;z-index:1;border-radius:var(--r-pill);
+ transition:color .18s ease .06s}
+:root[data-skin="briefly"] .seg{--segpad:0px;border-color:var(--ink);
+ background:transparent;border-radius:var(--r-sm)}
 :root[data-skin="briefly"] .seg>span{border-radius:0}
+:root[data-skin="briefly"] .segpill{border-radius:0}
 .seg>span{flex:1;padding:11px 0;text-align:center;font-size:14px;cursor:pointer;color:var(--ink)}
-.seg>span.on{background:var(--ink);color:var(--on-accent);font-weight:var(--w-mid)}
+.seg>span.on{color:var(--on-accent);font-weight:var(--w-mid)}
 /* 轨道 4px 是视觉；外面套一层 44 高的透明盒子当热区 */
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;
  background:transparent;cursor:pointer}
@@ -633,7 +641,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .daycard .sw.sliding .sw-del,.daycard .sw.open .sw-del{opacity:1}
 .sw.open .sw-body{transform:translateX(-76px)}
 .dim{position:absolute;inset:0;background:rgba(34,32,28,.36)}
-.dim.anim{animation:fade .18s ease}
 /* --kb 是软键盘顶上来的高度（见 visualViewport 那一段）。键盘弹出来的时候
    抽屉整个上移，不然底下的按钮会被键盘盖住，人还滑不下去。 */
 .sheet{position:absolute;left:0;right:0;bottom:var(--kb,0px);background:var(--page);
@@ -642,7 +649,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  display:flex;flex-direction:column;gap:11px;
  max-height:calc(88% - var(--kb,0px));overflow-y:auto;
  overscroll-behavior:contain;touch-action:pan-y}
-.sheet.anim{animation:up .24s cubic-bezier(.2,.8,.3,1)}
+/* 出场曲线：默认是「快出慢停」的五次缓出，收尾长、几乎不刹车感。
+   语音和打字那两张给一条会过冲的曲线 —— 弹一下再落回来，像被推上来的。 */
+.sheet.anim{animation:up .40s cubic-bezier(.22,1,.36,1)}
+.sheet.anim.bouncy{animation:upBouncy .52s cubic-bezier(.32,1.5,.5,1)}
+@keyframes upBouncy{
+  from{transform:translateY(100%)}
+  to{transform:translateY(0)}
+}
+.dim.anim{animation:fade .3s ease}
 /* 往下拖的时候跟手；松手要么弹回去、要么滑下去关掉 */
 .sheet.drag{transition:none}
 .sheet.snap{transition:transform .22s cubic-bezier(.2,.8,.3,1)}
@@ -899,7 +914,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v21";
+const BUILD = "v22";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Literata / Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1351,6 +1366,8 @@ zh: {
   "set.skin": "风格", "skin.pearl": "珠光", "skin.briefly": "奶油纸",
   "set.skinHint": "两套完整的视觉。换风格不动数据，随时切回来。",
   "set.theme": "外观", "theme.auto": "跟随系统", "theme.light": "浅色", "theme.dark": "深色",
+  "set.haptics": "触感反馈",
+  "set.hapticsSub": "点按时轻轻震一下。iPhone 上装成主屏 App 时可能没有 —— 系统没给网页这个口子。",
   "set.currency": "货币",
   "set.language": "语言",
 },
@@ -1804,6 +1821,8 @@ en: {
   "set.saved": "Everything on this page is saved",
   "set.skin": "Style", "skin.pearl": "Pearl", "skin.briefly": "Cream paper",
   "set.skinHint": "Two complete looks. Switching changes nothing but the surface.",
+  "set.haptics": "Haptics",
+  "set.hapticsSub": "A light tap when you press things. May not fire on iPhone \u2014 the OS doesn\u2019t expose it to web apps.",
   "set.theme": "Appearance", "theme.auto": "System", "theme.light": "Light",
   "theme.dark": "Dark",
   "set.currency": "Currency",
@@ -2850,9 +2869,22 @@ const select = (f, opts, val) => '<select class="fldbox" data-f="' + f + '">' +
   opts.map((o) => { const [v, l] = Array.isArray(o) ? o : [o, o];
     return '<option value="' + esc(v) + '"' + (v === val ? " selected" : "") + ">" +
       esc(l) + "</option>"; }).join("") + "</select>";
-const seg = (key, opts, val) => '<div class="seg">' + opts.map((o) =>
-  '<span class="' + (o[1] === val ? "on" : "") + '" data-a="seg:' + key + ":" + o[1] + '">' +
-  o[0] + "</span>").join("") + "</div>";
+/* 选中的那块底不是画在 span 上的，是一条单独的滑块 —— 这样切换时它能
+   滑过去，而不是这边灭那边亮。位置用百分比算，几个选项都通用。 */
+/* 滑块的宽和位置跟着内边距算，奶油纸那套 padding 是 0 也对得上。
+   手写 .seg 的那几处（月/年、分类抽屉）也得插这一条，不然选中态就没底了。 */
+const segPill = (i, n) => {
+  const track = "(100% - var(--segpad) * 2)";
+  return '<i class="segpill" style="width:calc(' + track + " / " + n +
+    ');left:calc(var(--segpad) + ' + track + " * " + i + " / " + n + ')"></i>';
+};
+const seg = (key, opts, val) => {
+  const i = Math.max(0, opts.findIndex((o) => o[1] === val));
+  const n = opts.length;
+  return '<div class="seg">' + segPill(i, n) +
+    opts.map((o) => '<span class="' + (o[1] === val ? "on" : "") +
+      '" data-a="seg:' + key + ":" + o[1] + '">' + o[0] + "</span>").join("") + "</div>";
+};
 /* 分类饼图：单色阶（颜色留给红黄绿判定），按金额从大到小，切片之间留 2px 缝。
    身份靠标签，不靠颜色 —— 图例里有名字和金额。 */
 /* 饼图色阶：单色由深到浅（颜色留给红黄绿判定），也走 token */
@@ -2919,6 +2951,7 @@ const navBack = () => atHome() ? ""
     ic("back", 20) + "</div>";
 const scopeToggle = () => '<div class="seg" style="border-width:1px;border-radius:999px;' +
   'overflow:hidden;flex:none">' +
+  segPill((ui.scope || "month") === "year" ? 1 : 0, 2) +
   [[t("scope.month"), "month"], [t("scope.year"), "year"]].map(([l, v]) =>
     '<span class="' + ((ui.scope || "month") === v ? "on" : "") + '" data-a="scope:' + v +
     '" style="padding:4px 15px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
@@ -3599,6 +3632,12 @@ SCREENS.settings = () => {
         .map(([k, key]) => '<div class="chip ' + ((S.theme || "auto") === k ? "on" : "") +
           '" data-a="theme:' + k + '">' + t(key) + "</div>").join("") + "</div></div>" +
 
+      /* 一直震是会烦人的，给一个关得掉的开关 */
+      '<div class="row" data-a="haptics" style="cursor:pointer">' +
+      '<div style="flex:1"><div style="font-size:15px">' + t("set.haptics") + "</div>" +
+      '<div class="sub" style="font-size:11.5px">' + t("set.hapticsSub") + "</div></div>" +
+      '<div class="toggle' + (S.haptics === false ? "" : " on") + '"><i></i></div></div>' +
+
       '<div class="fld" style="margin-top:6px"><div class="lbl">' + t("set.cooldown") +
       "</div>" +
       '<div style="display:flex;gap:7px">' + [24, 48, 72, 168].map((h) =>
@@ -4273,6 +4312,7 @@ SHEETS.cats = () => {
   const months = isYear() ? activeMonths(viewYear()) : [viewMonth()];
   const rows = foldSmall(breakdownOver(months, kind));
   const toggle = '<div class="seg" style="border-width:1px;border-radius:999px;overflow:hidden">' +
+    segPill(kind === "in" ? 1 : 0, 2) +
     [[t("word.spending"), "out"], [t("word.income"), "in"]].map(([l, v]) =>
       '<span class="' + (v === kind ? "on" : "") + '" data-a="seg:cats:' + v +
       '" style="padding:5px 13px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
@@ -4575,7 +4615,7 @@ const ACT = {
     ui.quiz = { name: it.name, price: it.price, necessity: it.necessity, dup: it.dup };
     ui.sheet = null; ui.stack = ["decisions"]; render(); },
   tab: (t) => { ui.navOpen = false; go(t); },
-  nav: () => { ui.navOpen = !ui.navOpen; render(); },
+  nav: () => { ui.navOpen = !ui.navOpen; paintDock(); },
   seg: (a) => { const [k, v] = a.split(":");
     if (k === "mode") S.saveMode = v === "save";
     else if (k === "txtype") ui.f.type = v;
@@ -4587,6 +4627,7 @@ const ACT = {
   cool: (h) => { S.cooldownHours = +h; render(); },
   cur: (k) => { S.currency = k; render(); toast(t("k.currencyNow", { code: k })); },
   theme: (k) => { S.theme = k; applyTheme(); render(); },
+  haptics: () => { S.haptics = S.haptics === false; render(); },
   skin: (k) => { S.skin = k; applySkin(); render(); },
   hideBal: () => { ui.hideBal = !ui.hideBal; render(); },
   /* 账本卡头的三个键。筛选菜单开着的时候再点一次就收起来。 */
@@ -5081,19 +5122,41 @@ function dockHtml(tab, fab) {
     secs.slice(from, to).map(([i, l, k]) =>
       '<div class="navb' + (k === tab ? " on" : "") + '" data-a="tab:' + k +
       '" title="' + esc(l) + '">' + ic(i, 22) + "</div>").join("") + "</div>";
+  /* 两侧各包一层槽：切换时只换槽里的东西，中间那颗点阵始终是同一个节点，
+     它的深浅才过渡得起来（整块重画的话，新节点一上来就是终态，没得过渡）。 */
+  const left = (acts) => acts
+    ? (fab ? '<div class="act dark" data-a="assistant">' + ic("mic", 17) +
+        "<span>" + t("as.speak") + "</span></div>" : '<div class="act ghost"></div>')
+    : half(0, 2);
+  const right = (acts) => acts
+    ? '<div class="act" data-a="jot">' + ic("plus", 17) +
+      "<span>" + t("word.addOne") + "</span></div>"
+    : half(2, 4);
+  dockSlots = { left, right };
   const acts = ui.navOpen;                 /* true = 露出说一句 / 记一笔 */
   return '<div class="dock">' +
-    (acts
-      ? (fab ? '<div class="act dark" data-a="assistant">' + ic("mic", 17) +
-          "<span>" + t("as.speak") + "</span></div>" : '<div class="act ghost"></div>')
-      : half(0, 2)) +
+    '<div class="dockside">' + left(acts) + "</div>" +
     '<div class="gridb' + (acts ? " open" : "") + '" data-a="nav" title="' +
     esc(t("nav.sections")) + '">' + ic("dots", 17) + "</div>" +
-    (acts
-      ? '<div class="act" data-a="jot">' + ic("plus", 17) +
-        "<span>" + t("word.addOne") + "</span></div>"
-      : half(2, 4)) +
+    '<div class="dockside">' + right(acts) + "</div>" +
     "</div>";
+}
+let dockSlots = null;
+/* 只换两侧的槽，不重画整页 —— 中间那颗留在原地，深浅的过渡才跑得起来。 */
+function paintDock() {
+  const d = app.querySelector(".dock");
+  if (!d || !dockSlots) return render();
+  const sides = d.querySelectorAll(".dockside");
+  const grid = d.querySelector(".gridb");
+  if (sides.length !== 2 || !grid) return render();
+  const acts = ui.navOpen;
+  sides.forEach((el) => el.classList.add("swapping"));
+  grid.classList.toggle("open", acts);
+  setTimeout(() => {
+    sides[0].innerHTML = dockSlots.left(acts);
+    sides[1].innerHTML = dockSlots.right(acts);
+    sides.forEach((el) => el.classList.remove("swapping"));
+  }, 110);
 }
 
 /* 自动扣款的目标，到了日子就自己把这个月记上（幂等）。真实实现里这是后端的定时任务。 */
@@ -5203,7 +5266,10 @@ function render() {
     '<div class="body' + (v.fab ? " hasfab" : "") + '">' + v.body + "</div>" +
     (!ui.sheet && (tab || v.fab) ? dockHtml(tab, v.fab) : "") +
     (ui.sheet ? '<div class="dim' + (ui.anim ? " anim" : "") + '" data-a="close"></div>' +
-      '<div class="sheet' + (ui.anim ? " anim" : "") + '">' + SHEETS[ui.sheet]() + "</div>" : "") +
+      /* 语音和打字是「被推上来」的，给一条会过冲的曲线；别的抽屉稳稳滑上来 */
+      '<div class="sheet' + (ui.anim ? " anim" : "") +
+      (/^(assistant|jot)$/.test(ui.sheet) ? " bouncy" : "") + '">' +
+      SHEETS[ui.sheet]() + "</div>" : "") +
     (ui.toast ? '<div class="toast' + (ui.sheet ? " high" : "") + '">' + ic("check", 17) +
       '<div style="flex:1">' + esc(ui.toast) + "</div></div>" : "");
   ui.lastScreen = key;
@@ -5217,6 +5283,39 @@ function render() {
   }
   if (animating) ui.anim = false;
 }
+/* ---- 触感 ------------------------------------------------------------
+   你说的那个「点下去有重量」是 Taptic Engine。Web 上没有直通它的 API：
+     · Android / Chrome：navigator.vibrate 能用，给不同的时长就是不同的轻重。
+     · iOS Safari：不实现 Vibration API（至今没有）。唯一能敲到马达的口子是
+       iOS 17.4 起的 <input type="checkbox" switch> —— 它被真人点一下会震一下。
+       所以藏一个这种开关，需要震的时候用真实的 click 去拨它。
+   这是个偏门做法，苹果哪天改了就没了；所以只当锦上添花，功能一点都不依赖它。 */
+let hapticSwitch = null;
+function haptics() {
+  if (hapticSwitch) return hapticSwitch;
+  const wrap = document.createElement("label");
+  wrap.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;" +
+    "pointer-events:none;left:-9999px;top:0";
+  const inp = document.createElement("input");
+  inp.type = "checkbox";
+  inp.setAttribute("switch", "");           /* iOS 17.4+ 才认得这个属性 */
+  inp.tabIndex = -1;
+  inp.setAttribute("aria-hidden", "true");
+  wrap.appendChild(inp);
+  document.body.appendChild(wrap);
+  hapticSwitch = { wrap, inp, ok: "switch" in inp || inp.matches("input[switch]") };
+  return hapticSwitch;
+}
+/* kind: "light" 轻点（切换、选中）/ "solid" 落定（提交、删除） */
+function buzz(kind) {
+  if (S.haptics === false) return;
+  if (navigator.vibrate) { navigator.vibrate(kind === "solid" ? 18 : 8); return; }
+  const h = haptics();
+  if (h.ok) { try { h.inp.click(); } catch (err) { /* 拨不动就算了 */ } }
+}
+/* 落定感更重的那几个动作，其余一律轻点 */
+const SOLID = /^(commit|submit|delTx|delFixed|delGoal|delDebt|delAcct|delWish|wipeData|parse|confirm|goalDone|debtDone)/;
+
 app.addEventListener("click", (e) => {
   if (swallowClick) { swallowClick = false; e.stopPropagation(); return; }
   /* 分区展开着的时候点别处 —— 收起来。没有蒙版可点，只能在这儿兜。 */
@@ -5229,7 +5328,7 @@ app.addEventListener("click", (e) => {
   const raw = el.dataset.a, i = raw.indexOf(":");
   const act = i < 0 ? raw : raw.slice(0, i);
   const arg = i < 0 ? null : raw.slice(i + 1);
-  if (ACT[act]) { e.stopPropagation(); ACT[act](arg); }
+  if (ACT[act]) { buzz(SOLID.test(act) ? "solid" : "light"); e.stopPropagation(); ACT[act](arg); }
 });
 /* 手势：只认横向；纵向一律让给滚动。滑过阈值就吞掉这次 click，避免误触发行内动作 */
 let swState = null, swallowClick = false;
