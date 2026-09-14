@@ -307,6 +307,31 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 收起时如果这一页没有语音键，左边留一颗同宽的空药丸，点阵才不会跑偏 */
 .act.ghost{background:transparent;pointer-events:none}
 
+/* ---- 热区 ----------------------------------------------------------------
+   小图标按钮视觉上就该小，但手指不认视觉。用一个透明的伪元素把可点区域
+   往外撑到 44（Apple HIG 的下限），版式一点不动。
+   撑多大要看邻居有多近：并排的按钮只能撑到「中心距」，撑过头会互相抢点击。 */
+.tapout{position:relative}
+.tapout::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ width:max(100%,44px);height:max(100%,44px)}
+/* 并排三颗，中心距 40 —— 只撑到 40，正好挨着不重叠 */
+.rnd::after{width:max(100%,40px);height:max(100%,40px)}
+/* 只把高度撑够：左右挨着别的东西时，横向再撑就会抢到邻居头上 */
+.taph{position:relative}
+.taph::after{content:"";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+ height:max(100%,44px)}
+.avatar,.iconbtn,.rnd,.eye,.mochip [data-a]{position:relative}
+.avatar::after,.iconbtn::after,.rnd::after,.eye::after,.mochip [data-a]::after{
+ content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ width:max(100%,44px);height:max(100%,44px)}
+.rnd::after{width:max(100%,40px);height:max(100%,40px)}
+/* 成排的那些只撑高度 */
+.seg>span,.chip[data-a],.toggle,.asmini,.fmenu div{position:relative}
+.seg>span::after,.chip[data-a]::after,.toggle::after,.asmini::after,.fmenu div::after{
+ content:"";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+ height:max(100%,44px)}
+/* 会换行的那一排 chip：自己 34 高、行距 10，热区撑到 44 正好挨着不重叠 */
+.chip[data-a]{min-height:34px}
 /* Pearl：白玻璃 + 一圈高光边 + 很软的投影。briefly：跟页面底同色、靠描边分层。 */
 .card{border:1px solid var(--edge);border-radius:var(--r);background:var(--surface);
  padding:18px;box-shadow:var(--shadow-card);backdrop-filter:blur(var(--glass))}
@@ -487,7 +512,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .mbtn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
  font-weight:var(--w-bold);box-shadow:var(--shadow-pill)}
 .mbtn.off{color:var(--ink-faint);border-color:var(--ink-faint);background:transparent;cursor:not-allowed}
-.mbtn.sm{min-height:40px;font-size:13px}
+.mbtn.sm{min-height:44px;font-size:13px}
 .barh{height:8px;background:var(--track);border-radius:var(--r-pill);overflow:hidden}
 .barh>i{display:block;height:100%;background:var(--accent);transition:width .35s ease}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -518,12 +543,16 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
 :root[data-skin="briefly"] .seg{border-color:var(--ink);background:transparent;
  padding:0;border-radius:var(--r-sm)}
 :root[data-skin="briefly"] .seg>span{border-radius:0}
-.seg>span{flex:1;padding:9px 0;text-align:center;font-size:14px;cursor:pointer;color:var(--ink)}
+.seg>span{flex:1;padding:11px 0;text-align:center;font-size:14px;cursor:pointer;color:var(--ink)}
 .seg>span.on{background:var(--ink);color:var(--on-accent);font-weight:var(--w-mid)}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:var(--r-pill);
- background:var(--track);margin:16px 0 6px}
+/* 轨道 4px 是视觉；外面套一层 44 高的透明盒子当热区 */
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;
+ background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:var(--r-pill);
+ background:var(--track)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;
- border-radius:50%;background:var(--page);border:1.5px solid var(--ink);cursor:pointer}
+ border-radius:50%;background:var(--page);border:1.5px solid var(--ink);cursor:pointer;
+ margin-top:-9px}
 .toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--edge);
  background:transparent;
  position:relative;flex-shrink:0;cursor:pointer;transition:background .2s}
@@ -557,10 +586,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .sw.open .sw-body{transform:translateX(-76px)}
 .dim{position:absolute;inset:0;background:rgba(34,32,28,.36)}
 .dim.anim{animation:fade .18s ease}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--page);border-top:0;
- border-radius:var(--r-lg) var(--r-lg) 0 0;padding:10px 16px 20px;display:flex;flex-direction:column;gap:11px;
- max-height:88%;overflow-y:auto}
+/* --kb 是软键盘顶上来的高度（见 visualViewport 那一段）。键盘弹出来的时候
+   抽屉整个上移，不然底下的按钮会被键盘盖住，人还滑不下去。 */
+.sheet{position:absolute;left:0;right:0;bottom:var(--kb,0px);background:var(--page);
+ border-top:0;border-radius:var(--r-lg) var(--r-lg) 0 0;
+ padding:10px 16px 20px;display:flex;flex-direction:column;gap:11px;
+ max-height:calc(88% - var(--kb,0px));overflow-y:auto;
+ overscroll-behavior:contain;touch-action:pan-y}
 .sheet.anim{animation:up .24s cubic-bezier(.2,.8,.3,1)}
+/* 往下拖的时候跟手；松手要么弹回去、要么滑下去关掉 */
+.sheet.drag{transition:none}
+.sheet.snap{transition:transform .22s cubic-bezier(.2,.8,.3,1)}
+.dim.fading{transition:opacity .2s ease;opacity:0}
 .grab{width:38px;height:4px;border-radius:var(--r-pill);background:var(--ink-faint);align-self:center;
  margin-bottom:5px;flex-shrink:0}
 .toast.high{bottom:auto;top:52px}
@@ -605,7 +642,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 搜索条：点放大镜才滑出来 */
 .sbar{overflow:hidden;max-height:0;transition:max-height .2s ease,margin .2s ease}
 .sbar.on{max-height:56px;margin-bottom:6px}
-.sbar input{width:100%;height:40px;border:0;border-radius:var(--r-pill);
+.sbar input{width:100%;height:44px;border:0;border-radius:var(--r-pill);
  background:var(--accent2);padding:0 16px;font:var(--w-body) 14px var(--font);
  color:var(--ink);outline:none;letter-spacing:-.01em}
 .sbar input::placeholder{color:var(--ink-faint)}
@@ -654,7 +691,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  color:var(--on-tint);border:0}
 .avatar:active{background:var(--press)}
 /* 即将发生：暖色底的圆角条，和真实流水区分开 */
-.upcoming{display:flex;align-items:center;gap:11px;min-height:34px;padding:10px 14px;
+.upcoming{display:flex;align-items:center;gap:11px;min-height:44px;padding:10px 14px;
  border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer;
  border:1px solid var(--edge);box-shadow:var(--shadow-card);
  backdrop-filter:blur(var(--glass))}
@@ -694,7 +731,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  align-items:center;gap:6px;font-size:12px;font-weight:var(--w-mid);cursor:pointer;
  background:var(--accent2);color:var(--ink);white-space:nowrap}
 .asmini.pri{background:var(--accent);color:var(--on-accent)}
-.asmini.round{padding:0;width:35px;justify-content:center;background:var(--icon-bg)}
+.asmini.round{padding:0;width:40px;justify-content:center;background:var(--icon-bg)}
 /* 通宽的那颗：平时深色「点一下说话」，在听的时候换成波形 */
 .asbtn{height:46px;border-radius:var(--r-pill);background:var(--accent);
  color:var(--on-accent);display:flex;align-items:center;justify-content:center;gap:8px;
@@ -2792,7 +2829,7 @@ const scopeToggle = () => '<div class="seg" style="border-width:1px;border-radiu
   'overflow:hidden;flex:none">' +
   [[t("scope.month"), "month"], [t("scope.year"), "year"]].map(([l, v]) =>
     '<span class="' + ((ui.scope || "month") === v ? "on" : "") + '" data-a="scope:' + v +
-    '" style="padding:4px 11px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
+    '" style="padding:4px 15px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
 
 function yearView() {
   const y = viewYear(), act = activeMonths(y), shown = shownMonths(y);
@@ -2810,7 +2847,7 @@ function yearView() {
     'padding:6px 0;border-bottom:1px dotted var(--line)">' +
     '<div class="sub" style="flex:1">' + name + "</div>" +
     '<div class="money" style="font-size:14px">' + yuan(v) + "</div></div>";
-  const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
+  const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
@@ -2866,7 +2903,7 @@ function yearView() {
 
           '<div style="display:flex;align-items:center;gap:9px;margin-top:2px">' +
           '<div class="h2" style="flex:1">' + t("yr.monthly") + "</div>" +
-          '<div class="sub" data-a="cats" style="cursor:pointer;color:var(--accent)">' +
+          '<div class="sub tapout" data-a="cats" style="cursor:pointer;color:var(--accent)">' +
           t("word.breakdown") + ic("chev", 13) + "</div></div>" +
           shown.map((mm) => {
             const has = hasRecords(mm);
@@ -3032,7 +3069,7 @@ function sparkline(cur) {
 function monthView() {
   const m = viewMonth(), cur = isThisMonth();
   const inc = incomeIn(S, m), out = outgoIn(S, m), avail = availableIn(m);
-  const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
+  const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="padding:6px;cursor:' + (on ? "pointer" : "default") + ";color:" +
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   return { tab: "dashboard", fab: "both", navSplit: true,
@@ -3203,8 +3240,8 @@ function lifeBar() {
   if (!lg) return '<div class="chip" data-a="lifeGoal" style="border-style:dashed">' +
     t("lg.set") + "</div>";
   const pct = lifePct();
-  return '<div data-a="lifeGoal" style="cursor:pointer;display:flex;align-items:center;' +
-    'gap:8px"><div class="barh" style="width:58px"><i style="width:' + pct + '%"></i></div>' +
+  return '<div class="taph" data-a="lifeGoal" style="cursor:pointer;display:flex;' +
+    'align-items:center;gap:8px"><div class="barh" style="width:58px"><i style="width:' + pct + '%"></i></div>' +
     '<div style="font-size:13px;font-weight:600;font-variant-numeric:lining-nums tabular-nums">' +
     Math.round(pct) + "%</div></div>";
 }
@@ -3247,7 +3284,7 @@ SCREENS.jars = () => {
       '<div class="big" style="margin:2px 0">' + yuan(netAssets(S)) + "</div>" +
       '<div class="sub">' + t("va.accountsN", { n: S.accounts.length,
         reserved: yuan(S.goals.reduce((a, g) => a + g.saved, 0)) }) + "</div>" +
-      (S.lifeGoal ? '<div class="sub" data-a="lifeGoal" style="font-size:11px;margin-top:7px;' +
+      (S.lifeGoal ? '<div class="sub taph" data-a="lifeGoal" style="font-size:11px;margin-top:7px;' +
         'padding-top:7px;border-top:1px solid var(--line);cursor:pointer">' +
         esc(S.lifeGoal.name) + " · " +
         (netAssets(S) >= S.lifeGoal.target ? t("va.lifeDone")
@@ -3415,7 +3452,7 @@ SCREENS.settings = () => {
 
       '<div class="lbl" style="margin-top:6px">' + t("set.cats") + "</div>" +
       '<div class="sub" style="margin-top:-8px">' + t("set.catsHint") + "</div>" +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
       SYS_CATS.map((c) => '<div class="chip flat" style="color:var(--ink-muted)">' + catLabel(c) +
         "</div>").join("") +
       S.customCats.map(catTag).join("") +
@@ -3790,9 +3827,9 @@ const head = (title, extra) => '<div style="display:flex;align-items:center;gap:
   '<div class="h2" style="flex:1">' + title + "</div>" + (extra || "") +
   /* 压在别的抽屉上面时给返回：叉会把底下那一层填的东西一起丢掉 */
   ((ui.fStack || []).length
-    ? '<div data-a="popSheet" style="cursor:pointer;color:var(--ink-muted)">' +
+    ? '<div class="tapout" data-a="popSheet" style="cursor:pointer;color:var(--ink-muted)">' +
       ic("back", 18) + "</div>"
-    : '<div data-a="close" style="cursor:pointer;color:var(--ink-muted)">' +
+    : '<div class="tapout" data-a="close" style="cursor:pointer;color:var(--ink-muted)">' +
       ic("close", 18) + "</div>") + "</div>";
 const errline = () => ui.f.err
   ? '<div class="errline"><span style="margin-top:2px">' + ic("warn", 14) + "</span><div>" +
@@ -4127,7 +4164,7 @@ SHEETS.cats = () => {
     [[t("word.spending"), "out"], [t("word.income"), "in"]].map(([l, v]) =>
       '<span class="' + (v === kind ? "on" : "") + '" data-a="seg:cats:' + v +
       '" style="padding:5px 13px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
-  const arrow = (dir, on) => '<div ' + (on ? 'data-a="month:' + dir + '"' : "") +
+  const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
     "cursor:" + (on ? "pointer" : "default") + ";color:" + (on ? "var(--ink)" : "var(--ink-faint)") + '">' +
     ic(dir === "prev" ? "back" : "chev", 18) + "</div>";
@@ -5145,6 +5182,75 @@ app.addEventListener("pointercancel", endSwipe);
 /* 语音改成点一下开始、再点一下结束。
    原来是「按住说、上移取消」—— 手势更自然，但它和抽屉自己的下拉关闭在同一块
    面上打架，先不做了；ACT.mic → micStart()，micStart 里已经带了开关语义。 */
+
+/* ---- 软键盘把抽屉顶上去 -------------------------------------------------
+   iOS 上键盘弹出来不会改变 window.innerHeight，只会把 visualViewport 压矮。
+   抽屉是 position:absolute; bottom:0，于是整个躺在键盘底下：底部的按钮够不着，
+   人也「滑不下去」。把差值写进 --kb，抽屉照着上移。 */
+const vv = window.visualViewport;
+if (vv) {
+  const syncKb = () => {
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    /* 一两像素的抖动别往上写，会让抽屉发颤 */
+    app.style.setProperty("--kb", (kb > 24 ? kb : 0) + "px");
+  };
+  vv.addEventListener("resize", syncKb);
+  vv.addEventListener("scroll", syncKb);
+}
+
+/* ---- 抽屉往下拖就关掉 ---------------------------------------------------
+   从顶上那一截（把手 + 标题那一行）往下拉，抽屉跟手；松手时拉过 90px
+   或者甩得够快就关掉，否则弹回去。
+   只有抽屉已经滚到顶才接管 —— 不然会把内部滚动抢走。
+   输入框和按钮上按下不接管，那儿的手势属于它们自己。 */
+let shState = null;
+const SH_GRAB = 72;                  /* 顶上这么高的一截算「把手区」 */
+const shEl = () => app.querySelector(".sheet");
+
+app.addEventListener("pointerdown", (e) => {
+  const sh = e.target.closest(".sheet");
+  if (!sh || shState) return;
+  if (e.target.closest("input,textarea,select,button,[data-a]")) return;
+  if (sh.scrollTop > 0) return;
+  const top = sh.getBoundingClientRect().top;
+  if (e.clientY - top > SH_GRAB) return;
+  shState = { sh, y0: e.clientY, t0: performance.now(), dy: 0, on: false };
+});
+app.addEventListener("pointermove", (e) => {
+  if (!shState) return;
+  const dy = e.clientY - shState.y0;
+  if (!shState.on) {
+    if (dy < 6) { if (dy < -6) shState = null; return; }
+    shState.on = true;
+    shState.sh.classList.add("drag");
+    shState.sh.classList.remove("anim", "snap");
+  }
+  /* 往上拉给阻尼，别让抽屉飞出屏幕 */
+  shState.dy = dy < 0 ? dy / 4 : dy;
+  shState.sh.style.transform = "translateY(" + shState.dy + "px)";
+});
+const endSheetDrag = () => {
+  if (!shState) return;
+  const { sh, dy, t0, on } = shState;
+  shState = null;
+  if (!on) return;
+  sh.classList.remove("drag");
+  const v = dy / Math.max(1, performance.now() - t0);   /* px/ms */
+  /* 甩一下也能关，但必须先走够 40px —— 只看速度的话，指头一抖
+     （几像素、几毫秒）算出来的速度是天文数字，抽屉会自己跑掉 */
+  if (dy > 90 || (dy > 40 && v > 0.6)) {
+    sh.classList.add("snap");
+    sh.style.transform = "translateY(110%)";
+    const d = app.querySelector(".dim"); if (d) d.classList.add("fading");
+    setTimeout(close, 180);
+  } else {
+    sh.classList.add("snap");
+    sh.style.transform = "";
+    setTimeout(() => sh.classList.remove("snap"), 240);
+  }
+};
+window.addEventListener("pointerup", endSheetDrag);
+window.addEventListener("pointercancel", endSheetDrag);
 
 /* ---- 长按拖动排序 -------------------------------------------------------
    不做把手：把手要么挤掉一列版式，要么在手机上太小点不中。长按 380ms 拿起来，
