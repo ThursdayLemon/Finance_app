@@ -677,6 +677,39 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* ---- AI 抽屉 ----
    一个大点阵当身份标识，一条通宽胶囊当「按住说话」。全 app 只有这颗按钮是
    胶囊 —— 圆角的形状本身就在说「可以按住」，这一处值得破例。 */
+/* ---- 语音 / 打字两张抽屉（Figma 2115-9126）-------------------------------
+   一句问候 + 一个盒子 + 一颗通宽的大按钮。盒子在三种状态间换内容：
+   空着时是例句，说完是可改的转写，麦克风用不了时就是打字框。 */
+.asgreet{text-align:center;font-size:14px;line-height:1.4;color:var(--ink-muted);
+ padding:12px 0 6px;white-space:pre-line}
+.asbox{background:var(--icon-bg);border-radius:var(--r-md);padding:12px;
+ display:flex;flex-direction:column;gap:10px;min-height:89px}
+.aseg{font-size:12px;line-height:1.5;color:var(--ink-faint);white-space:pre-line}
+.asbox textarea{width:100%;border:0;background:transparent;resize:none;outline:none;
+ font:var(--w-body) 15px/1.5 var(--font);color:var(--ink);min-height:46px}
+.asbox textarea::placeholder{color:var(--ink-faint)}
+.asrow{display:flex;gap:10px;justify-content:flex-end;align-items:center}
+.asrow .sp{flex:1}
+.asmini{height:35px;border-radius:var(--r-pill);padding:0 16px;display:inline-flex;
+ align-items:center;gap:6px;font-size:12px;font-weight:var(--w-mid);cursor:pointer;
+ background:var(--accent2);color:var(--ink);white-space:nowrap}
+.asmini.pri{background:var(--accent);color:var(--on-accent)}
+.asmini.round{padding:0;width:35px;justify-content:center;background:var(--icon-bg)}
+/* 通宽的那颗：平时深色「点一下说话」，在听的时候换成波形 */
+.asbtn{height:46px;border-radius:var(--r-pill);background:var(--accent);
+ color:var(--on-accent);display:flex;align-items:center;justify-content:center;gap:8px;
+ font-size:15px;font-weight:var(--w-mid);letter-spacing:-.22px;cursor:pointer;
+ font-family:var(--font)}
+.asbtn:active{transform:scale(.985)}
+.asbtn.off{background:transparent;border:1px solid var(--ink-faint);
+ color:var(--ink-muted);cursor:default}
+.asbtn.on{background:radial-gradient(120% 180% at 50% 0%,#e8845a 0%,var(--warn) 100%)}
+.asbtn .col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.asbtn .cap{font-size:11px;line-height:1.45}
+.asbtn .bars{display:flex;align-items:flex-end;gap:4px;height:9px}
+.asbtn .bars>span{width:3px;border-radius:2px;background:currentColor;
+ animation:vu .9s ease-in-out infinite}
+@keyframes vu{0%,100%{height:3px}50%{height:9px}}
 .aihead{display:flex;align-items:center;gap:9px;min-height:26px}
 .aihead .t{flex:1;text-align:center;font-size:15px;font-weight:700}
 .aihead .x{cursor:pointer;color:var(--ink);display:flex}
@@ -699,8 +732,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 胶囊里的波形是压在墨绿底上的，得用反色 —— 默认那个灰在深底上看不见 */
 .aipill .wave{flex:1;height:100%}
 .aipill .wave>span,.aipill .wave.on>span{background:var(--on-accent)}
-.airelease{text-align:center;font-size:12px;color:var(--ink-muted);min-height:16px}
-.airelease.cancel{color:var(--bad);font-weight:var(--w-mid)}
 .wave{display:flex;gap:4px;align-items:center;justify-content:center;height:44px}
 .wave>span{width:3px;background:var(--ink-faint);border-radius:var(--r-pill);height:9px}
 .wave.on>span{background:var(--ink);animation:w .9s ease-in-out infinite}
@@ -1056,6 +1087,13 @@ zh: {
   "as.shoot": "拍小票", "as.typeIt": "自己打",
   "as.shootSoon": "拍小票认账还没接上 —— 先说一句，或者点右边自己打。",
   "as.listen": "按住说话", "as.listening": "在听…", "as.stop": "说完了",
+  "as.greet": (v) => v.hi + "\n今天要记点什么？",
+  "as.hiMorning": "早上好", "as.hiAfternoon": "下午好", "as.hiEvening": "晚上好",
+  "as.eg": "可以这样说：\n「今天午饭 35，打车 9 块，卖旧衣服赚了 200」",
+  "as.tapSpeak": "点一下说话", "as.tapStop": "再点一下结束",
+  "as.redo": "重录", "as.confirm": "确认",
+  "as.noMicShort": "这个浏览器不能语音输入 —— 打字一样",
+  "as.manual": "自己填表",
   "as.speak": "说一句",
   "as.title": "AI 记账",
   "as.tipHi": "说一句就行，比如：",
@@ -1482,6 +1520,14 @@ en: {
   "as.shoot": "Snap a receipt", "as.typeIt": "Type it",
   "as.shootSoon": "Reading receipts isn't wired up yet — say it, or tap the keyboard.",
   "as.listen": "Hold to talk", "as.listening": "Listening…", "as.stop": "Done",
+  "as.greet": (v) => v.hi + ", Sunshine!\nWhat do you want to log today?",
+  "as.hiMorning": "Good morning", "as.hiAfternoon": "Good afternoon",
+  "as.hiEvening": "Good evening",
+  "as.eg": "Try saying something like:\n\u201cI spent \u00a310 on lunch and earned \u00a315 on Vinted\u201d",
+  "as.tapSpeak": "Tap to speak", "as.tapStop": "Tap to stop",
+  "as.redo": "Again", "as.confirm": "Confirm",
+  "as.noMicShort": "No speech input here \u2014 typing works the same",
+  "as.manual": "Fill it in myself",
   "as.speak": "Speak",
   "as.title": "AI Note",
   "as.tipHi": "Hi there — try saying something like:",
@@ -2417,6 +2463,9 @@ const PF = {
   sprout: ['9 9 26 26', '<path d="M15.1304 26.257C15.0597 26.2659 14.9882 26.2659 14.9175 26.257L15.6071 31.7912C15.6662 32.1512 15.8525 32.4782 16.1322 32.7125C16.4119 32.9469 16.7663 33.0731 17.1312 33.0683H26.8629C27.234 33.0717 27.5937 32.9394 27.8743 32.6965C28.1549 32.4535 28.3372 32.1164 28.3869 31.7486L29.0766 26.1889C28.9742 26.2325 28.8643 26.2556 28.753 26.257H15.1304ZM29.2298 20.8164C29.0851 20.6522 28.9069 20.5208 28.7071 20.4313C28.5074 20.3417 28.2908 20.2959 28.0719 20.2971H25.5687C25.8492 20.0869 26.1138 19.8564 26.3605 19.6074C26.9251 19.0625 27.3764 18.4115 27.6888 17.6917C27.878 17.3676 27.9594 16.9917 27.9211 16.6183C27.8829 16.2449 27.727 15.8933 27.4759 15.6143C26.6245 14.7628 24.9898 15.2226 23.4828 16.7296C23.1849 17.0255 22.9142 17.3475 22.6739 17.6917C22.5656 17.0061 22.4091 16.329 22.2056 15.6654C21.6607 13.8944 20.6305 11.7829 19.3874 11.1273C19.197 11.0213 18.9863 10.9566 18.7692 10.9375C18.5521 10.9185 18.3334 10.9454 18.1273 11.0166C16.5096 11.5871 16.6118 14.567 17.4462 17.266C17.7563 18.3309 18.2057 19.35 18.7829 20.2971H15.9222C15.7021 20.2963 15.4844 20.3422 15.2833 20.4318C15.0823 20.5213 14.9024 20.6524 14.7557 20.8164C14.6149 20.9766 14.5101 21.1651 14.4484 21.3693C14.3867 21.5735 14.3696 21.7885 14.3981 21.9999L14.7302 24.6819C14.8517 24.6084 14.9888 24.5646 15.1304 24.5541H28.753C28.9353 24.5584 29.1114 24.6211 29.2554 24.7329L29.6044 21.9999C29.6302 21.7873 29.6101 21.5717 29.5454 21.3675C29.4808 21.1634 29.3732 20.9755 29.2298 20.8164Z"/>'],
   vault: ['9 9 26 26', '<path d="M30.2509 21.9424C31.0822 21.2859 31.7114 20.429 32.0962 19.473C32.3612 20.2524 32.5 21.1259 32.5 22.1011C32.5 24.4295 31.678 26.0607 30.835 27.1114C30.4167 27.633 29.9968 28.0075 29.677 28.2544C29.614 28.303 29.5548 28.3467 29.5 28.3858V29.9505C29.5 31.1931 28.4926 32.2005 27.25 32.2005H26.5C25.6715 32.2005 25 31.5288 25 30.7005H22C22 31.5288 21.3285 32.2005 20.5 32.2005H19.75C18.5074 32.2005 17.5 31.1931 17.5 29.9505V29.6305C17.3705 29.5893 17.2255 29.5383 17.0689 29.475C16.469 29.2329 15.6873 28.8082 14.9661 28.0771C14.0779 27.1768 13.5804 26.0502 13.3311 25.3432C13.2495 25.1118 13.086 24.9661 12.9268 24.9211C12.0828 24.6826 11.5 23.9122 11.5 23.0351V21.8442C11.5 20.9803 12.0726 20.2211 12.9031 19.9837C13.0582 19.9393 13.2263 19.7878 13.3091 19.5376C13.5111 18.9268 13.9007 18.0242 14.6147 17.3005C15.1988 16.7084 15.8292 16.2708 16.3077 15.9826C16.4527 15.8953 16.5852 15.8208 16.7 15.7592V12.9429C16.7 12.4126 17.0476 12.0384 17.4212 11.8868C17.7917 11.7364 18.2884 11.7616 18.6599 12.1125C19.0391 12.4707 19.5375 12.8992 20.0706 13.2481C20.6173 13.6059 21.1303 13.8331 21.5486 13.8755L21.5566 13.8763C20.7646 15.052 20.3998 16.4916 20.5694 17.9332C20.7509 19.4755 21.9445 20.403 22.9466 20.818L26.5301 22.302C27.5323 22.717 29.0322 22.9049 30.2509 21.9424ZM17.125 20.9497C17.7463 20.9497 18.25 20.446 18.25 19.8247C18.25 19.2034 17.7463 18.6997 17.125 18.6997C16.5037 18.6997 16 19.2034 16 19.8247C16 20.446 16.5037 20.9497 17.125 20.9497Z"/><path d="M21.3872 15.3841C21.9157 14.0843 22.9637 12.9863 24.3953 12.409C27.2008 11.2776 30.4174 12.5741 31.5798 15.3048C32.5432 17.568 31.7932 20.106 29.9108 21.5528C29.1478 22.1393 28.1 22.0943 27.2017 21.7322L22.823 19.9673C21.9248 19.6052 21.151 18.9159 21.0374 17.9761C20.9819 17.5171 20.9889 17.0583 21.0538 16.6105L21.3872 15.3841ZM21.3872 15.3841L21.1378 16.1668C21.1765 16.002 21.223 15.8393 21.2773 15.6791C21.311 15.5797 21.3476 15.4814 21.3872 15.3841Z"/>'],
   user: ['0 0 20 20', '<path d="M10 10.8333C11.9967 10.8333 13.8125 11.4117 15.1483 12.2258C15.815 12.6342 16.385 13.1133 16.7967 13.6342C17.2017 14.1475 17.5 14.7608 17.5 15.4167C17.5 16.1208 17.1575 16.6758 16.6642 17.0717C16.1975 17.4467 15.5817 17.695 14.9275 17.8683C13.6125 18.2158 11.8575 18.3333 10 18.3333C8.1425 18.3333 6.3875 18.2167 5.0725 17.8683C4.41833 17.695 3.8025 17.4467 3.33583 17.0717C2.84167 16.675 2.5 16.1208 2.5 15.4167C2.5 14.7608 2.79833 14.1475 3.20333 13.6342C3.615 13.1133 4.18417 12.6342 4.85167 12.2258C6.1875 11.4117 8.00417 10.8333 10 10.8333Z"/><path d="M10 1.66667C13.2075 1.66667 15.2125 5.13917 13.6083 7.91667C13.2426 8.55007 12.7167 9.07605 12.0833 9.44175C11.4499 9.80745 10.7314 9.99998 10 10C6.7925 10 4.7875 6.5275 6.39167 3.75C6.75736 3.1166 7.28333 2.59062 7.91673 2.22492C8.55012 1.85922 9.26861 1.66669 10 1.66667Z"/>'],
+  /* 「更多」的横三点 */
+  ellipsis: ['0 0 20 20', '<circle cx="4.6" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/>' +
+    '<circle cx="15.4" cy="10" r="1.5"/>'],
   /* 中间那颗按钮：2×2 的点阵 */
   dots: ['0 0 20 20', '<circle cx="7" cy="7" r="2.1"/><circle cx="13" cy="7" r="2.1"/>' +
     '<circle cx="7" cy="13" r="2.1"/><circle cx="13" cy="13" r="2.1"/>'],
@@ -3754,7 +3803,6 @@ let micBase = "", micDone = "", micQuiet = 0;
 
 function micStop() {
   micQuiet = 99;                       /* 让 onend 别再自动接上 */
-  ui.micHold = false;
   if (rec) { try { rec.stop(); } catch (err) { /* 已经停了 */ } rec = null; }
   ui.listening = false;
 }
@@ -3818,47 +3866,61 @@ function micStart() {
   catch (err) { rec = null; ui.listening = false; ui.f.err = t("as.noMic"); render(); }
 }
 
+/* 一句转写就是一句转写 —— 说完先让人看见、能改，再按「确认」去解析。
+   解析结果那一屏（可编辑的草稿清单）没动，Confirm 只是走到那儿的入口。 */
+/* 早/下午/晚 —— 按真实时钟，不跟着 pinNow 那个测试用的日期走 */
+const greeting = () => { const h = new Date().getHours();
+  return t(h < 12 ? "as.hiMorning" : h < 18 ? "as.hiAfternoon" : "as.hiEvening"); };
+
+function speakBox(said, listening) {
+  const canMic = micOK();
+  /* 空着 + 麦克风能用 + 没在听 → 给例句；其余一律给可改的文本框 */
+  if (!said && canMic) return '<div class="aseg">' + esc(t("as.eg")) + "</div>";
+  return '<textarea data-f="text" placeholder="' + esc(t("as.placeholder")) + '">' +
+    esc(said) + "</textarea>" +
+    (listening ? "" : '<div class="asrow"><div class="sp"></div>' +
+      (canMic ? '<div class="asmini" data-a="redo">' + t("as.redo") + "</div>" : "") +
+      '<div class="asmini pri" data-a="parse">' + t("as.confirm") + "</div></div>");
+}
+function speakBtn(listening) {
+  if (!micOK()) return '<div class="asbtn off">' + t("as.noMicShort") + "</div>";
+  if (listening) return '<div class="asbtn on" data-a="mic"><div class="col">' +
+    '<div class="cap">' + t("as.tapStop") + "</div>" +
+    '<div class="bars">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) =>
+      '<span style="animation-delay:' + (i * 0.08).toFixed(2) + 's"></span>').join("") +
+    "</div></div></div>";
+  return '<div class="asbtn" data-a="mic">' + ic("mic", 17) +
+    "<span>" + t("as.tapSpeak") + "</span></div>";
+}
+
+/* 打字那张：一个框 + 左下「更多」（走结构化表单）+ 右下「说一句」。
+   和语音共用 ui.f.text 和同一个解析器 —— 一个输入口，两条进去的路。 */
+SHEETS.jot = () => {
+  const said = ui.f.text || "";
+  return '<div class="grab"></div>' +
+    '<div class="asgreet">' + esc(t("as.greet", { hi: greeting() })) + "</div>" +
+    '<div class="asbox"><textarea data-f="text" autofocus placeholder="' +
+    esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" +
+    '<div class="asrow">' +
+    '<div class="asmini round" data-a="addTx" title="' + esc(t("as.manual")) + '">' +
+    ic("ellipsis", 15) + '</div><div class="sp"></div>' +
+    (micOK() ? '<div class="asmini" data-a="assistant">' + ic("mic", 13) +
+      "<span>" + t("as.speak") + "</span></div>" : "") +
+    (said.trim() ? '<div class="asmini pri" data-a="parse">' + t("as.confirm") +
+      "</div>" : "") +
+    "</div></div>" + errline();
+};
+
 SHEETS.assistant = () => {
   const p = ui.f.parsed;
   if (!p) {
     const listening = !!ui.listening;
     const said = (ui.f.text || "").trim();
-    /* 麦克风用不了的时候（http、老浏览器）必须留一条打字的路，
-       否则用户会被困在这个抽屉里 —— 只有一颗报错的按钮 */
-    const needBox = !!said || !!ui.f.err || !micOK();
-    /* 用熟了就不用再教了 —— 长文案只陪前三次，之后缩成一行 */
-    const green = (S.aiUses || 0) < 3;
-    const tip = needBox ? "" : '<div class="aitip">' + (green
-      ? t("as.tipHi") + '<span class="eg">' + esc(t("as.tipEg")) + "</span>" +
-        '<span class="more">' + t("as.tipMore") + "</span>"
-      : '<span class="more" style="margin:0">' + t("as.tipShort") + "</span>") + "</div>";
     return '<div class="grab"></div>' +
-      '<div class="aihead"><div class="x" data-a="close">' + ic("close", 18) + "</div>" +
-      '<div class="t">' + t("as.title") + "</div>" +
-      '<div style="width:18px"></div></div>' +
-      /* 点阵在听的时候会呼吸 —— 有内容之后缩小，把地方让给清单 */
-      '<div class="aimark' + (listening ? " on" : "") + (said ? " sm" : "") + '">' +
-      ic("mic", said ? 56 : 128) + "</div>" +
-      tip +
-      (needBox ? '<textarea class="fldbox" data-f="text" placeholder="' +
-        esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" : "") +
+      '<div class="asgreet">' + esc(t("as.greet", { hi: greeting() })) + "</div>" +
+      '<div class="asbox">' + speakBox(said, listening) + "</div>" +
       errline() +
-      '<div class="airelease' + (ui.micCancel ? " cancel" : "") + '">' +
-      (listening ? t(ui.micCancel ? "as.cancelUp" : "as.release") : "") + "</div>" +
-      (listening
-        ? '<div class="aipill"><div class="wave on">' +
-          [9, 17, 28, 14, 34, 22, 40, 25, 13, 30, 19, 9].map((h, i) =>
-            '<span style="height:' + h + "px;animation-delay:" +
-            (i * 0.07).toFixed(2) + 's"></span>').join("") + "</div></div>"
-        /* 三条路并排在同一颗胶囊里：拍小票 / 按住说话 / 自己打字 */
-        : '<div class="aipill' + (SR ? "" : " off") + '" data-a="mic">' +
-          '<div class="aiicon" data-a="shoot" title="' + esc(t("as.shoot")) + '">' +
-          ic("camera", 22) + "</div>" +
-          '<div class="lbl2">' + (SR ? t("as.listen") : t("as.noMic")) + "</div>" +
-          '<div class="aiicon" data-a="addTx" title="' + esc(t("as.typeIt")) + '">' +
-          ic("keyboard", 22) + "</div></div>") +
-      (needBox ? btn(t("as.parse"), "parse", "pri") : "") +
-      '<div class="sub" style="text-align:center">' + t("as.parseHint") + "</div>";
+      speakBtn(listening);
   }
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
     'background:var(--sunken);border-style:dashed">' +
@@ -4380,8 +4442,14 @@ const ACT = {
   tooSoon: () => toast(t("k.tooSoon")),
 
   /* 助手 */
-  assistant: () => { micStop(); sheet("assistant", { text: "" }); },
+  /* 从打字那张切过去时把已经打的字带上，别让人白打 */
+  assistant: () => { micStop();
+    const kept = ui.sheet === "jot" ? (ui.f.text || "") : "";
+    sheet("assistant", { text: kept }); },
   mic: () => micStart(),
+  /* 重录：把这一轮说的丢掉，重新开口 */
+  redo: () => { micStop(); ui.f.text = ""; ui.f.err = null; micStart(); },
+  jot: () => { micStop(); sheet("jot", { text: "" }); },
   shoot: () => { ui.f.err = t("as.shootSoon"); render(); },
   editDraft: (i) => { const d = ui.f.parsed.drafts[+i];
     pushSheet("editDraft", { i: +i, type: d.type, amount: (d.amount / 100).toFixed(2),
@@ -4846,7 +4914,7 @@ function dockHtml(tab, fab) {
     esc(t("nav.sections")) + '">' + ic("dots", 17) + "</div>" +
     (ui.navOpen
       ? half(2, 4)
-      : '<div class="act" data-a="addTx">' + ic("plus", 17) +
+      : '<div class="act" data-a="jot">' + ic("plus", 17) +
         "<span>" + t("word.addOne") + "</span></div>") +
     "</div>";
 }
@@ -5046,47 +5114,9 @@ const endSwipe = () => {
 app.addEventListener("pointerup", endSwipe);
 app.addEventListener("pointercancel", endSwipe);
 
-/* ---- 按住说话 -----------------------------------------------------------
-   手一抬就结束，比点两下自然。但按不满 180ms 的算点击，还是走开关模式 ——
-   有人就是习惯点一下，而且点开之后也得有办法点回去。
-   松手的监听挂在 window 上：micStart 会重绘整个抽屉，按钮那个节点早没了。 */
-let holdTimer = null, holding = false, holdY0 = 0;
-
-app.addEventListener("pointerdown", (e) => {
-  /* 胶囊两端是拍照和打字，按在那儿不该触发说话 */
-  if (e.target.closest(".aipill .aiicon")) return;
-  const mic = e.target.closest('[data-a="mic"]');
-  if (!mic || mic.classList.contains("off") || ui.listening) return;
-  holdY0 = e.clientY;
-  holdTimer = setTimeout(() => {
-    holdTimer = null; holding = true; ui.micHold = true; ui.micCancel = false; micStart();
-  }, 180);
-});
-/* 按住的时候往上滑就取消 —— 说错了不用等它录完再删 */
-app.addEventListener("pointermove", (e) => {
-  if (!holding) return;
-  const want = e.clientY - holdY0 < -60;
-  if (want !== !!ui.micCancel) {
-    ui.micCancel = want;
-    const el = app.querySelector(".airelease");
-    if (el) { el.className = "airelease" + (want ? " cancel" : "");
-      el.textContent = t(want ? "as.cancelUp" : "as.release"); }
-  }
-});
-const endHold = () => {
-  if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }  /* 没按满，当点击 */
-  if (!holding) return;
-  holding = false;
-  swallowClick = true;               /* 紧跟的那次 click 别再切一遍 */
-  const cancelled = !!ui.micCancel;
-  micStop();
-  /* 取消 = 把这一轮说的都丢掉，回到开口之前的样子 */
-  if (cancelled) { ui.f.text = micBase; ui.f.err = null; }
-  ui.micCancel = false;
-  render();
-};
-window.addEventListener("pointerup", endHold);
-window.addEventListener("pointercancel", endHold);
+/* 语音改成点一下开始、再点一下结束。
+   原来是「按住说、上移取消」—— 手势更自然，但它和抽屉自己的下拉关闭在同一块
+   面上打架，先不做了；ACT.mic → micStart()，micStart 里已经带了开关语义。 */
 
 /* ---- 长按拖动排序 -------------------------------------------------------
    不做把手：把手要么挤掉一列版式，要么在手机上太小点不中。长按 380ms 拿起来，
