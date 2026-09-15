@@ -16,7 +16,7 @@
      drive.mjs 里有一条断言专门请求这几条 URL 验 200。 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Literata:opsz,wght@7..72,400&family=Libre+Caslon+Text:wght@400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Libre+Caslon+Text:wght@400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -80,11 +80,26 @@
   --font:"Onest","PingFang SC","Hiragino Sans GB",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
-  --font-display:"Literata","Songti SC",Georgia,serif;
-  /* 数字自己一支：Caslon 的数字比 Literata 的更立得住 */
-  --font-num:"Libre Caslon Text","Literata","Songti SC",Georgia,serif;
+  --font-display:"Libre Caslon Text","Songti SC",Georgia,serif;
+  /* 数字和标题同一支 —— 这一版只留两支字 */
+  --font-num:"Libre Caslon Text","Songti SC",Georgia,serif;
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --w-body:400; --w-mid:500; --w-bold:600;
+  --w-light:300; --w-body:400; --w-mid:500; --w-bold:600;
+  /* ---- Figma 新增 ----------------------------------------------------
+     Green 01：图表用的柔和绿（甜甜圈分段、本月那根柱子）。
+     交易行的图标圆现在按方向上色：出账暖橘、进账绿，都是稿子里点出来的
+     具体色，不是 good/warn 算出来的，所以单独立 token。
+     按钮投影：4/4 15 −18 的 15%，很浅，只是把按钮从玻璃底上托起来一点。 */
+  --green-01:#8fc48e;
+  --spend-bg:#fad9c6; --spend-edge:#eb9d6b;
+  --income-bg:#deefde; --income-edge:#38bc37;
+  --shadow-btn:4px 4px 15px -18px rgba(65,65,64,.15);
+  --chip-edge:rgba(172,172,172,.3);
+  --soft-edge:#b9b9b6;
+  /* 饼图/环图的单色梯：同一个墨色，只有深浅。对应 Figma 的 ramp-1..6。
+     不用多色相 —— 这套系统里颜色是拿来做判定的，不是拿来分类的。 */
+  --ramp-1:#414140; --ramp-2:#6f6f6d; --ramp-3:#949492;
+  --ramp-4:#b9b9b6; --ramp-5:#d8d8d5; --ramp-6:#ececea;
   --glass:16px;             /* backdrop-filter 的模糊半径，关掉就填 0px */
 }
 
@@ -159,6 +174,14 @@
     --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
     --shadow-pill:none;
     --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
+    --green-01:#8fc48e;
+    --spend-bg:rgba(224,138,88,.18); --spend-edge:rgba(224,138,88,.5);
+    --income-bg:rgba(79,208,78,.16); --income-edge:rgba(79,208,78,.5);
+    --shadow-btn:4px 4px 15px -18px rgba(0,0,0,.5);
+    --chip-edge:rgba(255,255,255,.14);
+    --soft-edge:rgba(255,255,255,.22);
+    --ramp-1:#ececeb; --ramp-2:#c2c2c0; --ramp-3:#9a9a98;
+    --ramp-4:#6f6f6d; --ramp-5:#4a4a48; --ramp-6:#2e2e2c;
   }
   /* briefly 的深色单独留着 */
   :root[data-skin="briefly"]:not([data-theme="light"]) {
@@ -206,6 +229,14 @@
   --shadow-card:0 8px 26px -18px rgba(0,0,0,.6);
   --shadow-pill:none;
   --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
+    --green-01:#8fc48e;
+    --spend-bg:rgba(224,138,88,.18); --spend-edge:rgba(224,138,88,.5);
+    --income-bg:rgba(79,208,78,.16); --income-edge:rgba(79,208,78,.5);
+    --shadow-btn:4px 4px 15px -18px rgba(0,0,0,.5);
+    --chip-edge:rgba(255,255,255,.14);
+    --soft-edge:rgba(255,255,255,.22);
+    --ramp-1:#ececeb; --ramp-2:#c2c2c0; --ramp-3:#9a9a98;
+    --ramp-4:#6f6f6d; --ramp-5:#4a4a48; --ramp-6:#2e2e2c;
 }
 :root[data-theme="dark"][data-skin="briefly"] {
   --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
@@ -387,8 +418,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* ---- 排版 ------------------------------------------------------------------
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
    三套字各管一摊：
-     Literata Regular  —— 标题和条目名（--font-display，一律 400）
-     Libre Caslon Text —— 所有数字和金额（--font-num）
+     Libre Caslon Text —— 标题、条目名、所有数字金额（一律 400）
      Onest             —— 界面字：标签、元信息、按钮文字、坐标轴
    不要再凭手感改这些值。 */
 .serif,.rowname,.cardtitle,.wordmark,.secttl,.tn b{font-family:var(--font-display);
@@ -396,7 +426,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 数字统一走 --font-num。只声明字族 —— 字号和字距各处自己写，别在这儿一起设，
    不然会盖掉后面那些按稿子量出来的值。
    数字一律要 lnum + tnum：等高、等宽，金额列才对得齐。
-   （Literata 本来就是等高数字，没有 lnum 这个 feature，写上也无害；
+   （Caslon 本来就是等高数字，没有 lnum 这个 feature，写上也无害；
    换成旧式数字的衬线 —— Bona Nova 那种 —— 时它就是救命的那一条。） */
 .big,.money,.num,.tileval,.ta b,.callout{font-family:var(--font-num);
  font-variant-numeric:lining-nums tabular-nums}
@@ -408,7 +438,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 分区标题 Transactions：17/22 */
 .secttl{font-size:17px;line-height:22px;letter-spacing:-.34px;color:var(--ink)}
 /* 条目名：15/20 */
-.rowname,.tn b{font-size:15px;line-height:20px;letter-spacing:-.22px;color:var(--ink)}
+.rowname,.tn b{font-size:16px;line-height:20px;letter-spacing:-.22px;color:var(--ink)}
 /* 界面字一律 Onest。这几处以前跟着正文走，会被衬线带跑。 */
 .hlbl,.dhead,.tn > span,.ta > span,.act,.mochip > span,.sparkl span,.chartax span{
  font-family:var(--font)}
@@ -436,11 +466,26 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .block{background:var(--sunken);border-radius:var(--r-md);padding:8px 12px}
 /* ---- 首页（按样机 2096-1015）---------------------------------------- */
 .hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
+/* 右上角的 Get Pro：86×30 深底白字 + 1px 浅灰描边（稿子 2188 实测） */
+/* 表盘：数字压在弧的中间。用 HTML 叠一层而不是 SVG <text>，
+   这样数字还是走 --font-num，和全站金额同一支字。 */
+.gauge{position:relative;display:flex;justify-content:center;margin:2px 0 4px}
+.gauge svg{display:block;max-width:100%;height:auto}
+.gaugev{position:absolute;left:0;right:0;top:46%;display:flex;
+ align-items:baseline;justify-content:center;gap:3px}
+.gaugev .big{font-size:38px;line-height:42px}
+.gaugemax{font-family:var(--font-num);font-size:13px;color:var(--ink-faint);
+ font-variant-numeric:lining-nums tabular-nums}
+.gopro{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+ height:30px;padding:0 12px;border-radius:var(--r-pill);flex:none;cursor:pointer;
+ background:var(--accent);color:var(--on-accent);border:1px solid var(--soft-edge)}
+.gopro>span{font-size:12px;line-height:14px;font-weight:var(--w-body)}
 .mochip{display:inline-flex;align-items:center;gap:2px;background:var(--icon-bg);
- border:1px solid var(--icon-edge);border-radius:var(--r-pill);padding:2px 6px;
+ border:3px solid var(--chip-edge);border-radius:var(--r-pill);padding:2px 6px;
  backdrop-filter:blur(8px)}
+/* 稿子里英文月份是全大写；中文没有大小写，套上去无害 */
 .mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
- min-width:78px;text-align:center}
+ min-width:78px;text-align:center;text-transform:uppercase}
 .heroamt{display:flex;align-items:center;gap:8px}
 /* 主数字：42/46，字距 −1.47px；小数同号但压灰 */
 .heroamt .big{font-size:42px;line-height:46px;letter-spacing:-1.47px}
@@ -467,7 +512,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .spark{display:flex;align-items:flex-end;gap:6px;height:50px}
 .spark>i{flex:1;border-radius:1px;
  background:repeating-linear-gradient(90deg,var(--ink-faint) 0 1px,transparent 1px 4px)}
-.spark>i.on{background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 4px)}
+/* 本月那根是绿的（稿子 Green 01），不再是墨灰 */
+.spark>i.on{background:repeating-linear-gradient(90deg,var(--green-01) 0 1px,transparent 1px 4px)}
 .sparkl{display:flex;gap:6px;margin-top:6px}
 .sparkl>span{flex:1;text-align:center;font-size:9px;line-height:12px;
  color:var(--ink-faint);letter-spacing:-.2px}
@@ -495,12 +541,17 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
  letter-spacing:-.19px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
-.tilelbl{font-family:var(--font);font-size:10px;line-height:13px;color:var(--ink-muted)}
+.tilelbl{font-family:var(--font);font-size:10px;line-height:13px;color:var(--ink)}
 /* 统一的白圆底：分类图标、快捷入口、行图标都用它。
    按稿子：40% 白 + 1px 纯白描边，不带投影 —— 玻璃卡上再叠投影会糊成一团。 */
 .circ{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--icon-bg);
  border:1px solid var(--icon-edge);color:var(--ink)}
+/* 账本里的行图标：30px，底色按方向分 —— 出账暖橘、进账绿、转存留白。
+   颜色是稿子里点的具体值，不是 good/warn 算出来的浅版。 */
+.tr .circ{width:30px;height:30px}
+.tr .circ.out{background:var(--spend-bg);border-color:var(--spend-edge)}
+.tr .circ.in{background:var(--income-bg);border-color:var(--income-edge)}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -557,10 +608,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .mbtn{min-height:50px;border:1px solid var(--edge);background:var(--icon-bg);
  border-radius:var(--r-pill);display:flex;align-items:center;
  justify-content:center;gap:7px;font-size:15px;font-weight:500;background:var(--surface);padding:0 14px;
- cursor:pointer;text-align:center;color:var(--ink)}
+ cursor:pointer;text-align:center;color:var(--ink);box-shadow:var(--shadow-btn)}
 .mbtn:active{transform:translateY(1px)}
 .mbtn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
- font-weight:var(--w-bold);box-shadow:var(--shadow-pill)}
+ font-weight:var(--w-bold);box-shadow:var(--shadow-btn)}
 .mbtn.off{color:var(--ink-faint);border-color:var(--ink-faint);background:transparent;cursor:not-allowed}
 .mbtn.sm{min-height:44px;font-size:13px}
 .barh{height:8px;background:var(--track);border-radius:var(--r-pill);overflow:hidden}
@@ -726,7 +777,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ta{text-align:right;white-space:nowrap;flex-shrink:0}
 /* 金额：15/20，字距 −0.37px；小数降到 12 并压灰 */
-.ta b{display:block;font-size:15px;font-weight:var(--w-body);line-height:20px;
+.ta b{display:block;font-size:16px;font-weight:var(--w-body);line-height:20px;
  letter-spacing:-.37px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .ta b .dec{font-size:12px;color:var(--ink-faint)}
 /* 收入绿、支出砖橙 —— 稿子里就是这两个色，用的是判定色 token */
@@ -799,19 +850,22 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  padding:12px 0 6px;white-space:pre-line}
 .asbox{background:var(--icon-bg);border-radius:var(--r-md);padding:12px;
  display:flex;flex-direction:column;gap:10px;min-height:89px}
-.aseg{font-size:12px;line-height:1.5;color:var(--ink-faint);white-space:pre-line}
+/* 例句：Onest Light 14/18（稿子的 Latin/Label light）*/
+.aseg{font-size:14px;line-height:18px;font-weight:var(--w-light);
+ color:var(--ink-faint);white-space:pre-line}
+/* 说出来/打进去的那句：Onest Light 15/20（稿子的 Latin/Body light）*/
 .asbox textarea{width:100%;border:0;background:transparent;resize:none;outline:none;
- font:var(--w-body) 15px/1.5 var(--font);color:var(--ink);min-height:46px}
+ font:var(--w-light) 15px/20px var(--font);color:var(--ink);min-height:46px}
 .asbox textarea::placeholder{color:var(--ink-faint)}
 .asrow{display:flex;gap:10px;justify-content:flex-end;align-items:center}
 .asrow .sp{flex:1}
 .asmini{height:35px;border-radius:var(--r-pill);padding:0 16px;display:inline-flex;
  align-items:center;gap:6px;font-size:12px;font-weight:var(--w-mid);cursor:pointer;
  background:var(--accent2);color:var(--ink);white-space:nowrap}
-.asmini.pri{background:var(--accent);color:var(--on-accent)}
+.asmini.pri{background:var(--accent);color:var(--on-accent);box-shadow:var(--shadow-btn)}
 .asmini.round{padding:0;width:40px;justify-content:center;background:var(--icon-bg)}
 /* 通宽的那颗：平时深色「点一下说话」，在听的时候换成波形 */
-.asbtn{height:46px;border-radius:var(--r-pill);background:var(--accent);
+.asbtn{height:46px;border-radius:var(--r-pill);background:var(--accent);box-shadow:var(--shadow-btn);
  color:var(--on-accent);display:flex;align-items:center;justify-content:center;gap:8px;
  font-size:15px;font-weight:var(--w-mid);letter-spacing:-.22px;cursor:pointer;
  font-family:var(--font)}
@@ -923,9 +977,9 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v24";
+const BUILD = "v28";
 const CUR = {
-  /* 半角 ¥ 不是全角 ￥：拉丁衬线（Literata / Caslon 这类）都没有全角那个码位，
+  /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
   CNY: { sym: "¥", dec: 2, loc: "zh-CN" },
   USD: { sym: "$",  dec: 2, loc: "en-US" },
@@ -976,6 +1030,7 @@ const STR = {
 zh: {
   "tab.money": "财况", "tab.bills": "账单", "tab.wants": "种草", "tab.vault": "金库",
   "nav.me": "我", "nav.sections": "分区", "scope.month": "月", "scope.year": "年",
+  "pro.cta": "升级 Pro", "pro.soon": "Pro 还在做，先把这套用顺手",
   "word.back": "返回", "word.addOne": "记一笔",
   "date.month": (v) => v.y + "年" + +v.m + "月",
   "date.monthShort": (v) => +v.m + "月",
@@ -1383,8 +1438,9 @@ zh: {
 en: {
   "tab.money": "Money", "tab.bills": "Bills", "tab.wants": "Wants", "tab.vault": "Vault",
   "nav.me": "Me", "nav.sections": "Sections", "scope.month": "Mo", "scope.year": "Yr",
+  "pro.cta": "Get Pro", "pro.soon": "Pro isn't ready yet — enjoy this first",
   "word.back": "Back", "word.addOne": "Add",
-  "date.month": (v) => MON[+v.m - 1] + " " + v.y,
+  "date.month": (v) => MON[+v.m - 1] + " · " + v.y,
   "date.monthShort": (v) => MON3[+v.m - 1],
   "date.day": (v) => MON3[+v.m - 1] + " " + +v.d,
   "date.year": (v) => v.y,
@@ -1919,7 +1975,10 @@ const monthOf = (iso) => iso.slice(0, 7);
 const thisMonth = () => monthOf(today());
 /* 正在看的月份（可以翻） */
 const viewMonth = () => ui.month || thisMonth();
-const isYear = () => ui.scope === "year";
+/* 年不是全局开关，是 Analytics 这一页的模式 —— 所以要连当前是哪一页一起判。
+   只看 ui.anScope 的话，在分析页拨成年、退回首页，首页的翻页箭头会变成
+   ±12 个月，而用户根本不知道是哪里改的。模式跟着页面走，就没有这个坑。 */
+const isYear = () => screen() === "analytics" && ui.anScope === "year";
 const viewYear = () => viewMonth().slice(0, 4);
 const isThisMonth = () => viewMonth() === thisMonth();
 const shiftMonth = (m, n) => { const [y, mo] = m.split("-").map(Number);
@@ -2897,8 +2956,9 @@ const seg = (key, opts, val) => {
 /* 分类饼图：单色阶（颜色留给红黄绿判定），按金额从大到小，切片之间留 2px 缝。
    身份靠标签，不靠颜色 —— 图例里有名字和金额。 */
 /* 饼图色阶：单色由深到浅（颜色留给红黄绿判定），也走 token */
-const RAMP = ["var(--accent)", "var(--accent)", "var(--accent)",
-  "var(--accent)", "var(--accent)", "var(--accent)"];
+/* 一个色相、六档深浅 —— 稿子要的就是这个，不要多色相 */
+const RAMP = ["var(--ramp-1)", "var(--ramp-2)", "var(--ramp-3)",
+  "var(--ramp-4)", "var(--ramp-5)", "var(--ramp-6)"];
 function donut(cats, size, thick) {
   const total = cats.reduce((a, c) => a + c[1], 0) || 1;
   const r = (size - thick) / 2, C = 2 * Math.PI * r;
@@ -2943,7 +3003,7 @@ const TAB_OF = { wishlist: "decisions", verdict: "decisions", wishItem: "decisio
 
 const SCREENS = {};
 
-SCREENS.dashboard = () => (isYear() ? yearView() : monthView());
+SCREENS.dashboard = () => monthView();   /* 首页只有本月；年度在分析页 */
 
 /* 放进 nav 左侧那块空位，正文就少一整行 */
 /* 顶栏右上角那一颗。只有首页（月/年概览）是月/年切换；
@@ -2952,20 +3012,26 @@ SCREENS.dashboard = () => (isYear() ? yearView() : monthView());
    不然会在首页上画出一个返回箭头。 */
 const atHome = () => { const k = screen(); return k === "dashboard" || !SCREENS[k]; };
 /* 顶栏右上角：只有首页（月/年概览）有月/年切换，别的页面那儿空着。 */
-const navRight = () => atHome() ? scopeToggle() : "";
+const navRight = () => atHome() ? proPill() : "";
+/* 稿子 2188：首页右上从「月/年」换成了 Get Pro。年度口径挪进分析页。 */
+const proPill = () => '<div class="gopro tapout" data-a="getPro">' + ic("dots", 13) +
+  "<span>" + t("pro.cta") + "</span></div>";
 /* 返回挪到左边，和页名并排 —— 不带白底，就是一个箭头。
    「我在哪一页」和「怎么回去」挨在一起，比一左一右分两头好读。 */
 const navBack = () => atHome() ? ""
   : '<div class="navback tapout" data-a="back" title="' + esc(t("word.back")) + '">' +
     ic("back", 20) + "</div>";
+/* 只有分析页用它 —— 拨的是 ui.anScope，管不到别的页面 */
 const scopeToggle = () => '<div class="seg" style="border-width:1px;border-radius:999px;' +
   'overflow:hidden;flex:none">' +
-  segPill((ui.scope || "month") === "year" ? 1 : 0, 2) +
+  segPill((ui.anScope || "month") === "year" ? 1 : 0, 2) +
   [[t("scope.month"), "month"], [t("scope.year"), "year"]].map(([l, v]) =>
-    '<span class="' + ((ui.scope || "month") === v ? "on" : "") + '" data-a="scope:' + v +
+    '<span class="' + ((ui.anScope || "month") === v ? "on" : "") + '" data-a="anScope:' + v +
     '" style="padding:4px 15px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
 
-function yearView() {
+/* 原来的年度首页 —— 现在是分析页的「年」模式。正文一行没动，
+   只把顶栏从「头像·字标·月/年」换成「返回·分析·月/年」。 */
+function analyticsYear() {
   const y = viewYear(), act = activeMonths(y), shown = shownMonths(y);
   const inc = sumOver(act, (m) => incomeIn(S, m));
   const out = sumOver(act, (m) => outgoIn(S, m));
@@ -2989,13 +3055,8 @@ function yearView() {
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
-  return { tab: "dashboard", fab: "both", navSplit: true,
-    /* 顶栏跟月视图一模一样：头像 · 字标 · 月/年。
-       年份的前后翻和月份一样，挪进正文顶上那颗药丸里 —— 两个口径长一个样。 */
-    nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
-      ic("user", 18) + "</div>" +
-      '<div class="wordmark" style="flex:1">' + t("app.wordmark") + "</div>" +
-      navRight(),
+  return { tab: "dashboard", fab: "both",
+    nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
     body:
       '<div class="hero" style="padding-bottom:6px">' +
       '<div class="mochip">' + arrow("prev", true) +
@@ -3119,7 +3180,9 @@ function setupCard() {
 /* 分析页：收入在轴上、支出在轴下，当月挑出来。
    月度那几个数（三段减法、存多了的提示、还需存多少）从首页搬到了这儿 ——
    首页开场讲「你有多少」，要看这个月过得怎么样，点左边那张卡进来。 */
-SCREENS.analytics = () => {
+SCREENS.analytics = () => ui.anScope === "year" ? analyticsYear() : analyticsMonth();
+
+function analyticsMonth() {
   const m = viewMonth(), cur = isThisMonth();
   const inc = incomeIn(S, m), out = outgoIn(S, m), saved = savedIn(m);
   const net = inc - out - saved;
@@ -3138,7 +3201,7 @@ SCREENS.analytics = () => {
     '<i style="height:' + Math.max(3, Math.round(v / top * 100)) + '%"' +
     (months[i] === m ? ' class="' + sel + '"' : "") + "></i>").join("") + "</div>";
   return { tab: "dashboard", fab: "both",
-    nav: navBack() + '<div class="navt" style="flex:1">' + t("an.title") + "</div>",
+    nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
     body:
       '<div class="hero" style="padding-top:2px">' +
       '<div class="mochip"><span>' + monthName(m) + "</span></div>" +
@@ -3379,7 +3442,7 @@ function txRow(x, future) {
   const amtHtml = withDec(amt);
   return '<div class="tr" data-a="' + (x.tap || "editTx:" + x.id) + '" style="cursor:pointer' +
     (future ? ";opacity:.62" : "") + '">' +
-    '<div class="circ">' + ic(txGlyph(x), 19) + "</div>" +
+    '<div class="circ ' + dir + '">' + ic(txGlyph(x), 19) + "</div>" +
     '<div class="tn"><b>' + esc(name) + "</b><span>" + esc(sub) + "</span></div>" +
     '<div class="ta"><b>' + amtHtml + "</b>" +
     '<span class="' + dir + '">' +
@@ -3686,16 +3749,53 @@ const makeSnap = (it) => { const { r, b } = liveVerdict(it);
     at: now().getTime() }; };
 const lampOf = (v) => TONE(v)[2].split(" · ")[0];
 
+/* 打分表盘：一段一段的半圆弧，圆头、留缝，填到分数为止。
+   分成 N 段而不是一条连续弧 —— 刻度感让「74」这种中间值有参照，
+   一条光弧只能看出「大概过半」。 */
+function scoreGauge(score, tone, bg) {
+  const W = 232, H = 150, cx = W / 2, cy = 114, r = 82, th = 13;
+  const N = 11, START = 158, SWEEP = 224;
+  const pt = (deg, rad) => {
+    const a = (deg * Math.PI) / 180;
+    return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)];
+  };
+  const arc = (from, sweep, color) => {
+    if (sweep <= 0.2) return "";
+    const [x0, y0] = pt(from, r), [x1, y1] = pt(from + sweep, r);
+    return '<path d="M' + x0.toFixed(1) + " " + y0.toFixed(1) + "A" + r + " " + r +
+      " 0 " + (sweep > 180 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1) +
+      '" fill="none" stroke="' + color + '" stroke-width="' + th +
+      '" stroke-linecap="round"></path>';
+  };
+  const v = Math.max(0, Math.min(100, score));
+  /* 一条整弧 + 一条填充弧，只有两端是圆的；段与段的分隔用背景色的细线切出来。
+     不这么做的话，圆头的帽子（半径 th/2=6.5px）会把 3° 那点缝整个吃掉 —— 
+     第一版就是这样，看着像一条连续的光弧，完全没有刻度感。 */
+  const ticks = [];
+  for (let i = 1; i < N; i++) {
+    const deg = START + (SWEEP / N) * i;
+    const [x0, y0] = pt(deg, r - th / 2 - 1), [x1, y1] = pt(deg, r + th / 2 + 1);
+    ticks.push('<line x1="' + x0.toFixed(1) + '" y1="' + y0.toFixed(1) +
+      '" x2="' + x1.toFixed(1) + '" y2="' + y1.toFixed(1) +
+      '" stroke="' + (bg || "var(--page)") + '" stroke-width="2.6"></line>');
+  }
+  return '<div class="gauge"><svg viewBox="0 0 ' + W + " " + H + '" width="' + W +
+    '" height="' + H + '" aria-hidden="true">' +
+    arc(START, SWEEP, "var(--track)") +
+    arc(START, (SWEEP * v) / 100, tone) +
+    ticks.join("") + "</svg>" +
+    '<div class="gaugev"><span class="big">' + Math.round(v) + "</span>" +
+    '<span class="gaugemax">/100</span></div></div>';
+}
+
 function scoreCard(r, corner) {
   const [tone, bg, label] = TONE(r.verdict);
   return '<div class="card" style="border-color:' + tone + ";background:" + bg + '">' +
     '<div style="display:flex;align-items:center;gap:9px">' +
     '<span class="dot" style="background:' + tone + '"></span>' +
-    '<div class="h2" style="flex:1">' + label + "</div>" +
-    '<div class="big" style="font-size:27px">' + r.score.toFixed(1) + "</div>" +
-    '<div class="sub">' + t("sc.points") + "</div></div>" +
-    '<div style="margin:9px 0">' + bar(r.score, tone) + "</div>" +
-    '<div style="font-size:15px">' +
+    '<div class="h2" style="flex:1">' + label + "</div></div>" +
+    scoreGauge(r.score, tone, bg) +
+    '<div style="font-size:15px;text-align:center">' +
     ADVICE(r.verdict, r.dup) + "</div>" +
     /* 冷静期只是个信息提示，塞在右下角就够了 —— 单独占一张卡不值 */
     (corner ? '<div class="sub" style="font-size:11px;text-align:right;margin-top:7px">' +
@@ -4264,7 +4364,9 @@ function foldSmall(rows) {
 function labeledDonut(rows, kind) {
   /* r 是路径半径，环的外沿是 r + th/2 —— 引线和标签都要从外沿算，
      否则标签会压在环上（第一版就压了） */
-  const W = 302, H = 268, cx = W / 2, cy = H / 2, r = 46, th = 18;
+  /* 圆头会让每一段往两头各长出 th/2，所以画的时候要先把这 th 减掉，
+     再减掉想要的那道缝，视觉长度才是对的。第一版没减，段段相连看不出缝。 */
+  const W = 302, H = 268, cx = W / 2, cy = H / 2, r = 46, th = 16, GAP = 7;
   const OUT = r + th / 2;
   const total = rows.reduce((a, c) => a + c[1], 0) || 1;
   const C = 2 * Math.PI * r;
@@ -4273,11 +4375,14 @@ function labeledDonut(rows, kind) {
   rows.forEach(([name, v], i) => {
     const len = (v / total) * C;
     const mid = off + len / 2;
-    const draw = Math.max(0.6, len - (rows.length > 1 ? 2 : 0));
+    /* 只剩一段时不留缝，否则首尾会咬在一起 */
+    const trim = rows.length > 1 ? th + GAP : 0;
+    const draw = Math.max(0.1, len - trim);
     segs.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' +
       RAMP[Math.min(i, RAMP.length - 1)] + '" stroke-width="' + th +
-      '" stroke-dasharray="' + draw.toFixed(2) + " " + (C - draw).toFixed(2) +
-      '" stroke-dashoffset="' + (-off).toFixed(2) + '"></circle>');
+      '" stroke-linecap="' + (rows.length > 1 ? "round" : "butt") + '"' +
+      ' stroke-dasharray="' + draw.toFixed(2) + " " + (C - draw).toFixed(2) +
+      '" stroke-dashoffset="' + (-(off + trim / 2)).toFixed(2) + '"></circle>');
     const ang = (mid / C) * Math.PI * 2 - Math.PI / 2;
     const side = Math.cos(ang) >= 0 ? "right" : "left";
     labels[side].push({ name, v, i, ang });
@@ -4750,11 +4855,13 @@ const ACT = {
     date: isThisMonth() ? today() : lastDayOf(viewMonth()) }),
   month: (dir) => { const step = dir === "prev" ? -1 : 1;
     ui.month = shiftMonth(viewMonth(), isYear() ? step * 12 : step); render(); },
-  scope: (v) => { ui.scope = v; ui.showFuture = false; render(); },
+  anScope: (v) => { ui.anScope = v; render(); },
+  getPro: () => toast(t("pro.soon")),
   cats: () => sheet("cats", {}),
   toggleFuture: () => { ui.showFuture = !ui.showFuture; render(); },
   toggleCalc: () => { ui.showCalc = !ui.showCalc; render(); },
-  toMonth: (mm) => { ui.month = mm; ui.scope = "month"; render(); },
+  /* 年度清单里点某个月 —— 回首页看那个月 */
+  toMonth: (mm) => { ui.month = mm; go("dashboard"); },
   wizAdd: () => {
     if ((ui.wizard || 0) === 1) {
       const name = (ui.f.name || "").trim(), amount = num(ui.f.amount);
