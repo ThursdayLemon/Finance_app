@@ -757,6 +757,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .tile .sub{line-height:1.25}
 /* 一天一张卡，左边一条竖杠 */
 /* 列表一律装进白卡 —— 光着摆在底色上会散 */
+/* 清单卡头：左边一行说明，右边这一档的合计（衬线 17，和行内金额区分开）*/
+.lchead{display:flex;align-items:baseline;gap:9px;padding:4px 0 10px;
+ border-bottom:1px solid var(--line);margin-bottom:2px}
+.sumamt{font-family:var(--font-num);font-size:17px;line-height:22px;
+ letter-spacing:-.02em;color:var(--ink);
+ font-variant-numeric:lining-nums tabular-nums}
 .listcard{background:var(--surface);border:1px solid var(--edge);
  border-radius:var(--r);padding:4px 16px;box-shadow:var(--shadow-card);
  backdrop-filter:blur(var(--glass))}
@@ -992,7 +998,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v29";
+const BUILD = "v30";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1120,6 +1126,11 @@ zh: {
   "va.perMonthNeed": (v) => v.months + " 个月 · 每月必存 " + v.amt,
 
   "bi.tabOut": "固定支出", "bi.tabDebt": "固定还贷", "bi.total": "合计",
+  "an.noOut": "这个口径下还没有支出", "an.noIn": "这个口径下还没有收入",
+  "an.noSave": "这个口径下还没有确认存入",
+  "bi.totalAll": "账单合计",
+  "bi.totalBreak": (v) => "包含 " + v.nOut + " 笔固定支出 " + v.out +
+    " · " + v.nDebt + " 笔还贷 " + v.debt,
   "bi.emptyOut": "房租、水电、交通这类每月都要走的钱。",
   "bi.addOut": "添加固定支出", "bi.sumOut": "每月固定支出合计",
   "bi.noteOut": "到日子就走，所以整月都算支出 —— 储蓄不一样，要确认了才扣。",
@@ -1537,6 +1548,11 @@ en: {
   "va.perMonthNeed": (v) => plural(v.months, "month", "months") + " · " + v.amt + " a month",
 
   "bi.tabOut": "Fixed costs", "bi.tabDebt": "Loans", "bi.total": "Total",
+  "an.noOut": "No spending in this period", "an.noIn": "No income in this period",
+  "an.noSave": "No confirmed deposits in this period",
+  "bi.totalAll": "Total Bills",
+  "bi.totalBreak": (v) => "Include " + v.nOut + " fixed bills " + v.out +
+    " · " + v.nDebt + " loans " + v.debt,
   "bi.emptyOut": "Rent, utilities, commuting — money that leaves every month.",
   "bi.addOut": "Add a fixed cost", "bi.sumOut": "Fixed costs per month",
   "bi.noteOut": "It goes on its due date, so the whole month counts it — savings " +
@@ -3032,7 +3048,9 @@ SCREENS.dashboard = () => monthView();   /* 首页只有本月；年度在分析
    不然会在首页上画出一个返回箭头。 */
 const atHome = () => { const k = screen(); return k === "dashboard" || !SCREENS[k]; };
 /* 顶栏右上角：只有首页（月/年概览）有月/年切换，别的页面那儿空着。 */
-const navRight = () => atHome() ? proPill() : "";
+/* Get Pro 不只首页有 —— 稿子里账单页顶栏右边也是它。
+   分析页不调这个函数，它自己那边放的是 月/年。 */
+const navRight = () => proPill();
 /* 稿子 2188：首页右上从「月/年」换成了 Get Pro。年度口径挪进分析页。 */
 const proPill = () => '<div class="gopro tapout" data-a="getPro">' + ic("dots", 13) +
   "<span>" + t("pro.cta") + "</span></div>";
@@ -3121,10 +3139,9 @@ function analyticsYear() {
           '<div class="sub" style="font-size:11px;margin-top:8px">' + t("yr.note") +
           "</div></div>" +
 
+          anSection(act) +
           '<div style="display:flex;align-items:center;gap:9px;margin-top:2px">' +
-          '<div class="h2" style="flex:1">' + t("yr.monthly") + "</div>" +
-          '<div class="sub tapout" data-a="cats" style="cursor:pointer;color:var(--accent)">' +
-          t("word.breakdown") + ic("chev", 13) + "</div></div>" +
+          '<div class="h2" style="flex:1">' + t("yr.monthly") + "</div></div>" +
           shown.map((mm) => {
             const has = hasRecords(mm);
             const v = has ? incomeIn(S, mm) - outgoIn(S, mm) - savedIn(mm) : 0;
@@ -3221,10 +3238,7 @@ function analyticsMonth() {
     '<i style="height:' + Math.max(3, Math.round(v / top * 100)) + '%"' +
     (months[i] === m ? ' class="' + sel + '"' : "") + "></i>").join("") + "</div>";
   return { tab: "dashboard", fab: "both",
-    nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" +
-      '<div style="display:flex;align-items:center;gap:8px">' +
-      '<div class="rnd" data-a="cats" title="' + esc(t("word.breakdown")) + '">' +
-      ic("pie", 14) + "</div>" + scopeToggle() + "</div>",
+    nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
     body:
       '<div class="hero" style="padding-top:2px">' +
       '<div class="mochip"><span>' + monthName(m) + "</span></div>" +
@@ -3266,6 +3280,7 @@ function analyticsMonth() {
       (need > 0 ? '<div class="sub" style="font-size:12px;margin-top:8px">' +
         t("mo.stillToSave", { amt: '<span class="money">' + yuan(need) + "</span>" }) +
         "</div>" : "") +
+      anSection([m]) +
       "</div>" };
 };
 
@@ -3357,8 +3372,8 @@ function txCard(m, out) {
     esc(t("tx.search")) + '">' + ic("search", 14) + "</div>" +
     '<div class="rnd' + (ui.txFilter ? " on" : "") + '" data-a="txFilter" title="' +
     esc(t("tx.filter")) + '">' + ic("filter", 14) + "</div>" +
-    /* 稿子 26:895 把分类饼图从卡头拿掉了 —— 它现在住在分析页里 */
-    "</div>" +
+    (out > 0 ? '<div class="rnd" data-a="cats" title="' + esc(t("word.breakdown")) +
+      '">' + ic("pie", 14) + "</div>" : "") + "</div>" +
 
     (ui.txFilter
       ? '<div class="fmenu">' +
@@ -3625,31 +3640,37 @@ SCREENS.route = () => {
 
   const fixedTotal = S.fixedOut.reduce((a, x) => a + x.amount, 0);
   return { tab: "route", fab: "mic",
-    nav: navBack() + '<div class="navt" style="flex:1">' + BILLS() + "</div>" +
-      '<div style="text-align:right"><div class="sub" style="font-size:10px">' +
-      t("bi.total") + "</div>" +
-      '<div class="money" style="font-size:15px;margin-top:-2px">' +
-      yuan(fixedTotal + debtCommit(S)) + "</div></div>" + navRight(),
-    body: seg("route", [[t("bi.tabOut"), "out"], [t("bi.tabDebt"), "debt"]], tab) +
+    nav: navBack() + '<div class="navt">' + BILLS() + "</div>" + navRight(),
+    /* 稿子 2208:7728：顶上先给一张「账单合计」，两个口径加在一起；
+       每一档自己的合计挪进清单卡头，和清单长在一起，不再单独占一张卡。 */
+    body: '<div class="card">' +
+        '<div class="sub" style="font-size:12px">' + t("bi.totalAll") + "</div>" +
+        '<div class="big" style="font-size:42px;line-height:48px;color:var(--warn);' +
+        'margin:2px 0 4px">' + yuan(fixedTotal + debtCommit(S)) + "</div>" +
+        '<div class="sub" style="font-size:12px">' + t("bi.totalBreak", {
+          nOut: S.fixedOut.length, out: yuan(fixedTotal),
+          nDebt: S.debts.length, debt: yuan(debtCommit(S)) }) + "</div></div>" +
+      seg("route", [[t("bi.tabOut"), "out"], [t("bi.tabDebt"), "debt"]], tab) +
       (tab === "out"
-        ? (S.fixedOut.length
-            ? '<div class="listcard">' + S.fixedOut.map(fixedRow).join("") + "</div>"
-            : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
-              'text-align:center">' + t("bi.emptyOut") + "</div>") +
-          '<div class="dash" data-a="addFixedOut">' + ic("plus", 16) + " " +
-          t("bi.addOut") + "</div>" +
-          '<div class="card"><div style="display:flex;align-items:baseline;gap:9px">' +
-          '<div class="lbl" style="flex:1">' + t("bi.sumOut") + "</div>" +
-          '<div class="num money">' + yuan(fixedTotal) + "</div></div></div>" +
+        ? '<div class="listcard">' +
+            '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
+            t("bi.sumOut") + "</div>" +
+            '<div class="sumamt">' + yuan(fixedTotal) + "</div></div>" +
+            (S.fixedOut.length ? S.fixedOut.map(fixedRow).join("")
+              : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
+                'text-align:center;margin:10px 0 0">' + t("bi.emptyOut") + "</div>") +
+            '<div class="dash" data-a="addFixedOut" style="margin:10px 0 2px">' +
+            ic("plus", 16) + " " + t("bi.addOut") + "</div></div>" +
           '<div class="sub" style="font-size:11px">' + t("bi.noteOut") + "</div>"
-        : (S.debts.length ? S.debts.map(debtRow).join("")
+        : '<div class="listcard">' +
+            '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
+            t("bi.sumDebt") + "</div>" +
+            '<div class="sumamt">' + yuan(debtCommit(S)) + "</div></div></div>" +
+          (S.debts.length ? S.debts.map(debtRow).join("")
             : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
               'text-align:center">' + t("bi.emptyDebt") + "</div>") +
           '<div class="dash" data-a="addDebt">' + ic("plus", 16) + " " +
           t("bi.addDebt") + "</div>" +
-          '<div class="card"><div style="display:flex;align-items:baseline;gap:9px">' +
-          '<div class="lbl" style="flex:1">' + t("bi.sumDebt") + "</div>" +
-          '<div class="num money">' + yuan(debtCommit(S)) + "</div></div></div>" +
           '<div class="sub" style="font-size:11px">' + t("bi.noteDebt") + "</div>") };
 };
 
@@ -4327,6 +4348,43 @@ SHEETS.assistant = () => {
 
 /* 这一屏的合计必须等于概况里的「支出」，否则占大头的固定支出就被藏起来了。
    固定支出和还贷是声明出来的，没有分类，所以各自成一块。 */
+/* 分析页中段：支出 / 收入 / 储蓄 三选一，下面是环图 + 这一档的明细账。
+   口径（哪几个月）由调用方给，所以月视图和年视图能共用这一段。 */
+function anSection(months) {
+  const kind = ui.seg.an || "out";
+  const n = months.length;
+  const rows = foldSmall(breakdownOver(months, kind));
+  const total = rows.reduce((a, c) => a + c[1], 0);
+  const line = (name, v, head) =>
+    '<div style="display:flex;align-items:baseline;gap:9px;padding:' +
+    (head ? "10px 0 6px" : "7px 0") + (head ? "" : ";border-bottom:1px dotted var(--line)") +
+    '">' + '<div class="' + (head ? "h2" : "sub") + '" style="flex:1">' + esc(name) + "</div>" +
+    '<div class="' + (head ? "sumamt" : "money") + '">' + yuan(v) + "</div></div>";
+
+  /* 明细账：固定项要乘以月数，账本里的另算 —— 和年视图那张表同一套口径 */
+  const detail = kind === "in"
+    ? line(t("word.income"), sumOver(months, (m) => incomeIn(S, m)), true) +
+      line(t("yr.timesN", { what: t("word.fixedIn"), n }), fixedIn(S) * n) +
+      line(t("yr.ledgerIn"), sumOver(months, (m) => earnedIn(S, m)))
+    : kind === "save"
+      ? line(t("word.savings"), sumOver(months, savedIn), true) +
+        rows.map(([nm, v]) => line(nm, v)).join("")
+      : line(t("word.spending"), sumOver(months, (m) => outgoIn(S, m)), true) +
+        line(t("yr.timesN", { what: t("word.fixedOut"), n }),
+          S.fixedOut.reduce((a, x) => a + x.amount, 0) * n) +
+        line(t("yr.timesN", { what: t("word.debt"), n }), debtCommit(S) * n) +
+        line(t("yr.ledgerOut"), sumOver(months, (m) => spentIn(S, m)));
+
+  return '<div style="margin-top:14px">' +
+    seg("an", [[t("word.spending"), "out"], [t("word.income"), "in"],
+      [t("word.savings"), "save"]], kind) + "</div>" +
+    (total > 0
+      ? '<div style="margin:6px -8px 0">' + labeledDonut(rows, kind) + "</div>"
+      : '<div class="dash" style="height:120px;cursor:default;margin-top:10px">' +
+        t(kind === "in" ? "an.noIn" : kind === "save" ? "an.noSave" : "an.noOut") + "</div>") +
+    '<div style="margin-top:6px">' + detail + "</div>";
+}
+
 /* ￥25 四舍五入是 0%，显示成「0%」会像坏掉 */
 const pctLabel = (v, total) => {
   const pct = (v / total) * 100;
@@ -4353,6 +4411,13 @@ function passiveRow(x, m) {
 function breakdownOver(months, kind) {
   const map = new Map();
   const add = (k, v) => { if (v > 0) map.set(k, (map.get(k) || 0) + v); };
+  /* 储蓄这一档按「存进哪个目标」拆 —— 只算已经确认存走的那部分，
+     没兑现的钱还在账户里，不该出现在这张图上。 */
+  if (kind === "save") {
+    S.goals.forEach((g) => months.forEach((m) =>
+      add(g.name, ((g.marks || {})[m] || {}).amt || 0)));
+    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+  }
   months.forEach(() => {
     if (kind === "in") S.fixedIn.forEach((x) => add(x.name, x.amount));
     else {
@@ -4439,7 +4504,8 @@ function labeledDonut(rows, kind) {
     '<g transform="rotate(-90 ' + cx + " " + cy + ')">' + segs.join("") + "</g>" +
     leaders.join("") + texts.join("") +
     '<text x="' + cx + '" y="' + (cy - 3) + '" text-anchor="middle" font-size="11" ' +
-    'fill="var(--ink-muted)">' + t(kind === "in" ? "word.income" : "word.spending") + "</text>" +
+    'fill="var(--ink-muted)">' + t(kind === "in" ? "word.income"
+      : kind === "save" ? "word.savings" : "word.spending") + "</text>" +
     '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="13" ' +
     'font-weight="600" fill="var(--ink)">' + yuan(total) + "</text></svg>";
 }
