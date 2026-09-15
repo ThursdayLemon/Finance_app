@@ -359,6 +359,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  letter-spacing:-.015em;background:rgba(236,236,236,.2);color:var(--ink);cursor:pointer;
  border:1px solid var(--icon-edge);min-width:0;white-space:nowrap;overflow:hidden}
 .act.dark{background:var(--accent);color:var(--on-accent)}
+/* 说一句那一态：记一笔是橙的（稿子 2188:6416，填的是 warn） */
+.act.hot{background:var(--warn);color:#fff;border-color:var(--icon-edge)}
 .act:active{transform:scale(.97)}
 /* 默认是黑的（底栏正露着四个分区）；点一下换出动作键，它才变成白底 */
 .gridb{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;
@@ -377,9 +379,16 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .navpill{flex:1;min-width:0;height:46px;border-radius:var(--r-pill);
  background:rgba(236,236,236,.2);border:1px solid var(--icon-edge);
  display:flex;align-items:center;justify-content:space-around}
-.navb{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;
- align-items:center;justify-content:center;color:var(--ink);opacity:.5;cursor:pointer}
-.navb.on{opacity:1}
+/* 稿子 26:895：选中的那一格是一颗白色药丸（64×38，r30），
+   没选中的就是透明。不再靠透明度分主次 —— 白底更直接。 */
+.navb{width:64px;height:38px;border-radius:30px;flex-shrink:0;display:flex;
+ align-items:center;justify-content:center;color:var(--ink);cursor:pointer;
+ position:relative;transition:background-color .18s ease}
+/* 稿子给的是 38 高，低于 44 的下限。视觉照稿子，可点区域用伪元素往外撑 —— 
+   版式一点不动，手指不会点空。 */
+.navb::after{content:"";position:absolute;left:0;right:0;top:50%;
+ transform:translateY(-50%);height:46px}
+.navb.on{background:var(--field)}
 .navb:active{transform:scale(.92)}
 /* 收起时如果这一页没有语音键，左边留一颗同宽的空药丸，点阵才不会跑偏 */
 .act.ghost{background:transparent;pointer-events:none}
@@ -421,14 +430,19 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
      Libre Caslon Text —— 标题、条目名、所有数字金额（一律 400）
      Onest             —— 界面字：标签、元信息、按钮文字、坐标轴
    不要再凭手感改这些值。 */
-.serif,.rowname,.cardtitle,.wordmark,.secttl,.tn b{font-family:var(--font-display);
+/* 衬线只留给标题和「大的 display 金额」。条目名和行里的金额都走 Onest ——
+   稿子 26:895 量出来：Lunch 是 Onest 16、−£10.00 是 Onest 15。 */
+.serif,.cardtitle,.wordmark,.secttl{font-family:var(--font-display);
  font-weight:var(--w-body)}
 /* 数字统一走 --font-num。只声明字族 —— 字号和字距各处自己写，别在这儿一起设，
    不然会盖掉后面那些按稿子量出来的值。
    数字一律要 lnum + tnum：等高、等宽，金额列才对得齐。
    （Caslon 本来就是等高数字，没有 lnum 这个 feature，写上也无害；
    换成旧式数字的衬线 —— Bona Nova 那种 —— 时它就是救命的那一条。） */
-.big,.money,.num,.tileval,.ta b,.callout{font-family:var(--font-num);
+.big,.tileval,.callout{font-family:var(--font-num);
+ font-variant-numeric:lining-nums tabular-nums}
+/* 行里的金额走 Onest，但等高等宽还得留着 —— 金额列要对得齐 */
+.money,.num,.ta b{font-family:var(--font);
  font-variant-numeric:lining-nums tabular-nums}
 /* 字标 COACH：17/22，字距 +3.7px */
 .wordmark{font-size:17px;letter-spacing:3.7px;line-height:22px;
@@ -438,7 +452,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 分区标题 Transactions：17/22 */
 .secttl{font-size:17px;line-height:22px;letter-spacing:-.34px;color:var(--ink)}
 /* 条目名：15/20 */
-.rowname,.tn b{font-size:16px;line-height:20px;letter-spacing:-.22px;color:var(--ink)}
+.rowname,.tn b{font-family:var(--font);font-weight:var(--w-body);font-size:16px;
+ line-height:20px;letter-spacing:-.22px;color:var(--ink)}
 /* 界面字一律 Onest。这几处以前跟着正文走，会被衬线带跑。 */
 .hlbl,.dhead,.tn > span,.ta > span,.act,.mochip > span,.sparkl span,.chartax span{
  font-family:var(--font)}
@@ -777,7 +792,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ta{text-align:right;white-space:nowrap;flex-shrink:0}
 /* 金额：15/20，字距 −0.37px；小数降到 12 并压灰 */
-.ta b{display:block;font-size:16px;font-weight:var(--w-body);line-height:20px;
+.ta b{display:block;font-size:15px;font-weight:var(--w-body);line-height:20px;
  letter-spacing:-.37px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .ta b .dec{font-size:12px;color:var(--ink-faint)}
 /* 收入绿、支出砖橙 —— 稿子里就是这两个色，用的是判定色 token */
@@ -977,7 +992,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v28";
+const BUILD = "v29";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2667,6 +2682,11 @@ const PF = {
   ticket: ['0 0 24 24', '<path d="M21.75 10.5a.75.75 0 0 0 .75-.75V6a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 6v3.75a.75.75 0 0 0 .75.75 1.5 1.5 0 1 1 0 3 .75.75 0 0 0-.75.75V18A1.5 1.5 0 0 0 3 19.5h18a1.5 1.5 0 0 0 1.5-1.5v-3.75a.75.75 0 0 0-.75-.75 1.5 1.5 0 1 1 0-3ZM21 14.903V18h-5.25v-2.25h-1.5V18H3v-3.097a3.75 3.75 0 0 0 0-7.806V6h11.25v2.25h1.5V6H21v3.097a3.75 3.75 0 0 0 0 7.806Z"/><path d="M14.25 9.75h1.5v4.5h-1.5v-4.5Z"/>'],
   outing: ['0 0 24 24', '<path d="M12 6c-2.5 4-6.5 6-8.5 6.5L2 22h20l-1.5-9.5c-2-.5-6-2.5-8.5-6.5Zm0 0V2l4.5 2L12 6Z"/><path d="m15.5 22-2-7.5h-3L8.5 22"/>', "stroke", 1.5],
   car: ['0 0 24 24', '<path d="M22 16.922V19.5c0 .466 0 .699-.076.883a1.2 1.2 0 0 1-.541.54C21.199 21 20.966 21 20.5 21s-.699 0-.883-.076a1.2 1.2 0 0 1-.54-.541C19 20.199 19 19.966 19 19.5s0-.699-.076-.883a1.2 1.2 0 0 0-.541-.54C18.199 18 17.966 18 17.5 18h-11c-.466 0-.699 0-.883.076a1.2 1.2 0 0 0-.54.541C5 18.801 5 19.034 5 19.5s0 .699-.076.883a1.2 1.2 0 0 1-.541.54C4.199 21 3.966 21 3.5 21s-.699 0-.883-.076a1.2 1.2 0 0 1-.54-.541C2 20.199 2 19.966 2 19.5v-2.578c0-1.202 0-1.803.172-2.37.172-.567.505-1.067 1.172-2.067L4 11.5l.962-2.308c.745-1.79 1.118-2.684 1.874-3.188C7.592 5.5 8.56 5.5 10.5 5.5h3c1.939 0 2.908 0 3.664.504.756.504 1.129 1.399 1.874 3.188L20 11.5l.656.985c.667 1 1 1.5 1.172 2.067.172.567.172 1.168.172 2.37Z"/><path d="m2 10 2 1.5 2 .5h12l2-.5L22 10M15 5.5V5c0-.943 0-1.414-.293-1.707C14.414 3 13.943 3 13 3h-2c-.943 0-1.414 0-1.707.293C9 3.586 9 4.057 9 5v.5M6.125 15H6m12.125 0H18"/>', "stroke", 1.5],
+  /* 固定承诺那四格的图标（Figma 26:895 导出，16 的画布）。
+     Debt 还是原来那张卡，没换。 */
+  tileIn: ['0 0 16 16', '<path d="M6.3335 2H9.66683C9.93205 2 10.1864 2.10536 10.3739 2.29289C10.5615 2.48043 10.6668 2.73478 10.6668 3C10.6668 3.61884 10.421 4.21233 9.98341 4.64992C9.54583 5.0875 8.95233 5.33333 8.3335 5.33333H7.66683C7.04799 5.33333 6.4545 5.0875 6.01691 4.64992C5.57933 4.21233 5.3335 3.61884 5.3335 3C5.3335 2.73478 5.43885 2.48043 5.62639 2.29289C5.81393 2.10536 6.06828 2 6.3335 2Z"/><path d="M8.33342 14H5.33342C4.62617 14 3.94789 13.7191 3.4478 13.219C2.9477 12.7189 2.66675 12.0406 2.66675 11.3333V10.6667C2.66634 9.4917 3.05396 8.34946 3.76939 7.4174C4.48483 6.48534 5.48804 5.81562 6.6232 5.51228C7.75835 5.20894 8.96191 5.28895 10.0469 5.73989C11.1319 6.19083 12.0377 6.98745 12.6234 8.00601M10.6667 12.6667H14.6667M12.6667 10.6667V14.6667"/>', "stroke", 1],
+  tileSave: ['0 0 16 16', '<path d="M6.83961 8.9629C7.17848 9.20403 7.5841 9.33352 8 9.33334C8.4159 9.33352 8.82152 9.20403 9.16039 8.9629C9.49926 8.72178 9.75453 8.381 9.89067 7.98801C10.0107 7.64001 10.2987 7.33334 10.6667 7.33334C12.238 7.33334 13.0233 7.33334 13.512 7.82134C14 8.30934 14 9.09534 14 10.6667C14 12.238 14 13.0233 13.512 13.512C13.0233 14 12.238 14 10.6667 14H5.33333H5.32692C3.75986 14 2.97534 14 2.488 13.512C2 13.0233 2 12.238 2 10.6667C2 9.09534 2 8.30934 2.488 7.82134C2.976 7.33334 3.762 7.33334 5.33333 7.33334C5.70133 7.33334 5.98933 7.64001 6.10933 7.98801C6.24547 8.381 6.50074 8.72178 6.83961 8.9629Z"/><path d="M14 11.3333V7.99999C14 6.42866 14 5.64266 13.512 5.15466C13.0233 4.66666 12.238 4.66666 10.6667 4.66666H5.33333C3.762 4.66666 2.976 4.66666 2.488 5.15466C2 5.64266 2 6.42866 2 7.99999V11.3333"/><path d="M14 8.66667V5.33333C14 3.762 14 2.976 13.512 2.488C13.0233 2 12.238 2 10.6667 2H5.33333C3.762 2 2.976 2 2.488 2.488C2 2.976 2 3.762 2 5.33333V8.66667"/>', "stroke", 1],
+  tileBill: ['0 0 16 16', '<path d="M7.33341 7.33334H5.33341M9.33341 4.66668H5.33341M2.66675 12.4307V5.36934C2.66675 3.46668 2.66675 2.51601 3.25275 1.92468C3.83808 1.33334 4.78141 1.33334 6.66675 1.33334H9.33341C11.2187 1.33334 12.1621 1.33334 12.7474 1.92468C13.3334 2.51534 13.3334 3.46668 13.3334 5.36934V12.4307C13.3334 13.438 13.3334 13.942 13.0254 14.1407C12.5221 14.4647 11.7441 13.7847 11.3527 13.538C11.0294 13.334 10.8681 13.2327 10.6881 13.2267C10.4947 13.22 10.3301 13.318 9.98075 13.538L8.70675 14.3413C8.36275 14.558 8.19141 14.6667 8.00008 14.6667C7.80875 14.6667 7.63741 14.558 7.29341 14.3413L6.02008 13.538C5.69608 13.334 5.53475 13.2327 5.35541 13.2267C5.16141 13.22 4.99675 13.318 4.64741 13.538C4.25608 13.7847 3.47808 14.4647 2.97408 14.1407C2.66675 13.942 2.66675 13.4387 2.66675 12.4307Z"/>', "stroke", 1],
   /* 「更多」的横三点 */
   ellipsis: ['0 0 20 20', '<circle cx="4.6" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/>' +
     '<circle cx="15.4" cy="10" r="1.5"/>'],
@@ -3201,7 +3221,10 @@ function analyticsMonth() {
     '<i style="height:' + Math.max(3, Math.round(v / top * 100)) + '%"' +
     (months[i] === m ? ' class="' + sel + '"' : "") + "></i>").join("") + "</div>";
   return { tab: "dashboard", fab: "both",
-    nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
+    nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<div class="rnd" data-a="cats" title="' + esc(t("word.breakdown")) + '">' +
+      ic("pie", 14) + "</div>" + scopeToggle() + "</div>",
     body:
       '<div class="hero" style="padding-top:2px">' +
       '<div class="mochip"><span>' + monthName(m) + "</span></div>" +
@@ -3306,9 +3329,9 @@ function monthView() {
       '<div class="cardtitle">' + t("mo.committed") + "</div>" +
       '<div class="quick">' +
       /* 标签按稿子：Income · Savings · Bills · Debt，不是页面上那些长名字 */
-      [[t("tile.income"), fixedIn(S), "settings", "arrowUp"],
-       [t("tile.savings"), goalCommit(S), "toSavings2", "arrowDown"],
-       [t("tile.bills"), S.fixedOut.reduce((a, x) => a + x.amount, 0), "route:out", "bill"],
+      [[t("tile.income"), fixedIn(S), "settings", "tileIn"],
+       [t("tile.savings"), goalCommit(S), "toSavings2", "tileSave"],
+       [t("tile.bills"), S.fixedOut.reduce((a, x) => a + x.amount, 0), "route:out", "tileBill"],
        [t("tile.debt"), debtCommit(S), "route:debt", "card"]].map(([l, v, a, g]) =>
         '<div class="qi" data-a="' + a + '"><div class="circ">' + ic(g, 18) + "</div>" +
         '<div class="tileval">' + moneyShort(v) + "</div>" +
@@ -3334,8 +3357,8 @@ function txCard(m, out) {
     esc(t("tx.search")) + '">' + ic("search", 14) + "</div>" +
     '<div class="rnd' + (ui.txFilter ? " on" : "") + '" data-a="txFilter" title="' +
     esc(t("tx.filter")) + '">' + ic("filter", 14) + "</div>" +
-    (out > 0 ? '<div class="rnd" data-a="cats" title="' + esc(t("word.breakdown")) +
-      '">' + ic("pie", 14) + "</div>" : "") + "</div>" +
+    /* 稿子 26:895 把分类饼图从卡头拿掉了 —— 它现在住在分析页里 */
+    "</div>" +
 
     (ui.txFilter
       ? '<div class="fmenu">' +
@@ -5245,7 +5268,7 @@ function dockHtml(tab, fab) {
         "<span>" + t("as.speak") + "</span></div>" : '<div class="act ghost"></div>')
     : half(0, 2);
   const right = (acts) => acts
-    ? '<div class="act" data-a="jot">' + ic("plus", 17) +
+    ? '<div class="act hot" data-a="jot">' + ic("plus", 17) +
       "<span>" + t("word.addOne") + "</span></div>"
     : half(2, 4);
   dockSlots = { left, right };
