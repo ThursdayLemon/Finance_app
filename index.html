@@ -533,14 +533,28 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .sparkl>span{flex:1;text-align:center;font-size:9px;line-height:12px;
  color:var(--ink-faint);letter-spacing:-.2px}
 .sparkl>span.on{color:var(--ink);font-weight:var(--w-mid)}
+/* 每一根柱子自己一列 —— 数字才好标在它正上方（稿子 2208 就是这样）。
+   上排的列往下对齐（柱子从底往上长），下排的列往上对齐。 */
+.chartcol{flex:1;min-width:0;display:flex;flex-direction:column;
+ justify-content:flex-end;align-items:stretch}
+.chartrow + .chartax + .chartrow .chartcol{justify-content:flex-start}
+/* 标注是绝对定位的，不占列高 —— 否则当月那根柱子会比别的矮一截 */
+.chartcol{position:relative}
+.chartcol > .callout{position:absolute;left:-14px;right:-14px}
+.chartcol > .callout:not(.bot){bottom:100%}
+.chartcol > .callout.bot{top:100%}
+.chartcol > .callout{text-align:center;padding:0 0 3px}
+.chartcol > .callout.bot{padding:3px 0 0}
+.anchart{gap:0}
 /* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
 .chart{padding:18px 0 6px;position:relative}
-.chartrow{display:flex;gap:6px;height:78px;align-items:flex-end}
-.chartrow + .chartax + .chartrow{align-items:flex-start}
-.chartrow>i{flex:1;border-radius:1px;
+/* 每根柱子现在自己一列（列里还要放那个数字标注），所以行是 stretch，
+   柱子贴哪一边由列自己决定：上排贴底往上长，下排贴顶往下长。 */
+.chartrow{display:flex;gap:6px;height:78px;align-items:stretch}
+.chartcol > i{display:block;width:100%;border-radius:1px;
  background:repeating-linear-gradient(90deg,var(--ink-faint) 0 1px,transparent 1px 4px)}
-.chartrow>i.on{background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 4px)}
-.chartrow>i.bad{background:repeating-linear-gradient(90deg,var(--bad) 0 1px,transparent 1px 4px)}
+.chartcol > i.on{background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 4px)}
+.chartcol > i.bad{background:repeating-linear-gradient(90deg,var(--bad) 0 1px,transparent 1px 4px)}
 .chartax{display:flex;gap:6px;padding:9px 0}
 .chartax>span{flex:1;text-align:center;font-size:11.5px;color:var(--ink-faint)}
 .chartax>span.on{color:var(--ink);font-weight:var(--w-bold)}
@@ -998,7 +1012,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v30";
+const BUILD = "v31";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3081,6 +3095,20 @@ function analyticsYear() {
   const debtOut = debtCommit(S) * n;
   const txIn = sumOver(act, (m) => earnedIn(S, m));
   const txOut = sumOver(act, (m) => spentIn(S, m));
+  /* 和月视图同一张图，横轴换成年：当年前面 5 年、后面 1 年 */
+  const years = [];
+  for (let i = 5; i >= -1; i--) years.push(String(+y - i));
+  const yIn = years.map((yy) => sumOver(activeMonths(yy), (m) => incomeIn(S, m)));
+  const yOut = years.map((yy) =>
+    sumOver(activeMonths(yy), (m) => outgoIn(S, m) + savedIn(m)));
+  const yTop = Math.max.apply(null, yIn.concat(yOut, [1]));
+  const yBars = (vals, sel, callout, below) => '<div class="chartrow">' +
+    vals.map((v, i) => '<div class="chartcol">' +
+      (!below && years[i] === y ? '<div class="callout">' + callout + "</div>" : "") +
+      '<i style="height:' + Math.max(3, Math.round((v / yTop) * 100)) + '%"' +
+      (years[i] === y ? ' class="' + sel + '"' : "") + "></i>" +
+      (below && years[i] === y ? '<div class="callout bot">' + callout + "</div>" : "") +
+      "</div>").join("") + "</div>";
   const label = (name, v) => '<div style="display:flex;align-items:baseline;gap:9px;' +
     'padding:6px 0;border-bottom:1px dotted var(--line)">' +
     '<div class="sub" style="flex:1">' + name + "</div>" +
@@ -3100,6 +3128,22 @@ function analyticsYear() {
       '<div class="mochip">' + arrow("prev", true) +
       "<span>" + t("date.year", { y }) + "</span>" +
       arrow("next", +y < +thisMonth().slice(0, 4)) + "</div></div>" +
+      (n === 0 ? "" :
+        '<div class="card anchart">' +
+        '<div class="hero" style="padding:2px 0 0">' +
+        '<div class="hlbl">' + t("an.income") + "</div>" +
+        '<div class="heroamt an"><span class="big">' + withDec(yuan(inc)) +
+        "</span></div></div>" +
+        '<div class="chart">' +
+        yBars(yIn, "on", yuan(inc), false) +
+        '<div class="chartax">' + years.map((yy) =>
+          '<span' + (yy === y ? ' class="on"' : "") + ">" + yy + "</span>").join("") +
+        "</div>" +
+        yBars(yOut, "bad", neg(out + saved), true) + "</div>" +
+        '<div class="hero" style="padding:8px 0 2px">' +
+        '<div class="hlbl">' + t("an.expenses") + "</div>" +
+        '<div class="heroamt an"><span class="big neg">' +
+        withDec(yuan(out + saved)) + "</span></div></div></div>") +
       (n === 0
         ? '<div class="dash" style="min-height:150px;cursor:default;flex-direction:column;' +
           'gap:6px;padding:0 26px;text-align:center">' + t("yr.empty", { y }) + "<br/>" +
@@ -3224,44 +3268,54 @@ function analyticsMonth() {
   const inc = incomeIn(S, m), out = outgoIn(S, m), saved = savedIn(m);
   const net = inc - out - saved;
   const need = cur ? stillToSave(S) : 0;
+  /* 稿子 2208:7726 给的是 7 根柱子：当月前面 5 个、后面 1 个。
+     多画一个月是有意的 —— 固定收支已经排到下个月了，图上看得见。 */
   const months = [];
   let [y, mo] = m.split("-").map(Number);
-  for (let i = 5; i >= 0; i--) {
+  for (let i = 5; i >= -1; i--) {
     let yy = y, mm = mo - i;
     while (mm <= 0) { mm += 12; yy--; }
+    while (mm > 12) { mm -= 12; yy++; }
     months.push(yy + "-" + String(mm).padStart(2, "0"));
   }
   const ins = months.map((k) => incomeIn(S, k));
   const outs = months.map((k) => outgoIn(S, k) + savedIn(k));
   const top = Math.max.apply(null, ins.concat(outs, [1]));
-  const bars = (vals, sel) => '<div class="chartrow">' + vals.map((v, i) =>
+  /* 数字标在当月那一根的正上/正下方，不再右对齐贴在整张图的边上 */
+  const bars = (vals, sel, callout, below) => '<div class="chartrow">' + vals.map((v, i) =>
+    '<div class="chartcol">' +
+    (!below && months[i] === m ? '<div class="callout">' + callout + "</div>" : "") +
     '<i style="height:' + Math.max(3, Math.round(v / top * 100)) + '%"' +
-    (months[i] === m ? ' class="' + sel + '"' : "") + "></i>").join("") + "</div>";
+    (months[i] === m ? ' class="' + sel + '"' : "") + "></i>" +
+    (below && months[i] === m ? '<div class="callout bot">' + callout + "</div>" : "") +
+    "</div>").join("") + "</div>";
   return { tab: "dashboard", fab: "both",
     nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
     body:
-      '<div class="hero" style="padding-top:2px">' +
-      '<div class="mochip"><span>' + monthName(m) + "</span></div>" +
+      '<div class="hero" style="padding-top:2px;padding-bottom:10px">' +
+      '<div class="mochip"><span>' + monthName(m) + "</span></div></div>" +
+
+      /* 稿子把「收入 · 图 · 支出」整块收进一张卡里 */
+      '<div class="card anchart">' +
+      '<div class="hero" style="padding:2px 0 0">' +
       '<div class="hlbl">' + t("an.income") + "</div>" +
       '<div class="heroamt an"><span class="big">' + withDec(yuan(inc)) +
       "</span></div></div>" +
 
       '<div class="chart">' +
-      '<div class="callout">' + yuan(inc) + "</div>" +
-      bars(ins, "on") +
+      bars(ins, "on", yuan(inc), false) +
       '<div class="chartax">' + months.map((k) =>
         '<span' + (k === m ? ' class="on"' : "") + ">" +
         t("date.monthShort", { m: k.slice(5) }) + "</span>").join("") + "</div>" +
-      bars(outs, "bad") +
-      '<div class="callout bot">' + neg(out + saved) + "</div></div>" +
+      bars(outs, "bad", neg(out + saved), true) + "</div>" +
 
-      '<div class="hero" style="padding-top:14px">' +
+      '<div class="hero" style="padding:8px 0 2px">' +
       '<div class="hlbl">' + t("an.expenses") + "</div>" +
       '<div class="heroamt an"><span class="big neg">' +
-      withDec(yuan(out + saved)) + "</span></div></div>" +
+      withDec(yuan(out + saved)) + "</span></div></div></div>" +
 
       /* 月度那三段减法和教练的话，从首页搬到这儿 */
-      '<div class="card" style="margin-top:22px">' +
+      '<div class="card gapcard" style="margin-top:22px">' +
       '<div class="badge">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) + "</div>" +
       '<div class="big' + (net < 0 ? " mark" : " mark pos") +
       '" style="margin:6px 0;font-size:30px">' +
