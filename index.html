@@ -678,7 +678,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 这条 800 + 正字距是奶油纸（Bricolage）那一套。以前没限定皮肤，
    Pearl 的衬线也跟着被拉到 800 —— 只请求 400 的字重时浏览器会伪粗。 */
 :root[data-skin="briefly"] .big.money{font-weight:800;letter-spacing:.03em}
-.row{min-height:48px;display:flex;align-items:center;gap:8px;padding:12px 0;
+/* 稿子 2188:5694：行高 54、上下各 7、元素之间 11 */
+.row{min-height:54px;display:flex;align-items:center;gap:11px;padding:7px 0;
  border-bottom:1px solid var(--line)}
 .card .row:last-child{border-bottom:0}
 .chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:4px 11px;
@@ -712,10 +713,13 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  display:flex;gap:9px;
  align-items:flex-start;line-height:1.45}
 .banner.tap{cursor:pointer}
-.dash{border:1px dashed var(--ink-faint);border-radius:var(--r-sm);
- background:var(--surface);min-height:54px;
- display:flex;align-items:center;justify-content:center;gap:7px;color:var(--ink-muted);font-size:14px;
- cursor:pointer}
+/* 稿子 2188:5694：加号按钮是**全圆角**的药丸，不是 12 的小圆角；
+   3-3 的虚线、透明底（它已经在一张玻璃卡里了，再铺一层底就是两层玻璃）。
+   Vault 的「新建账户」、Bills 的「录入还贷」、我页面那些都走这一条。 */
+.dash{border:1px dashed var(--ink-faint);border-radius:var(--r-pill);
+ background:transparent;min-height:54px;
+ display:flex;align-items:center;justify-content:center;gap:8px;
+ color:var(--ink-muted);font-size:15px;cursor:pointer}
 .dash:active{background:var(--press)}
 .fld{display:flex;flex-direction:column;gap:5px}
 .fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--edge);
@@ -840,14 +844,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 一天一张卡，左边一条竖杠 */
 /* 列表一律装进白卡 —— 光着摆在底色上会散 */
 /* 清单卡头：左边一行说明，右边这一档的合计（衬线 17，和行内金额区分开）*/
-.lchead{display:flex;align-items:baseline;gap:9px;padding:4px 0 10px;
- border-bottom:1px solid var(--line);margin-bottom:2px}
+.lchead{display:flex;align-items:baseline;gap:9px;padding:0 0 8px;
+ border-bottom:1px solid var(--line)}
 .sumamt{font-family:var(--font-num);font-size:17px;line-height:22px;
  letter-spacing:-.02em;color:var(--ink);
  font-variant-numeric:lining-nums tabular-nums}
+/* 稿子：内边距 16、子项之间 12。.card 一族默认 display:block，
+   gap 对块级容器不生效 —— 必须显式开 flex 列（v39 踩过一次）。 */
 .listcard{background:var(--surface);border:1px solid var(--edge);
- border-radius:var(--r);padding:4px 16px;box-shadow:var(--shadow-card);
- backdrop-filter:blur(var(--glass))}
+ border-radius:var(--r);padding:16px;box-shadow:var(--shadow-card);
+ backdrop-filter:blur(var(--glass));
+ display:flex;flex-direction:column;gap:12px}
 .listcard .sw:not(:last-child) .row{border-bottom:1px solid var(--line)}
 .listcard .sw:last-child .row{border-bottom:0}
 /* ---- 账本：按样机收进一张玻璃卡 ------------------------------------------
@@ -1174,7 +1181,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v39";
+const BUILD = "v40";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3200,10 +3207,13 @@ const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") +
   '">' + ic("trash", 19) + '</div><div class="sw-body">' + inner + "</div></div>";
 const listrow = (mid, right, sub, act) =>
   '<div class="row"' + (act ? ' data-a="' + act + '" style="cursor:pointer"' : "") + ">" +
-  '<div style="flex:1;min-width:0"><div style="font-size:15px">' + mid + "</div>" +
-  (sub ? '<div class="sub" style="font-size:11px">' + sub + "</div>" : "") + "</div>" +
+  '<div style="flex:1;min-width:0"><div style="font-size:15px;line-height:20px">' +
+  mid + "</div>" +
+  (sub ? '<div class="sub" style="font-size:11px;line-height:13px;margin-top:2px">' +
+    sub + "</div>" : "") + "</div>" +
   '<div class="money" style="font-size:15px">' + right + "</div>" +
-  (act ? '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span>" : "") + "</div>";
+  (act ? '<span style="color:var(--ink-faint);display:flex">' + ic("chev", 20) +
+    "</span>" : "") + "</div>";
 
 /* ==========================================================================
    4. 各个页面
@@ -3778,9 +3788,10 @@ SCREENS.jars = () => {
                 (earmarkOn(a.name) > a.balance ? t("va.overBalance") : "")
               : t("va.shareOf", {
                   pct: Math.round((a.balance / Math.max(1, netAssets(S))) * 100) }),
-            "editJar:" + a.name), "delJar:" + a.name, ["acct", a.name])).join("") + "</div>" +
+            "editJar:" + a.name), "delJar:" + a.name, ["acct", a.name])).join("") +
+          /* 加号按钮收进卡里 —— 和账单/我那两页同一套（稿子 2188:5694）*/
           '<div class="dash" data-a="addJar">' + ic("plus", 16) + " " +
-          t("va.addAccount") + "</div>" +
+          t("va.addAccount") + "</div></div>" +
           (planJars.length
             ? '<div class="lbl" style="margin-top:8px">' + t("va.planJars") + "</div>" +
               '<div class="sub" style="margin-top:-8px">' + t("va.planJarsHint") + "</div>" +
@@ -3879,7 +3890,7 @@ SCREENS.route = () => {
             (S.fixedOut.length ? S.fixedOut.map(fixedRow).join("")
               : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
                 'text-align:center;margin:10px 0 0">' + t("bi.emptyOut") + "</div>") +
-            '<div class="dash" data-a="addFixedOut" style="margin:10px 0 2px">' +
+            '<div class="dash" data-a="addFixedOut">' +
             ic("plus", 16) + " " + t("bi.addOut") + "</div></div>" +
           '<div class="sub" style="font-size:11px">' + t("bi.noteOut") + "</div>"
         : '<div class="listcard">' +
@@ -3907,25 +3918,20 @@ SCREENS.settings = () => {
 
       '<div class="lbl">' + t("set.fixedIn") + "</div>" +
       '<div class="sub" style="margin-top:-8px">' + t("set.fixedInHint") + "</div>" +
-      '<div class="card" style="padding:2px 14px">' +
-      (S.fixedIn.length ? S.fixedIn.map((x, i) => swipe(
-        '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;cursor:pointer' +
-        (i < S.fixedIn.length - 1 ? ";border-bottom:1px solid var(--line)" : "") +
-        '" data-a="editFixed:in:' + x.id + '">' +
-        '<div style="flex:1;font-size:15px">' + esc(x.name) +
-        '<div class="sub" style="font-size:11px">' + t("date.onDay", { day: x.day }) +
-        "</div></div>" +
-        '<div class="money" style="font-size:15px">' + yuan(x.amount) + "</div>" +
-        '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span></div>",
-        "delFixed:in:" + x.id, ["fin", x.id])).join("")
-        : '<div class="sub" style="padding:13px 0">' + t("set.fixedInEmpty") + "</div>") +
-      (S.fixedIn.length ? '<div style="display:flex;align-items:baseline;gap:9px;padding:10px 0;' +
-        'border-top:1px solid var(--line)"><div class="lbl" style="flex:1">' +
+      /* 和账单/金库同一张清单卡：合计在卡头，加号按钮收进卡里。
+         原来这块是手搭的 .card + inline 样式，所以全站就它一个不一样。 */
+      '<div class="listcard">' +
+      (S.fixedIn.length ? '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
         t("set.perMonthSum") + "</div>" +
-        '<div class="num money" style="font-size:15px">' + yuan(fixedIn(S)) + "</div></div>" : "") +
-      "</div>" +
+        '<div class="sumamt">' + yuan(fixedIn(S)) + "</div></div>" : "") +
+      (S.fixedIn.length ? S.fixedIn.map((x) => swipe(
+        listrow(esc(x.name), yuan(x.amount), t("date.onDay", { day: x.day }),
+          "editFixed:in:" + x.id),
+        "delFixed:in:" + x.id, ["fin", x.id])).join("")
+        : '<div class="sub" style="padding:13px 0;text-align:center">' +
+          t("set.fixedInEmpty") + "</div>") +
       '<div class="dash" data-a="addFixedIn">' + ic("plus", 16) + " " +
-      t("set.addFixedIn") + "</div>" +
+      t("set.addFixedIn") + "</div></div>" +
       '<div class="sub" style="font-size:11px">' +
       t("set.movedNote", { bills: BILLS(), vault: t("va.title") }) + "</div>" +
 
