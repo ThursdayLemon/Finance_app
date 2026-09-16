@@ -19,7 +19,7 @@
      drive.mjs 里有一条断言专门请求这几条 URL 验 200。 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Libre+Caslon+Text:wght@400&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Libre+Caslon+Text:wght@400&family=Gulzar&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="储蓄教练">
@@ -83,9 +83,9 @@
   --font:"Onest","PingFang SC","Hiragino Sans GB",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
-  --font-display:"Libre Caslon Text","Songti SC",Georgia,serif;
+  --font-display:"Gulzar","Libre Caslon Text","Songti SC",Georgia,serif;
   /* 数字和标题同一支 —— 这一版只留两支字 */
-  --font-num:"Libre Caslon Text","Songti SC",Georgia,serif;
+  --font-num:"Gulzar","Libre Caslon Text","Songti SC",Georgia,serif;
   /* 账本行里的金额单独一支 Inter —— 稿子就是这么定的 */
   --font-amt:"Inter",-apple-system,"Helvetica Neue",Helvetica,sans-serif;
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -1114,7 +1114,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v36";
+const BUILD = "v37";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
