@@ -957,6 +957,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .calcrow{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;
  border-bottom:1px dotted var(--line)}
 .calcrow.tot{font-size:13px;padding:7px 0 0;border-bottom:0;font-weight:var(--w-bold)}
+/* 只装一行汇总的卡：18 的内边距是给多行卡片留的，一行用着太厚 */
+.sumcard{padding:14px 16px}
 /* ---- 打分页的表单卡（稿子 2188:6140）--------------------------------
    整张表单一张玻璃卡，字段之间 24。标签是 Onest 15 的墨色，不是灰小字 ——
    这一页每一行都要人动手填，标签得站得住。 */
@@ -1185,7 +1187,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v41";
+const BUILD = "v42";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1245,6 +1247,7 @@ zh: {
   "date.day": (v) => +v.m + "月" + +v.d + "日",
   "date.year": (v) => v.y + " 年",
   "date.onDay": (v) => "每月 " + v.day + " 号",
+  "date.md": (v) => v.m + " 月 " + v.d + " 日",
   "word.income": "收入", "word.spending": "支出", "word.savings": "储蓄",
   "word.gap": "缺口", "word.left": "结余",
   "word.fixedIn": "固定收入", "word.fixedOut": "固定支出",
@@ -1300,6 +1303,12 @@ zh: {
   "va.overBalance": "（超过余额了）",
   "va.shareOf": (v) => "占总资产 " + v.pct + "%",
   "va.addAccount": "新建账户",
+  "va.history": "变动记录", "va.noHistory": "还没有变动 —— 改了余额、转账、攒物计划存钱，都会记在这儿。",
+  "va.setAsideOf": (v) => "其中 " + v.amt + " 是划出去的",
+  "va.why.edit": "改了余额", "va.why.buy": "买下了",
+  "va.why.moveOut": "转出", "va.why.moveIn": "转入",
+  "va.why.sold": "卖东西攒的", "va.why.deposit": "存入",
+  "va.editAccount": "改这个账户",
   "va.planJars": "攒物计划专项",
   "va.planJarsHint": "卖旧物换来的，计划在管，不能手动动用。",
   "va.planJarGrows": "卖一件就自己涨",
@@ -1659,6 +1668,7 @@ en: {
   "date.day": (v) => MON3[+v.m - 1] + " " + +v.d,
   "date.year": (v) => v.y,
   "date.onDay": (v) => "the " + nth(+v.day) + " of each month",
+  "date.md": (v) => MON3[+v.m - 1] + " " + v.d + ",",
   "word.income": "Income", "word.spending": "Spending", "word.savings": "Savings",
   "word.gap": "short", "word.left": "left over",
   "word.fixedIn": "fixed income", "word.fixedOut": "fixed costs",
@@ -1722,6 +1732,12 @@ en: {
   "va.overBalance": " (more than the balance)",
   "va.shareOf": (v) => v.pct + "% of everything",
   "va.addAccount": "New account",
+  "va.history": "Changes", "va.noHistory": "Nothing yet — edits, transfers and money you raise all land here.",
+  "va.setAsideOf": (v) => v.amt + " of this is set aside",
+  "va.why.edit": "Balance updated", "va.why.buy": "Bought it",
+  "va.why.moveOut": "Moved out", "va.why.moveIn": "Moved in",
+  "va.why.sold": "From a sale", "va.why.deposit": "Deposit",
+  "va.editAccount": "Edit this account",
   "va.planJars": "Sell-to-buy plans",
   "va.planJarsHint": "From selling things. The plan holds it — you can't spend it by hand.",
   "va.planJarGrows": "Grows every time you sell something",
@@ -2287,6 +2303,7 @@ const catTotals = (s, m) => {
    clockOffset 给原型面板上那个「快进」按钮 —— 冷静期才看得出来在走。
    原来这里写死成 2026-09-07，结果手机上记什么都记到 7 号。 */
 let clockOffset = 0, pinNow = null;
+const DAY = 86400000;
 const now = () => new Date((pinNow === null ? Date.now() : pinNow) + clockOffset);
 const today = () => now().toISOString().slice(0, 10);
 const hoursLeft = (item) => {
@@ -2916,6 +2933,17 @@ const ic = (n, s = 20, c) => {
     'stroke-linejoin="round" style="' + st + '">' + P[n] + "</svg>";
 };
 
+/* 月份/年份药丸里的左右箭头。原来在年视图、月视图、分类抽屉里各写了一份，
+   尺寸和内边距已经分叉过一次 —— 收成一个，谁都不许再本地定义。
+   svg 是行内元素、贴基线排，不套 display:flex 的话会比中间那行字高一两像素。 */
+const monthArrow = (dir, on) => '<div class="tapout" ' +
+  (on ? 'data-a="month:' + dir + '"' : "") +
+  ' style="padding:0;display:flex;align-items:center;justify-content:center;cursor:' +
+  (on ? "pointer" : "default") + ";color:" +
+  (on ? "var(--ink)" : "var(--ink-faint)") + '">' +
+  ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
+
+
 /* 判定色从 CSS token 里取 —— 换肤时 CSS 和 JS 不能各说各话 */
 const GREEN = "var(--good)", AMBER = "var(--warn)", RED = "var(--bad)";
 const GREEN_BG = "var(--good-tint)", AMBER_BG = "var(--warn-tint)",
@@ -2962,11 +2990,19 @@ function seed() {
       { id: id(), name: "水电燃气", amount: 15000, day: 15 },
       { id: id(), name: "交通月卡", amount: 30000, day: 1 }],
     /* 金库 = 我的账户们（银行卡、理财、ISA、saving pot…） */
+    /* 每个账户垫几条历史 —— 不然 demo 一打开变动记录是空的，看不出这页是干嘛的。
+       at 用相对今天的偏移，换月份也不会穿帮。 */
     accounts: [
-      { name: "招商银行卡", balance: 1500000, earmark: null },
-      { name: "微信零钱", balance: 120000, earmark: null },
-      { name: "支付宝理财", balance: 3000000, earmark: null },
-      { name: "中国银行定期", balance: 5000000, earmark: null }],
+      { name: "招商银行卡", balance: 1500000, earmark: null,
+        log: [{ at: +now() - 2 * DAY, d: -80000, to: 1500000, why: "moveOut" },
+              { at: +now() - 9 * DAY, d: 320000, to: 1580000, why: "edit" },
+              { at: +now() - 26 * DAY, d: -45000, to: 1260000, why: "buy" }] },
+      { name: "微信零钱", balance: 120000, earmark: null,
+        log: [{ at: +now() - 1 * DAY, d: 20000, to: 120000, why: "sold" },
+              { at: +now() - 12 * DAY, d: -6000, to: 100000, why: "edit" }] },
+      { name: "支付宝理财", balance: 3000000, earmark: null,
+        log: [{ at: +now() - 5 * DAY, d: 80000, to: 3000000, why: "moveIn" }] },
+      { name: "中国银行定期", balance: 5000000, earmark: null, log: [] }],
     tx: [
       { id: id(), type: "out", amount: 1000, category: "food", description: "吃饭", date: "2026-09-07" },
       { id: id(), type: "out", amount: 900, category: "transport", description: "打车", date: "2026-09-07" },
@@ -3100,6 +3136,25 @@ function applySkin() {
 let ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {} };
 const screen = () => ui.stack[ui.stack.length - 1];
 const jar = (n) => S.accounts.find((a) => a.name === n);
+
+/* 账户余额只能从这儿动。8 处调用点原来各改各的（手动改、账户间转、
+   攒物计划存入/完成），加历史就得逐处打补丁 —— 收成一个出入口之后，
+   以后再多一种变动方式也不会漏记。
+   why 是变动的来头，用来在历史里说人话，不是内部代号。 */
+function jarMove(name, delta, why) {
+  const j = jar(name);
+  if (!j || !delta) return j;
+  j.balance += delta;
+  (j.log = j.log || []).unshift({ at: +now(), d: delta, to: j.balance, why });
+  return j;
+}
+function jarSet(j, to, why) {
+  if (!j || j.balance === to) return j;
+  const d = to - j.balance;
+  j.balance = to;
+  (j.log = j.log || []).unshift({ at: +now(), d, to, why });
+  return j;
+}
 const biggestJar = () => (S.accounts.length
   ? S.accounts.reduce((a, b) => (b.balance > a.balance ? b : a)).name
   : t("data.cashWallet"));
@@ -3228,7 +3283,8 @@ const BILLS = () => t("tab.bills");
 /* 账本并进了财况 —— 一份数据不该有两个 Tab */
 const TABS = () => [["navMoney", t("tab.money"), "dashboard"], ["navBills", BILLS(), "route"],
   ["navWants", t("tab.wants"), "decisions"], ["navVault", t("tab.vault"), "jars"]];
-const TAB_OF = { wishlist: "decisions", verdict: "decisions", wishItem: "decisions" };
+const TAB_OF = { wishlist: "decisions", verdict: "decisions", wishItem: "decisions",
+  account: "jars" };
 
 const SCREENS = {};
 
@@ -3294,19 +3350,15 @@ function analyticsYear() {
     '<div class="money" style="font-size:14px">' + yuan(v) + "</div></div>";
   /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
      降部的空隙，箭头就比中间那行字高出一两像素。 */
-  const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:0;display:flex;align-items:center;justify-content:center;cursor:' +
-    (on ? "pointer" : "default") + ";color:" +
-    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
   return { tab: "dashboard", fab: "both",
     nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
     body:
       '<div class="hero" style="padding-bottom:6px">' +
-      '<div class="mochip">' + arrow("prev", true) +
+      '<div class="mochip">' + monthArrow("prev", true) +
       "<span>" + t("date.year", { y }) + "</span>" +
-      arrow("next", +y < +thisMonth().slice(0, 4)) + "</div></div>" +
+      monthArrow("next", +y < +thisMonth().slice(0, 4)) + "</div></div>" +
       (n === 0 ? "" :
         '<div class="card anchart">' +
         '<div class="hero" style="padding:2px 0 0">' +
@@ -3473,7 +3525,10 @@ function analyticsMonth() {
     nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
     body:
       '<div class="hero" style="padding-top:2px;padding-bottom:10px">' +
-      '<div class="mochip"><span>' + monthName(m) + "</span></div></div>" +
+      /* 月视图也要左右箭头：没有的话，切到年视图时药丸的宽高会跳一下 */
+      '<div class="mochip">' + monthArrow("prev", true) +
+      "<span>" + monthName(m) + "</span>" +
+      monthArrow("next", !isThisMonth()) + "</div></div>" +
 
       /* 稿子把「收入 · 图 · 支出」整块收进一张卡里 */
       '<div class="card anchart">' +
@@ -3498,7 +3553,7 @@ function analyticsMonth() {
       '<div class="card gapcard" style="margin-top:22px">' +
       '<div class="badge">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) + "</div>" +
       '<div class="big' + (net < 0 ? " mark" : " mark pos") +
-      '" style="margin:6px 0;font-size:30px">' +
+      '" style="margin:10px 0 6px;font-size:30px">' +
       (net < 0 ? neg(-net) : plus(net)) + "</div>" +
       '<div class="block" style="display:flex;flex-wrap:wrap;gap:4px 14px">' +
       '<div class="sub">' + t("word.income") +
@@ -3542,10 +3597,6 @@ function monthView() {
   const inc = incomeIn(S, m), out = outgoIn(S, m), avail = availableIn(m);
   /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
      降部的空隙，箭头就比中间那行字高出一两像素。 */
-  const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:0;display:flex;align-items:center;justify-content:center;cursor:' +
-    (on ? "pointer" : "default") + ";color:" +
-    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
   return { tab: "dashboard", fab: "both", navSplit: true,
     /* 顶栏按样机：头像 · 字标 · 月/年。月份的前后翻挪到下面那颗药丸里了。 */
     nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
@@ -3556,8 +3607,8 @@ function monthView() {
       /* 按样机：月份药丸 → 可用余额 → 两张卡。月度的收支对比整个搬到
          「分析」页去了（点左边那张卡进去），首页开场是「你有多少」。 */
       '<div class="hero">' +
-      '<div class="mochip">' + arrow("prev", true) +
-      '<span>' + monthName(m) + "</span>" + arrow("next", !cur) + "</div>" +
+      '<div class="mochip">' + monthArrow("prev", true) +
+      '<span>' + monthName(m) + "</span>" + monthArrow("next", !cur) + "</div>" +
       '<div class="hlbl">' + t("mo.available") + "</div>" +
       '<div class="heroamt">' +
       (ui.hideBal ? '<span class="big">' + ccy().sym +
@@ -3792,7 +3843,7 @@ SCREENS.jars = () => {
                 (earmarkOn(a.name) > a.balance ? t("va.overBalance") : "")
               : t("va.shareOf", {
                   pct: Math.round((a.balance / Math.max(1, netAssets(S))) * 100) }),
-            "editJar:" + a.name), "delJar:" + a.name, ["acct", a.name])).join("") +
+            "openJar:" + a.name), "delJar:" + a.name, ["acct", a.name])).join("") +
           /* 加号按钮收进卡里 —— 和账单/我那两页同一套（稿子 2188:5694）*/
           '<div class="dash" data-a="addJar">' + ic("plus", 16) + " " +
           t("va.addAccount") + "</div></div>" +
@@ -4179,6 +4230,53 @@ SCREENS.verdict = () => {
       actionStack(acts) };
 };
 
+/* --- 账户详情：这个账户的余额是怎么走到今天的 ---------------------------
+   这个 app 里账本和账户是分开的：记一笔花销不动账户余额，目标存钱也只是
+   把账户里的一块划出来。所以真正会让余额变的只有那几种动作，
+   全部走 jarMove/jarSet，都会落到这张表上。 */
+SCREENS.account = () => {
+  const a = jar(ui.jarName);
+  if (!a) return { tab: "jars", nav: navBack(), body: "" };
+  const log = a.log || [];
+  const ear = earmarkOn(a.name);
+  const d = (ms) => { const x = new Date(ms);
+    return t("date.md", { m: x.getMonth() + 1, d: x.getDate() }) + " " +
+      String(x.getHours()).padStart(2, "0") + ":" +
+      String(x.getMinutes()).padStart(2, "0"); };
+  return { tab: "jars", fab: "mic",
+    nav: navBack() + '<div class="navt">' + esc(a.name) + "</div>" + navRight(),
+    body:
+      /* 顶栏已经写着账户名了，卡里不用再来一遍 */
+      '<div class="card" style="align-items:center">' +
+      '<div class="heroamt" style="justify-content:center"><span class="big">' +
+      withDec(yuan(a.balance)) + "</span></div>" +
+      (ear > 0 ? '<div class="sub" style="text-align:center;margin-top:8px">' +
+        t("va.setAsideOf", { amt: yuan(ear) }) + "</div>" : "") +
+      "</div>" +
+
+      '<div class="listcard">' +
+      '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
+      t("va.history") + "</div>" +
+      '<div class="sumamt">' + log.length + "</div></div>" +
+      (log.length
+        ? log.slice(0, 30).map((e) =>
+            '<div class="row"><div style="flex:1;min-width:0">' +
+            '<div style="font-size:15px;line-height:20px">' +
+            t("va.why." + e.why) + "</div>" +
+            '<div class="sub" style="font-size:11px;line-height:13px;margin-top:2px">' +
+            d(e.at) + "</div></div>" +
+            '<div style="text-align:right">' +
+            '<div class="money" style="font-size:15px;color:' +
+            (e.d > 0 ? GREEN : "var(--ink)") + '">' +
+            (e.d > 0 ? plus(e.d) : neg(-e.d)) + "</div>" +
+            '<div class="sub" style="font-size:11px;line-height:13px;margin-top:2px">' +
+            yuan(e.to) + "</div></div></div>").join("")
+        : '<div class="sub" style="padding:14px 0;text-align:center">' +
+          t("va.noHistory") + "</div>") +
+      "</div>" +
+      btn(t("va.editAccount"), "editJar:" + a.name, "sm") };
+};
+
 /* --- 清单：卡片是纯链接，动作都在详情页 ------------------------------- */
 SCREENS.wishlist = () => {
   const tab = ui.seg.wish || "active";
@@ -4220,7 +4318,9 @@ SCREENS.wishlist = () => {
     body: seg("wish", [[t("wl.tabActive", { n: S.wishlist.length }), "active"],
       [t("wl.tabDone", { n: S.archive.length }), "done"]], tab) +
       (tab === "active" && S.wishlist.length
-        ? '<div class="card"><div style="display:flex;align-items:baseline;gap:9px">' +
+        /* 一行的汇总卡：内边距收到 14（原来 18，整张 64 太厚），
+           两边用 center 对齐 —— baseline 会让 12 的标签和 17 的数字中线差 2px。 */
+        ? '<div class="card sumcard"><div style="display:flex;align-items:center;gap:9px">' +
           '<div class="lbl" style="flex:1">' + t("wl.pending") +
           '</div><div class="num money">' +
           yuan(S.wishlist.filter((w) => !planOf(w.id)).reduce((a, w) => a + w.price, 0)) +
@@ -4720,7 +4820,7 @@ SHEETS.cats = () => {
     ? t("date.year", { y: viewYear() }) : monthName(viewMonth()) }), toggle) +
     /* 固定高度：切支出/收入、翻月份都不会让页面变高 */
     '<div style="display:flex;align-items:center;height:268px">' +
-    arrow("prev", true) +
+    monthArrow("prev", true) +
     '<div style="flex:1;min-width:0">' + (rows.length
       ? labeledDonut(rows, kind)
       : '<div class="dash" style="height:200px;cursor:default">' +
@@ -4946,7 +5046,7 @@ function dropJar(name) {
 }
 function finalizeBuy(p) {
   const j = jar(p.jar);
-  if (j) j.balance -= p.target;
+  if (j) jarSet(j, j.balance - p.target, "buy");
   dropJar(p.jar);
   p.status = "bought";
   S.archive.unshift({ name: p.name, price: p.target, outcome: "bought", date: today(),
@@ -5108,13 +5208,14 @@ const ACT = {
         ui.f.err = t("e.notEnough", { name: f.name, has: yuan(f.balance),
           short: yuan(p.move.amount - f.balance) }); return render(); }
       if (!to) S.accounts.push({ name: p.move.to, balance: 0, earmark: null });
-      f.balance -= p.move.amount; jar(p.move.to).balance += p.move.amount;
+      jarSet(f, f.balance - p.move.amount, "moveOut");
+      jarMove(p.move.to, p.move.amount, "moveIn");
       close(); return toast(t("k.moved", { from: f.name, to: p.move.to }));
     }
     if (p.intent === "deposit") {
       if (p.move.amount <= 0) { ui.f.err = t("e.amountPos"); return render(); }
       if (!jar(p.move.to)) S.accounts.push({ name: p.move.to, balance: 0, earmark: null });
-      jar(p.move.to).balance += p.move.amount;
+      jarMove(p.move.to, p.move.amount, "deposit");
       close(); return toast(t("k.deposited", { to: p.move.to }));
     }
     if (p.intent === "goal") {
@@ -5235,6 +5336,8 @@ const ACT = {
     ui.sheet = null; ui.f = {}; toast(t("k.deletedTx")); },
 
   /* 金库 */
+  /* 点进账户先看变动记录，要改在里面点「改这个账户」 */
+  openJar: (name) => { ui.jarName = name; push("account"); },
   editJar: (name) => { const j = jar(name);
     sheet("editJar", { was: name, name, balance: (j.balance / 100).toFixed(2) }); },
   submitEditJar: () => {
@@ -5245,7 +5348,7 @@ const ACT = {
       return render(); }
     if (bal < 0) { ui.f.err = t("e.notNegative"); return render(); }
     S.plans.forEach((pl) => { if (pl.jar === ui.f.was) pl.jar = n; });
-    j.name = n; j.balance = bal;
+    j.name = n; jarSet(j, bal, "edit");
     close(); toast(t("k.saved")); },
   delJar: (name) => { const j = jar(name);
     if (j && j.earmark) { toast(t("k.jarLockedDel")); return render(); }
@@ -5461,7 +5564,7 @@ addDebt: () => sheet("addDebt", {}),
     if (!(ui.f.name || "").trim()) { ui.f.err = t("e.soldWhat"); return render(); }
     if (!(amt > 0)) { ui.f.err = t("e.amountPos"); return render(); }
     pl.sales.push({ name: ui.f.name.trim(), amount: amt, date: today() });
-    pl.raised += amt; jar(pl.jar).balance += amt;
+    pl.raised += amt; jarMove(pl.jar, amt, "sold");
     ui.wishId = pl.wishId; close();
     toast(pl.raised >= pl.target ? t("k.planFull")
       : t("k.planLeft", { amt: yuan(pl.target - pl.raised) })); },
@@ -5469,12 +5572,13 @@ addDebt: () => sheet("addDebt", {}),
     if (sp > 0) sheet("surplus", { amount: sp, to: jarOpts()[0] });
     else { finalizeBuy(pl); render(); } },
   submitSurplus: () => { const pl = curPlan();
-    jar(pl.jar).balance -= ui.f.amount; jar(ui.f.to).balance += ui.f.amount;
+    jarMove(pl.jar, -ui.f.amount, "moveOut");
+    jarMove(ui.f.to, ui.f.amount, "moveIn");
     finalizeBuy(pl); render(); },
   planAbandon: () => { const pl = curPlan();
     sheet("toSavings", { amount: pl.raised, count: pl.sales.length, to: jarOpts()[0] }); },
   submitAbandon: () => { const pl = curPlan(), amt = pl.raised;
-    if (amt > 0) { jar(pl.jar).balance -= amt; jar(ui.f.to).balance += amt; }
+    if (amt > 0) { jarMove(pl.jar, -amt, "moveOut"); jarMove(ui.f.to, amt, "moveIn"); }
     dropJar(pl.jar);
     pl.status = "abandoned";
     S.archive.unshift({ name: pl.name, price: pl.target, outcome: "dropped", date: today(),
@@ -5488,7 +5592,8 @@ addDebt: () => sheet("addDebt", {}),
     if (pl.raised > 0) sheet("cashBuy", { amount: pl.raised, to: jarOpts()[0] });
     else ACT.doCashBuy(); },
   submitCashBuy: () => { const pl = curPlan();
-    jar(pl.jar).balance -= ui.f.amount; jar(ui.f.to).balance += ui.f.amount;
+    jarMove(pl.jar, -ui.f.amount, "moveOut");
+    jarMove(ui.f.to, ui.f.amount, "moveIn");
     ACT.doCashBuy(); },
   doCashBuy: () => { const w = curWish(), pl = curPlan();
     if (pl) { dropJar(pl.jar); pl.status = "abandoned"; }
