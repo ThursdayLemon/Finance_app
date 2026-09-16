@@ -9,7 +9,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#fcfaf5">
+<!-- iOS 独立模式下状态栏那块是拿 theme-color 涂的。原来写的是 #fcfaf5（奶白），
+     而珠光底最上面一行量出来是 #e0e0dc —— 差得够多，看着就是「页眉有一块浅色」。
+     Pearl 用背景顶部的实测色；briefly 那套自己的底才是 #fcfaf5。 -->
+<meta name="theme-color" content="#e0e0dc">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字体请求一旦写错是静默失败的：整条 css2 返回 400，六个字体一个都不下来，
      页面看着「字体不对」，但 CSS 是对的。之前 Literata 就是这么挂了一路。
@@ -343,8 +346,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .inset{height:40px;flex-shrink:0}
 /* 标题脱离了文档流（见 .navt），所以剩下的两边要靠 space-between 撑开，
    否则右边那堆（合计 / 进度条 / 清单）会缩到返回键旁边去。 */
+/* 稿子 26:895 的顶栏底下没有分隔线 —— 玻璃卡自己有边界，再加一条会把
+   页眉切成一块，反而像贴上去的 */
 .nav{min-height:50px;display:flex;align-items:center;justify-content:space-between;
- gap:8px;padding:0 12px;flex-shrink:0;border-bottom:1px solid var(--line)}
+ gap:8px;padding:0 12px;flex-shrink:0}
 /* 左右两栏等宽，中间那栏才是真居中 —— 头像 38、月/年 70，
    靠 flex 的话日期会被挤偏；1fr auto 1fr 不管两边多宽都对称。 */
 .nav.split{display:grid;grid-template-columns:1fr auto 1fr}
@@ -379,8 +384,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  border:1px solid var(--edge);border-radius:var(--r-pill);padding:4px;
  box-shadow:var(--shadow-nav);backdrop-filter:blur(20px)}
 /* ---- 底栏三（四）颗：说一句 · 点阵 · [返回] · 记一笔 ---------------------- */
-.act{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:58px;
- border-radius:var(--r-pill);font-size:14.5px;font-weight:var(--w-mid);
+/* 稿子 2219:7974：Log 那一态里 Speak/Add 是 54 高、整条仍是 66，
+   所以上下各留 2 的外边距（4+2+54+2+4 = 66），左右合起来正好是稿子的 8。
+   字是 Onest Regular 15，不是 Medium 14.5。 */
+.act{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:54px;
+ margin:2px 4px;border-radius:var(--r-pill);font-size:15px;font-weight:var(--w-body);
  letter-spacing:-.015em;background:rgba(236,236,236,.2);color:var(--ink);cursor:pointer;
  border:1px solid var(--icon-edge);min-width:0;white-space:nowrap;overflow:hidden}
 .act.dark{background:var(--accent);color:var(--on-accent)}
@@ -398,21 +406,24 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  transition:opacity .11s ease,transform .11s ease}
 .dockside.swapping{opacity:0;transform:scale(.97)}
 .dockside > *{flex:1;min-width:0}
-.gridb.open{background:rgba(232,232,232,.2);color:var(--ink)}
+/* Log 那一态中间那颗是 60% 白 + 深色点阵（稿子 2219:7974）*/
+.gridb.open{background:rgba(255,255,255,.6);color:var(--ink)}
 /* 展开时，两颗药丸里各坐两个分区。按样机：药丸和收起时的 .act 同底，
    药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
 .navpill{flex:1;min-width:0;height:58px;border-radius:var(--r-pill);
  background:rgba(236,236,236,.2);border:1px solid var(--icon-edge);
- display:flex;align-items:center;justify-content:space-around}
+ display:flex;align-items:center;justify-content:space-between;
+ gap:0;padding:0 4px}
 /* 稿子 26:895：选中的那一格是一颗白色药丸（64×38，r30），
    没选中的就是透明。不再靠透明度分主次 —— 白底更直接。 */
 /* 稿子把每一格做成了「图标 + 名字」：65×50、r30、1px 白描边 + 很浅的投影。
    50 高已经过了 44 的下限，不用再撑热区了。 */
 .navb{width:65px;height:50px;border-radius:30px;flex-shrink:0;display:flex;
- flex-direction:column;align-items:center;justify-content:center;gap:1px;
+ flex-direction:column;align-items:center;justify-content:center;gap:2px;
  color:var(--ink);cursor:pointer;border:1px solid var(--icon-edge);
  box-shadow:9px 2px 10px -18px rgba(65,65,64,.03);
  transition:background .18s ease}
+/* 图标和名字之间 2（稿子 2219:7801） */
 .navb > span{font-size:11px;line-height:13px;font-weight:var(--w-body);
  color:var(--ink);white-space:nowrap}
 /* 选中的那格是白到浅灰的竖向渐变，不是纯白 */
@@ -469,9 +480,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    换成旧式数字的衬线 —— Bona Nova 那种 —— 时它就是救命的那一条。） */
 .big,.tileval,.callout{font-family:var(--font-num);
  font-variant-numeric:lining-nums tabular-nums}
-/* 行里的金额走 Onest，但等高等宽还得留着 —— 金额列要对得齐 */
-.money,.num,.ta b{font-family:var(--font);
- font-variant-numeric:lining-nums tabular-nums}
+/* 行里的金额走 Onest。这里**不要** tabular-nums：等宽会把每个数字撑成一样的
+   advance，「1」两边就空出一截，看着像字距被拉开了（真机上就是这个症状）。
+   稿子用的是比例数字。金额是右对齐的，右边缘本来就齐，不靠等宽。
+   lining 留着：万一以后换成有旧式数字的字体，它是救命的那一条。 */
+.money,.num,.ta b{font-family:var(--font);font-variant-numeric:lining-nums}
 /* 字标 COACH：17/22，字距 +3.7px */
 .wordmark{font-size:17px;letter-spacing:3.7px;line-height:22px;
  text-align:center;color:var(--ink)}
@@ -1046,7 +1059,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v32";
+const BUILD = "v33";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1510,7 +1523,8 @@ zh: {
   "set.language": "语言",
 },
 en: {
-  "tab.money": "Money", "tab.bills": "Bills", "tab.wants": "Wants", "tab.vault": "Vault",
+  /* 稿子 2219:7801 底栏写的是 Home / Savings */
+  "tab.money": "Home", "tab.bills": "Bills", "tab.wants": "Wants", "tab.vault": "Savings",
   "nav.me": "Me", "nav.sections": "Sections", "scope.month": "Mo", "scope.year": "Yr",
   "pro.cta": "Get Pro", "pro.soon": "Pro isn't ready yet — enjoy this first",
   "word.back": "Back", "word.addOne": "Add",
@@ -2953,7 +2967,8 @@ function applySkin() {
   if (S.skin === "briefly") el.setAttribute("data-skin", "briefly");
   else el.removeAttribute("data-skin");
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute("content", S.skin === "briefly" ? "#fcfaf5" : "#f2f1ef");
+  /* Pearl 的顶部不是 --page，上面还压着一层珠光；量出来是 #e0e0dc */
+  if (m) m.setAttribute("content", S.skin === "briefly" ? "#fcfaf5" : "#e0e0dc");
 }
 let ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {} };
 const screen = () => ui.stack[ui.stack.length - 1];
