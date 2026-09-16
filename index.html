@@ -92,7 +92,8 @@
      按钮投影：4/4 15 −18 的 15%，很浅，只是把按钮从玻璃底上托起来一点。 */
   --green-01:#8fc48e;
   --spend-bg:#fad9c6; --spend-edge:#eb9d6b;
-  --income-bg:#deefde; --income-edge:#38bc37;
+  --income-bg:#deefde; --income-edge:#8fc48e;
+  --icon-ring:#e6e4dd;    /* 固定承诺那四颗白圆的描边（稿子 26:895）*/
   --shadow-btn:4px 4px 15px -18px rgba(65,65,64,.15);
   --chip-edge:rgba(172,172,172,.3);
   --soft-edge:#b9b9b6;
@@ -176,7 +177,8 @@
     --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
     --green-01:#8fc48e;
     --spend-bg:rgba(224,138,88,.18); --spend-edge:rgba(224,138,88,.5);
-    --income-bg:rgba(79,208,78,.16); --income-edge:rgba(79,208,78,.5);
+    --income-bg:rgba(143,196,142,.16); --income-edge:rgba(143,196,142,.5);
+    --icon-ring:rgba(255,255,255,.14);
     --shadow-btn:4px 4px 15px -18px rgba(0,0,0,.5);
     --chip-edge:rgba(255,255,255,.14);
     --soft-edge:rgba(255,255,255,.22);
@@ -231,7 +233,8 @@
   --shadow-sheet:0 -8px 30px -18px rgba(0,0,0,.7);
     --green-01:#8fc48e;
     --spend-bg:rgba(224,138,88,.18); --spend-edge:rgba(224,138,88,.5);
-    --income-bg:rgba(79,208,78,.16); --income-edge:rgba(79,208,78,.5);
+    --income-bg:rgba(143,196,142,.16); --income-edge:rgba(143,196,142,.5);
+    --icon-ring:rgba(255,255,255,.14);
     --shadow-btn:4px 4px 15px -18px rgba(0,0,0,.5);
     --chip-edge:rgba(255,255,255,.14);
     --soft-edge:rgba(255,255,255,.22);
@@ -287,19 +290,39 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    （试过换成稿子里那张丝绸图，按你说的换回来了。）
    inset 保持 0 —— 负 inset 会把 .phone 的滚动区撑出去，键盘一起来浏览器
    就会去滚它，抽屉跟着飞。要放大靠 transform，不靠往外扩。 */
-.phone::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+/* 往外扩 70：blur(55) 会在四条边上和外面的透明混合，不扩就整圈偏亮
+   （量出来上边差 10/255）。当年不敢扩是因为负 inset 让 .phone 变成了可滚容器，
+   那个根因已经用 overflow:clip 解决了 —— 滚动相关的几条测试盯着这件事。 */
+.phone::before{content:"";position:absolute;inset:-70px;z-index:0;pointer-events:none;
  will-change:transform;animation:silk 64s ease-in-out infinite alternate;
+ /* 稿子 26:895 的底：五个实心椭圆，各自 110 的高斯模糊。
+    所以这里用「硬边椭圆 + 一次整体模糊」，不是软渐变 —— 软渐变的falloff
+    是线性的，和高斯不一样，压出来整片会偏灰。位置和尺寸按 390×844 换算：
+      blob1 #dcddda  (-62,-118) 281×405 → 36.0% 24.0% at 20.1% 10.0%
+      blob2 #d8d9d7  (218,-143) 250×371 → 32.1% 22.0% at 87.9%  5.0%
+      blob3 #e6e4dd  (109,  17) 343×473 → 44.0% 28.0% at 71.9% 30.0%
+      blob4 #d7d7d7 31% (-117,203) 296×405 → 37.9% 24.0% at  7.9% 48.0%
+      blob5 #acaaa5 29% (-16, 439) 390×506 → 50.0% 30.0% at 45.9% 82.0%
+    Figma 的模糊半径约等于 CSS 的两倍标准差，110 → 55。 */
+ /* 注意顺序是反的：CSS 里先写的那层在最上面，Figma 里后面的子节点在最上面。
+    所以这里 blob5 → blob1 倒着写，重叠处的压盖关系才和稿子一致。 */
  background:
-  radial-gradient(38% 26% at 18% 12%, #dcddda, transparent 70%),
-  radial-gradient(34% 24% at 86% 6%,  #d8d9d7, transparent 70%),
-  radial-gradient(46% 30% at 70% 34%, #e6e4dd, transparent 72%),
-  radial-gradient(40% 26% at 10% 52%, rgba(215,215,215,.31), transparent 72%),
-  radial-gradient(52% 30% at 50% 86%, rgba(172,170,165,.29), transparent 74%);
- filter:blur(28px)}
+  radial-gradient(36.8% 25.7% at 47.0% 77.4%, rgba(172,170,165,.29) 0 100%, transparent 100%),
+  radial-gradient(27.9% 20.6% at 19.1% 48.3%, rgba(215,215,215,.31) 0 100%, transparent 100%),
+  radial-gradient(32.4% 24.0% at 66.1% 32.9%, #e6e4dd 0 100%, transparent 100%),
+  radial-gradient(23.6% 18.9% at 77.9% 11.4%, #d8d9d7 0 100%, transparent 100%),
+  radial-gradient(26.5% 20.6% at 28.0% 15.7%, #dcddda 0 100%, transparent 100%),
+  /* 垫一层不透明的底：不然模糊会在四条边上和透明混合，角上整片偏亮
+     （量出来差 9/255）。Figma 那边椭圆本来就是压在 #f2f1ef 上的。 */
+  linear-gradient(var(--page), var(--page));
+ filter:blur(55px)}
+/* 静止态（0%）不位移 —— 它就是稿子里那一帧。只留一点点过度缩放，
+   把 blur 在四条边上的衰减挡在视野外；漂移从这一帧往外走。
+   之前 0% 带 translate(-1.5%,-1%)，等于一上来就比稿子偏了一截。 */
 @keyframes silk{
-  0%   {transform:scale(1.12) translate3d(-1.5%,-1%,0) rotate(.3deg)}
-  50%  {transform:scale(1.22) translate3d(2%,2%,0)     rotate(-.4deg)}
-  100% {transform:scale(1.14) translate3d(-1%,3%,0)    rotate(.2deg)}
+  0%   {transform:scale(1.08) translate3d(0,0,0)      rotate(0deg)}
+  50%  {transform:scale(1.16) translate3d(1.5%,1.5%,0) rotate(-.35deg)}
+  100% {transform:scale(1.10) translate3d(-1%,2%,0)    rotate(.2deg)}
 }
 /* 系统里关了动效就别动 */
 @media (prefers-reduced-motion: reduce){ .phone::before{animation:none} }
@@ -347,14 +370,16 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    所以有它的页面要把这块高度垫出来，不然年视图这种长页面最后一张卡会被压住 */
 /* 底栏浮在正文上面，占掉 30(离底) + 62(高) = 92。滚到底时再留 56 的余量，
    最后一行不会贴着底栏的投影。年视图和账单页原来就差这一口。 */
-.body.hasfab{padding-bottom:148px}
+/* 底栏 30(离底) + 66(高) = 96，再留 56 的余量，最后一行不贴着投影 */
+.body.hasfab{padding-bottom:152px}
 /* 底部不再是通栏，是一簇悬浮的东西：一条玻璃药丸，内容从底下滑过去 */
+/* 稿子 26:895：整条 350×66，内边距 4（66 = 4 + 58 + 4），背景模糊 20 */
 .dock{position:absolute;left:20px;right:20px;bottom:30px;z-index:4;
  display:flex;align-items:center;gap:8px;background:var(--nav);
- border:1px solid var(--edge);border-radius:var(--r-pill);padding:8px;
- box-shadow:var(--shadow-nav);backdrop-filter:blur(calc(var(--glass) + 4px))}
+ border:1px solid var(--edge);border-radius:var(--r-pill);padding:4px;
+ box-shadow:var(--shadow-nav);backdrop-filter:blur(20px)}
 /* ---- 底栏三（四）颗：说一句 · 点阵 · [返回] · 记一笔 ---------------------- */
-.act{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;
+.act{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:58px;
  border-radius:var(--r-pill);font-size:14.5px;font-weight:var(--w-mid);
  letter-spacing:-.015em;background:rgba(236,236,236,.2);color:var(--ink);cursor:pointer;
  border:1px solid var(--icon-edge);min-width:0;white-space:nowrap;overflow:hidden}
@@ -363,7 +388,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .act.hot{background:var(--warn);color:#fff;border-color:var(--icon-edge)}
 .act:active{transform:scale(.97)}
 /* 默认是黑的（底栏正露着四个分区）；点一下换出动作键，它才变成白底 */
-.gridb{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;
+.gridb{width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--accent);
  color:var(--on-accent);border:1px solid var(--icon-edge);
  cursor:pointer;touch-action:none;
@@ -376,19 +401,22 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .gridb.open{background:rgba(232,232,232,.2);color:var(--ink)}
 /* 展开时，两颗药丸里各坐两个分区。按样机：药丸和收起时的 .act 同底，
    药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
-.navpill{flex:1;min-width:0;height:46px;border-radius:var(--r-pill);
+.navpill{flex:1;min-width:0;height:58px;border-radius:var(--r-pill);
  background:rgba(236,236,236,.2);border:1px solid var(--icon-edge);
  display:flex;align-items:center;justify-content:space-around}
 /* 稿子 26:895：选中的那一格是一颗白色药丸（64×38，r30），
    没选中的就是透明。不再靠透明度分主次 —— 白底更直接。 */
-.navb{width:64px;height:38px;border-radius:30px;flex-shrink:0;display:flex;
- align-items:center;justify-content:center;color:var(--ink);cursor:pointer;
- position:relative;transition:background-color .18s ease}
-/* 稿子给的是 38 高，低于 44 的下限。视觉照稿子，可点区域用伪元素往外撑 —— 
-   版式一点不动，手指不会点空。 */
-.navb::after{content:"";position:absolute;left:0;right:0;top:50%;
- transform:translateY(-50%);height:46px}
-.navb.on{background:var(--field)}
+/* 稿子把每一格做成了「图标 + 名字」：65×50、r30、1px 白描边 + 很浅的投影。
+   50 高已经过了 44 的下限，不用再撑热区了。 */
+.navb{width:65px;height:50px;border-radius:30px;flex-shrink:0;display:flex;
+ flex-direction:column;align-items:center;justify-content:center;gap:1px;
+ color:var(--ink);cursor:pointer;border:1px solid var(--icon-edge);
+ box-shadow:9px 2px 10px -18px rgba(65,65,64,.03);
+ transition:background .18s ease}
+.navb > span{font-size:11px;line-height:13px;font-weight:var(--w-body);
+ color:var(--ink);white-space:nowrap}
+/* 选中的那格是白到浅灰的竖向渐变，不是纯白 */
+.navb.on{background:linear-gradient(180deg,#ffffff 0%,#f4f4f4 100%)}
 .navb:active{transform:scale(.92)}
 /* 收起时如果这一页没有语音键，左边留一颗同宽的空药丸，点阵才不会跑偏 */
 .act.ghost{background:transparent;pointer-events:none}
@@ -519,9 +547,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .gcard{padding:16px;display:flex;flex-direction:column;cursor:pointer}
 .figure{flex:1;display:flex;flex-direction:column;align-items:center;
  justify-content:center;padding:6px 0 10px}
-/* 卡内那个数：19/24，小数降到 13 并压灰 */
-.figure .money{font-size:19px;font-weight:var(--w-body);line-height:24px;
- letter-spacing:-.48px}
+/* 卡里的大数字是「display 金额」，还是衬线 —— 24/24，字距 −.48（稿子 26:895）。
+   上一版把 .money 整族改成 Onest 时把它一起带走了，这里单独拉回来。 */
+.figure .money{font-family:var(--font-num);font-size:24px;font-weight:var(--w-body);
+ line-height:24px;letter-spacing:-.48px}
 .figure .money .dec{font-size:13px;color:var(--ink-faint)}
 .figure .sub{font-size:11.5px;line-height:15px}
 .spark{display:flex;align-items:flex-end;gap:6px;height:50px}
@@ -565,7 +594,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    align-content 不能用 center —— 那样标题到图标的距离会随卡片高度变。 */
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;flex:1;
  align-content:start;margin-top:12px}
-.quick .circ{width:36px;height:36px}
+/* 稿子给这四颗加了描边：60% 白 + 2px #e6e4dd，和账本里那些白圆不一样 */
+.quick .circ{width:36px;height:36px;background:rgba(255,255,255,.6);
+ border:2px solid var(--icon-ring)}
 .qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
 /* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
@@ -579,8 +610,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 账本里的行图标：30px，底色按方向分 —— 出账暖橘、进账绿、转存留白。
    颜色是稿子里点的具体值，不是 good/warn 算出来的浅版。 */
 .tr .circ{width:30px;height:30px}
-.tr .circ.out{background:var(--spend-bg);border-color:var(--spend-edge)}
-.tr .circ.in{background:var(--income-bg);border-color:var(--income-edge)}
+/* 稿子 26:895：图标本身也跟着方向上色，不只是底和描边 */
+.tr .circ.out{background:var(--spend-bg);border-color:var(--spend-edge);color:var(--warn)}
+.tr .circ.in{background:var(--income-bg);border-color:var(--income-edge);
+ color:var(--green-01)}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -812,8 +845,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ta{text-align:right;white-space:nowrap;flex-shrink:0}
 /* 金额：15/20，字距 −0.37px；小数降到 12 并压灰 */
+/* 稿子量出来行内金额字距是 0 —— 负字距是衬线数字才需要的，Onest 不用 */
 .ta b{display:block;font-size:15px;font-weight:var(--w-body);line-height:20px;
- letter-spacing:-.37px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
+ letter-spacing:0;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .ta b .dec{font-size:12px;color:var(--ink-faint)}
 /* 收入绿、支出砖橙 —— 稿子里就是这两个色，用的是判定色 token */
 .ta > span{display:block;font-size:11px;line-height:15px;margin-top:2px;
@@ -1012,7 +1046,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v31";
+const BUILD = "v32";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -5380,7 +5414,8 @@ function dockHtml(tab, fab) {
   const half = (from, to) => '<div class="navpill">' +
     secs.slice(from, to).map(([i, l, k]) =>
       '<div class="navb' + (k === tab ? " on" : "") + '" data-a="tab:' + k +
-      '" title="' + esc(l) + '">' + ic(i, 22) + "</div>").join("") + "</div>";
+      '" title="' + esc(l) + '">' + ic(i, 22) + "<span>" + esc(l) + "</span></div>")
+      .join("") + "</div>";
   /* 两侧各包一层槽：切换时只换槽里的东西，中间那颗点阵始终是同一个节点，
      它的深浅才过渡得起来（整块重画的话，新节点一上来就是终态，没得过渡）。 */
   const left = (acts) => acts
