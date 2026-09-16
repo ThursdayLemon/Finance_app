@@ -382,9 +382,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 悬浮的「马上记一笔」：42 的橙圆，压在账本列表上、底栏上方 10。
    点它直接开那张「键盘就绪」的快捷输入，不是带表单的详细记账页。 */
 .qlog{position:absolute;right:32px;bottom:106px;z-index:5;
- width:42px;height:42px;border-radius:50%;background:var(--warn);color:#fff;
+ width:45px;height:45px;border-radius:50%;background:var(--warn);color:#fff;
  display:flex;align-items:center;justify-content:center;cursor:pointer;
- border:1px solid rgba(255,255,255,.5);
  box-shadow:0 6px 16px -6px rgba(65,65,64,.35);
  transition:transform .12s ease}
 .qlog:active{transform:scale(.92)}
@@ -609,7 +608,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .chartcol > .callout.bot{top:100%}
 .chartcol > .callout{text-align:center;padding:0 0 3px}
 .chartcol > .callout.bot{padding:3px 0 0}
-.anchart{gap:0}
+/* 稿子 2150:2125：第一张卡没有底色，只有 1px 白描边 */
+.anchart{gap:0;background:transparent;border:1px solid var(--edge)}
 /* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
 .chart{padding:18px 0 6px;position:relative}
 /* 每根柱子现在自己一列（列里还要放那个数字标注），所以行是 stretch，
@@ -754,18 +754,22 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
 /* 轨道 4px 是视觉；外面套一层 44 高的透明盒子当热区 */
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;
  background:transparent;cursor:pointer}
-input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:var(--r-pill);
- background:var(--track)}
+/* 稿子 2188:6140：槽 358×6 是 --ink-faint + 1px --line；
+   把手 22 的纯白圆，**不带深色描边**（原来是 1.5px 的墨色，太重了）。 */
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:var(--r-pill);
+ background:var(--ink-faint);border:1px solid var(--line)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;
- border-radius:50%;background:var(--page);border:1.5px solid var(--ink);cursor:pointer;
- margin-top:-9px}
+ border-radius:50%;background:#fff;border:1px solid #fff;cursor:pointer;
+ box-shadow:0 1px 3px rgba(65,65,64,.18);margin-top:-9px}
+/* 稿子 2188:6140：关着是 44×26 的浅灰底（--ink-faint）+ 1px 高光边，
+   把手 20 的纯白。原来关着是透明底 + 浅色把手，在浅背景上几乎看不见。 */
 .toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--edge);
- background:transparent;
+ background:var(--ink-faint);
  position:relative;flex-shrink:0;cursor:pointer;transition:background .2s}
-.toggle>i{position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;
- background:var(--edge);transition:left .2s,background .2s}
+.toggle>i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+ background:#fff;transition:left .2s}
 .toggle.on{background:var(--accent);border-color:var(--accent)}
-.toggle.on>i{left:21px;background:var(--page)}
+.toggle.on>i{left:22px}
 /* 左滑删除：红底垫在下面，内容层往左推 */
 /* 红底放在删除面板上，不要放在容器上 —— 容器铺红色会在行与行之间透出红缝 */
 /* 跟着里面卡片的圆角裁 —— 否则四个圆角处会透出底下的红色删除面板 */
@@ -809,7 +813,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 出场曲线：默认是「快出慢停」的五次缓出，收尾长、几乎不刹车感。
    语音和打字那两张给一条会过冲的曲线 —— 弹一下再落回来，像被推上来的。 */
 .sheet.anim{animation:up .40s cubic-bezier(.22,1,.36,1)}
-.sheet.anim.bouncy{animation:upBouncy .52s cubic-bezier(.32,1.5,.5,1)}
+/* 出现的时候不要「冲过头再弹回来」—— 那个 1.5 的控制点会明显过冲。
+   换成 1.05：速度曲线上还留一点回弹的劲，但位置不越过终点。 */
+.sheet.anim.bouncy{animation:upBouncy .46s cubic-bezier(.22,1.05,.36,1)}
 @keyframes upBouncy{
   from{transform:translateY(100%)}
   to{transform:translateY(0)}
@@ -972,6 +978,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  background:var(--accent2);color:var(--ink);white-space:nowrap}
 .asmini.pri{background:var(--accent);color:var(--on-accent);box-shadow:var(--shadow-btn)}
 .asmini.round{padding:0;width:40px;justify-content:center;background:var(--icon-bg)}
+/* ---- 马上记一笔（稿子 2150:2632）------------------------------------
+   抽屉本身就是那个白框：圆角 15、内边距 8、两行之间 24。 */
+.sheet.quick{border-radius:15px 15px 0 0;gap:24px;
+ padding:8px 8px max(8px, calc(8px - var(--kb,0px)))}
+.jotin{width:100%;border:0;background:transparent;resize:none;outline:none;
+ padding:0 10px;font:var(--w-light) 15px/20px var(--font);
+ color:var(--ink);min-height:40px}
+.jotin::placeholder{color:var(--ink-faint)}
+.jotrow{display:flex;gap:6px;align-items:center}
+.jotrow .sp{flex:1}
+/* 两颗都是黑底白字 —— 稿子里没有浅色那一颗 */
+.jotmini{height:35px;min-width:35px;border-radius:var(--r-pill);
+ background:var(--accent);color:var(--on-accent);display:inline-flex;
+ align-items:center;justify-content:center;gap:8px;font-size:12px;
+ font-weight:var(--w-body);cursor:pointer;white-space:nowrap}
+.jotmini.wide{padding:0 18px}
+.jotmini:active{transform:scale(.96)}
+/* 稿子给的是 35 高，低于 44 的下限：视觉照稿子，可点区域往外撑到 44 */
+.jotmini{position:relative}
+.jotmini::after{content:"";position:absolute;left:0;right:0;top:50%;
+ transform:translateY(-50%);height:44px;min-width:44px}
 /* 通宽的那颗：平时深色「点一下说话」，在听的时候换成波形 */
 .asbtn{height:46px;border-radius:var(--r-pill);background:var(--accent);box-shadow:var(--shadow-btn);
  color:var(--on-accent);display:flex;align-items:center;justify-content:center;gap:8px;
@@ -1087,7 +1114,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v35";
+const BUILD = "v36";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4078,8 +4105,9 @@ SCREENS.decisions = () => {
   return { tab: "decisions", fab: editing ? null : "mic",
     nav: navBack() + '<div class="navt" style="flex:1">' +
       (editing ? t("de.retest") : t("tab.wants")) + "</div>" +
+      /* 右上角是清单入口，不是 Get Pro —— 这一页本来就有自己的东西要放 */
       (editing ? "" : '<div class="chip" data-a="wishlist">' +
-        t("de.wishlistN", { n: S.wishlist.length }) + "</div>") + navRight(),
+        t("de.wishlistN", { n: S.wishlist.length }) + "</div>"),
     body: '<div class="sub">' + (editing
       ? t("de.editIntro", { name: esc(editing.name) }) : t("de.intro")) + "</div>" +
       (clash ? '<div class="banner tap" data-a="wishItem:' + clash.id +
@@ -4382,20 +4410,23 @@ function speakBtn(listening) {
 
 /* 打字那张：一个框 + 左下「更多」（走结构化表单）+ 右下「说一句」。
    和语音共用 ui.f.text 和同一个解析器 —— 一个输入口，两条进去的路。 */
+/* 稿子 2150:2632：整张就一个输入框 + 两颗深色按钮，贴着键盘。
+   没有把手、没有问候语、没有内层的白框 —— 抽屉自己就是那个框。
+   这一张是「马上记一笔」，要快；想填分类日期再点左边那颗去详细页。 */
 SHEETS.jot = () => {
   const said = ui.f.text || "";
-  return '<div class="grab"></div>' +
-    '<div class="asgreet">' + esc(t("as.greet", { hi: greeting() })) + "</div>" +
-    '<div class="asbox"><textarea data-f="text" autofocus placeholder="' +
+  return '<textarea class="jotin" data-f="text" autofocus placeholder="' +
     esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" +
-    '<div class="asrow">' +
-    '<div class="asmini round" data-a="detail" title="' + esc(t("as.manual")) + '">' +
+    '<div class="jotrow">' +
+    '<div class="jotmini" data-a="detail" title="' + esc(t("as.manual")) + '">' +
     ic("ellipsis", 15) + '</div><div class="sp"></div>' +
-    (micOK() ? '<div class="asmini" data-a="assistant">' + ic("mic", 13) +
+    /* 「说一句」任何时候都在 —— 打了字再切去说，字是要带过去的，
+       这颗一消失那条路就断了（稿子那张靠键盘回车提交，没画确认键）。 */
+    (micOK() ? '<div class="jotmini wide" data-a="assistant">' + ic("mic", 14) +
       "<span>" + t("as.speak") + "</span></div>" : "") +
-    (said.trim() ? '<div class="asmini pri" data-a="parse">' + t("as.confirm") +
-      "</div>" : "") +
-    "</div></div>" + errline();
+    (said.trim() ? '<div class="jotmini wide" data-a="parse">' +
+      t("as.confirm") + "</div>" : "") +
+    "</div>" + errline();
 };
 
 SHEETS.assistant = () => {
@@ -5613,7 +5644,8 @@ function render() {
     (ui.sheet ? '<div class="dim' + (ui.anim ? " anim" : "") + '" data-a="close"></div>' +
       /* 语音和打字是「被推上来」的，给一条会过冲的曲线；别的抽屉稳稳滑上来 */
       '<div class="sheet' + (ui.anim ? " anim" : "") +
-      (/^(assistant|jot)$/.test(ui.sheet) ? " bouncy" : "") + '">' +
+      (/^(assistant|jot)$/.test(ui.sheet) ? " bouncy" : "") +
+      (ui.sheet === "jot" ? " quick" : "") + '">' +
       SHEETS[ui.sheet]() + "</div>" : "") +
     (ui.toast ? '<div class="toast' + (ui.sheet ? " high" : "") + '">' + ic("check", 17) +
       '<div style="flex:1">' + esc(ui.toast) + "</div></div>" : "");
