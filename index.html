@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<!-- iOS 独立模式下状态栏那块是拿 theme-color 涂的。原来写的是 #fcfaf5（奶白），
-     而珠光底最上面一行量出来是 #e0e0dc —— 差得够多，看着就是「页眉有一块浅色」。
-     Pearl 用背景顶部的实测色；briefly 那套自己的底才是 #fcfaf5。 -->
+<!-- 状态栏那条不是我们画的：iOS 独立模式拿 body 的背景色（以及 theme-color）去涂它。
+     body 原来是 --page #f2f1ef，而珠光底真正的顶色是 #e0e0dc —— 差 18/255，真机上
+     就是「最上面一块比背景浅的色块，下边缘一条直线」。两边现在都读 --ground。 -->
 <meta name="theme-color" content="#e0e0dc">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字体请求一旦写错是静默失败的：整条 css2 返回 400，六个字体一个都不下来，
@@ -46,6 +46,10 @@
   --ink-muted:#8e8e8c;      /* 说明小字 */
   --ink-faint:#b9b9b6;      /* 占位、禁用 */
   --page:#f2f1ef;           /* 页面底（上面还铺一层珠光） */
+  /* 真机上 iOS 独立模式会拿 body 的背景色去涂状态栏那条，所以 body 不能用
+     --page —— 珠光那层压上去之后顶部量出来是 #e0e0dc，差 18/255，真机上就是
+     顶上一块比背景浅的色块，下边缘一条直线。--ground 就是「真机看到的底色」。 */
+  --ground:#e0e0dc;
   --surface:rgba(255,255,255,.6);    /* 玻璃卡 */
   --sunken:rgba(255,255,255,.5);     /* 内嵌块、只读框 */
   --field:#ffffff;          /* 输入框 */
@@ -116,6 +120,7 @@
   --ink-muted:color-mix(in srgb, var(--ink) 62%, var(--page));
   --ink-faint:color-mix(in srgb, var(--ink) 34%, var(--page));
   --page:#fcfaf5;
+  --ground:#fcfaf5;
   --surface:#fcfaf5;
   --sunken:#f1eee5;
   --field:#fcfaf5;
@@ -161,7 +166,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { color-scheme: dark;
   --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
-    --page:#1a1a19; --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
+    --page:#1a1a19; --ground:var(--page); --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
     --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
     --accent:#ececeb; --on-accent:#1a1a19;
     --nav:rgba(40,40,39,.86); --on-nav:#ececeb;
@@ -195,7 +200,7 @@
   /* briefly 的深色单独留着 */
   :root[data-skin="briefly"]:not([data-theme="light"]) {
   --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
-    --page:#14180f; --surface:#14180f; --sunken:#1b2016;
+    --page:#14180f; --ground:var(--page); --surface:#14180f; --sunken:#1b2016;
     --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
     --accent:#d5f5c2; --on-accent:#14180f;
     --nav:#1b2016; --on-nav:#edf3e4;
@@ -218,7 +223,7 @@
 }
 :root[data-theme="dark"] { color-scheme: dark;
   --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
-  --page:#1a1a19; --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
+  --page:#1a1a19; --ground:var(--page); --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
   --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
   --accent:#ececeb; --on-accent:#1a1a19;
   --nav:rgba(40,40,39,.86); --on-nav:#ececeb;
@@ -251,7 +256,7 @@
 }
 :root[data-theme="dark"][data-skin="briefly"] {
   --ink:#edf3e4; --ink-muted:#9aa88c; --ink-faint:#5f6b54;
-  --page:#14180f; --surface:#14180f; --sunken:#1b2016;
+  --page:#14180f; --ground:var(--page); --surface:#14180f; --sunken:#1b2016;
   --field:#1b2016; --edge:#3b4633; --line:rgba(237,243,228,.14);
   --accent:#d5f5c2; --on-accent:#14180f;
   --nav:#1b2016; --on-nav:#edf3e4;
@@ -1137,7 +1142,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    反而挡地方，所以铺满屏幕，并把刘海和 home 条的高度让出来。
    加到主屏幕后 display-mode:standalone 也走这一套。 */
 @media (max-width:600px), (display-mode:standalone) {
-  body{overflow:hidden}
+  body{overflow:hidden;background:var(--ground)}
   .stage{display:block;padding:0;gap:0}
   .side{display:none}
   .phone{width:100%;height:100vh;height:100dvh;border:0;border-radius:0;box-shadow:none}
@@ -1190,7 +1195,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v43";
+const BUILD = "v44";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3133,8 +3138,11 @@ function applySkin() {
   if (S.skin === "briefly") el.setAttribute("data-skin", "briefly");
   else el.removeAttribute("data-skin");
   const m = document.querySelector('meta[name="theme-color"]');
-  /* Pearl 的顶部不是 --page，上面还压着一层珠光；量出来是 #e0e0dc */
-  if (m) m.setAttribute("content", S.skin === "briefly" ? "#fcfaf5" : "#e0e0dc");
+  /* 状态栏那条跟 body 同色 —— 两边都读 --ground，别再手抄色号 */
+  if (m) {
+    const g = getComputedStyle(el).getPropertyValue("--ground").trim();
+    if (g) m.setAttribute("content", g);
+  }
 }
 let ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {} };
 const screen = () => ui.stack[ui.stack.length - 1];
