@@ -86,6 +86,8 @@
   --font-display:"Libre Caslon Text","Songti SC",Georgia,serif;
   /* 数字和标题同一支 —— 这一版只留两支字 */
   --font-num:"Libre Caslon Text","Songti SC",Georgia,serif;
+  /* 账本行里的金额单独一支 Inter —— 稿子就是这么定的 */
+  --font-amt:"Inter",-apple-system,"Helvetica Neue",Helvetica,sans-serif;
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --w-light:300; --w-body:400; --w-mid:500; --w-bold:600;
   /* ---- Figma 新增 ----------------------------------------------------
@@ -377,6 +379,15 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    最后一行不会贴着底栏的投影。年视图和账单页原来就差这一口。 */
 /* 底栏 30(离底) + 66(高) = 96，再留 56 的余量，最后一行不贴着投影 */
 .body.hasfab{padding-bottom:152px}
+/* 悬浮的「马上记一笔」：42 的橙圆，压在账本列表上、底栏上方 10。
+   点它直接开那张「键盘就绪」的快捷输入，不是带表单的详细记账页。 */
+.qlog{position:absolute;right:32px;bottom:106px;z-index:5;
+ width:42px;height:42px;border-radius:50%;background:var(--warn);color:#fff;
+ display:flex;align-items:center;justify-content:center;cursor:pointer;
+ border:1px solid rgba(255,255,255,.5);
+ box-shadow:0 6px 16px -6px rgba(65,65,64,.35);
+ transition:transform .12s ease}
+.qlog:active{transform:scale(.92)}
 /* 底部不再是通栏，是一簇悬浮的东西：一条玻璃药丸，内容从底下滑过去 */
 /* 稿子 26:895：整条 350×66，内边距 4（66 = 4 + 58 + 4），背景模糊 20 */
 .dock{position:absolute;left:20px;right:20px;bottom:30px;z-index:4;
@@ -420,14 +431,17 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    50 高已经过了 44 的下限，不用再撑热区了。 */
 .navb{width:65px;height:50px;border-radius:30px;flex-shrink:0;display:flex;
  flex-direction:column;align-items:center;justify-content:center;gap:2px;
- color:var(--ink);cursor:pointer;border:1px solid var(--icon-edge);
- box-shadow:9px 2px 10px -18px rgba(65,65,64,.03);
- transition:background .18s ease}
+ color:var(--ink);cursor:pointer;border:1px solid transparent;
+ transition:background .18s ease,box-shadow .18s ease}
 /* 图标和名字之间 2（稿子 2219:7801） */
 .navb > span{font-size:11px;line-height:13px;font-weight:var(--w-body);
  color:var(--ink);white-space:nowrap}
 /* 选中的那格是白到浅灰的竖向渐变，不是纯白 */
-.navb.on{background:linear-gradient(180deg,#ffffff 0%,#f4f4f4 100%)}
+/* 只有选中那格有描边和投影。稿子里那层是 3% + 负 18 扩散，等于看不见，
+   这里给一层真的托得起来的。 */
+.navb.on{background:linear-gradient(180deg,#ffffff 0%,#f4f4f4 100%);
+ border-color:var(--icon-edge);
+ box-shadow:0 2px 6px -1px rgba(65,65,64,.12),0 1px 2px rgba(65,65,64,.06)}
 .navb:active{transform:scale(.92)}
 /* 收起时如果这一页没有语音键，左边留一颗同宽的空药丸，点阵才不会跑偏 */
 .act.ghost{background:transparent;pointer-events:none}
@@ -537,8 +551,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  background:var(--accent);color:var(--on-accent);border:1px solid var(--soft-edge)}
 .gopro>span{font-size:12px;line-height:14px;font-weight:var(--w-body)}
 .mochip{display:inline-flex;align-items:center;gap:2px;background:var(--icon-bg);
- border:3px solid var(--chip-edge);border-radius:var(--r-pill);padding:2px 6px;
- backdrop-filter:blur(8px)}
+ border:3px solid var(--chip-edge);border-radius:var(--r-pill);padding:0 6px;
+ min-height:34px;backdrop-filter:blur(8px)}
 /* 稿子里英文月份是全大写；中文没有大小写，套上去无害 */
 .mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
  min-width:78px;text-align:center;text-transform:uppercase}
@@ -556,7 +570,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 稿子里 Body 的间距是拿空 frame 摆出来的：余额→两张卡 22，
    两张卡→账本 6 —— 跟两张卡之间那道缝一样宽。
    .body 自己有 12 的 gap，所以这两块各自补差值。 */
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+/* 稿子把三块之间从 6 拉到了 12 */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
 .gcard{padding:16px;display:flex;flex-direction:column;cursor:pointer}
 .figure{flex:1;display:flex;flex-direction:column;align-items:center;
  justify-content:center;padding:6px 0 10px}
@@ -830,12 +845,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .listcard .sw:last-child .row{border-bottom:0}
 /* ---- 账本：按样机收进一张玻璃卡 ------------------------------------------
    卡头是「标题 · 放大镜 · 漏斗 · 饼图 · 全部」，下面按天分段。 */
-.txcard{position:relative;margin-top:-6px;padding:16px 16px 6px}
+/* 三块之间统一 12：.body 的 gap 就是 12，所以这里不再往回收 6 */
+.txcard{position:relative;padding:16px 16px 6px}
 .thead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .thead .secttl{flex:1}
 .rnd{width:36px;height:36px;border-radius:50%;background:var(--icon-bg);display:flex;
  align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;cursor:pointer;
  border:1px solid var(--icon-edge)}
+/* 账本卡头那两颗跟着承诺卡走：60% 白 + 2px 环（稿子 26:895）*/
+.txcard .thead .rnd{background:rgba(255,255,255,.6);border:2px solid var(--icon-ring)}
 .rnd.on{background:var(--accent);color:var(--on-accent)}
 /* 漏斗菜单挂在按钮下面，不占默认状态的地方 */
 .fmenu{position:absolute;right:16px;top:52px;z-index:5;background:var(--field);
@@ -858,8 +876,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ta{text-align:right;white-space:nowrap;flex-shrink:0}
 /* 金额：15/20，字距 −0.37px；小数降到 12 并压灰 */
-/* 稿子量出来行内金额字距是 0 —— 负字距是衬线数字才需要的，Onest 不用 */
-.ta b{display:block;font-size:15px;font-weight:var(--w-body);line-height:20px;
+/* 账本里的金额用 Inter（稿子指定）。字距 0：负字距是衬线数字才需要的。 */
+.ta b{font-family:var(--font-amt);display:block;font-size:15px;
+ font-weight:var(--w-body);line-height:20px;
  letter-spacing:0;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .ta b .dec{font-size:12px;color:var(--ink-faint)}
 /* 收入绿、支出砖橙 —— 稿子里就是这两个色，用的是判定色 token */
@@ -1016,6 +1035,8 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
   /* 稿子里悬浮簇离屏幕底 30 —— 用 max() 而不是加法：加法等于在 home 条上面
      又垫了一层，簇会整个飘起来。别去改胶囊自己的高度，那会把它撑变形。 */
   .dock{bottom:max(30px, env(safe-area-inset-bottom))}
+  /* 跟着底栏走：底栏高 66，上面再留 10 */
+  .qlog{bottom:calc(76px + max(30px, env(safe-area-inset-bottom)))}
   .toast{bottom:calc(72px + max(30px, env(safe-area-inset-bottom)))}
   .body,.body.hasfab{padding-bottom:calc(118px + max(30px, env(safe-area-inset-bottom)))}
   .sheet{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
@@ -1059,7 +1080,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v33";
+const BUILD = "v34";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1154,7 +1175,7 @@ zh: {
   "mo.ledger": "本月账本", "mo.rows": (v) => v.n + " 条",
   "app.wordmark": "储蓄教练",
   "an.title": "分析", "an.income": "本月收入", "an.expenses": "本月支出",
-  "mo.available": "可用余额", "mo.totalIn": "本月收入", "mo.thisMonth": "这个月",
+  "mo.available": "可用余额", "mo.totalIn": "分析", "mo.thisMonth": "本月收入",
   "tx.search": "搜账本", "tx.filter": "筛选",
   "tile.income": "收入", "tile.savings": "储蓄", "tile.bills": "账单", "tile.debt": "还贷",
   "tx.fAll": "全部", "tx.fIn": "进账", "tx.fOut": "花销",
@@ -1578,8 +1599,8 @@ en: {
   "tile.bills": "Bills", "tile.debt": "Debt",
   "tx.fAll": "All", "tx.fIn": "Money in", "tx.fOut": "Money out",
   "tx.in": "Income", "tx.out": "Spend", "tx.noMatch": "Nothing matches that.",
-  "mo.available": "Available balance", "mo.totalIn": "Total income",
-  "mo.thisMonth": "This month", "mo.committed": "Committed",
+  "mo.available": "Available balance", "mo.totalIn": "Analytics",
+  "mo.thisMonth": "Total Income", "mo.committed": "Committed",
   "mo.upcoming": (v) => plural(v.n, "entry", "entries") + " coming up",
   "mo.willArrive": "in", "mo.willLeave": "out", "mo.willMove": "moved",
   "mo.emptyNow": "Nothing logged this month yet. Hold the mic and say it, or tap Add.",
@@ -2769,8 +2790,9 @@ const PF = {
   ellipsis: ['0 0 20 20', '<circle cx="4.6" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/>' +
     '<circle cx="15.4" cy="10" r="1.5"/>'],
   /* 中间那颗按钮：2×2 的点阵 */
-  dots: ['0 0 20 20', '<circle cx="7" cy="7" r="2.1"/><circle cx="13" cy="7" r="2.1"/>' +
-    '<circle cx="7" cy="13" r="2.1"/><circle cx="13" cy="13" r="2.1"/>'],
+  /* 稿子 2219：20 的框、3 内边距、10 间隔、点 5×5 → 中心 5.5 / 14.5，半径 2.5 */
+  dots: ['0 0 20 20', '<circle cx="5.5" cy="5.5" r="2.5"/><circle cx="14.5" cy="5.5" r="2.5"/>' +
+    '<circle cx="5.5" cy="14.5" r="2.5"/><circle cx="14.5" cy="14.5" r="2.5"/>'],
   pie: ['0 0 16 16', '<path d="M8.66667 1.33334C8.48986 1.33334 8.32029 1.40358 8.19526 1.52861C8.07024 1.65363 8 1.8232 8 2.00001V7.33334C8 7.51015 8.07024 7.67972 8.19526 7.80475C8.32029 7.92977 8.48986 8.00001 8.66667 8.00001H14C14.1768 8.00001 14.3464 7.92977 14.4714 7.80475C14.5964 7.67972 14.6667 7.51015 14.6667 7.33334C14.6667 5.74204 14.0345 4.21592 12.9093 3.0907C11.7841 1.96548 10.258 1.33334 8.66667 1.33334ZM9.33333 6.66668V2.71334C10.3308 2.85709 11.2549 3.31986 11.9675 4.03246C12.6801 4.74507 13.1429 5.66921 13.2867 6.66668H9.33333Z"/><path d="M13.88 9.37333C13.7973 9.34377 13.7095 9.33084 13.6218 9.33529C13.5341 9.33974 13.4481 9.36149 13.3688 9.39928C13.2895 9.43707 13.2184 9.49016 13.1597 9.5555C13.101 9.62083 13.0558 9.69713 13.0267 9.78C12.7262 10.6293 12.2156 11.3886 11.5423 11.9872C10.8691 12.5857 10.0552 13.004 9.17655 13.203C8.29795 13.4019 7.38326 13.3751 6.51782 13.125C5.65239 12.8748 4.86442 12.4096 4.22742 11.7726C3.59042 11.1356 3.12515 10.3476 2.87502 9.48216C2.6249 8.61673 2.59806 7.70204 2.79702 6.82343C2.99598 5.94483 3.41425 5.13093 4.01281 4.45768C4.61137 3.78443 5.37071 3.27377 6.21999 2.97333C6.38707 2.91499 6.52414 2.79265 6.60103 2.63325C6.67792 2.47384 6.68834 2.29042 6.62999 2.12333C6.57164 1.95625 6.44931 1.81918 6.2899 1.74229C6.1305 1.6654 5.94707 1.65499 5.77999 1.71333C4.71802 2.08852 3.76841 2.72664 3.0198 3.56815C2.27119 4.40965 1.74798 5.4271 1.499 6.52554C1.25003 7.62397 1.2834 8.76758 1.59602 9.84963C1.90863 10.9317 2.49028 11.9169 3.2867 12.7133C4.08311 13.5097 5.06832 14.0914 6.15036 14.404C7.23241 14.7166 8.37602 14.75 9.47445 14.501C10.5729 14.252 11.5903 13.7288 12.4318 12.9802C13.2733 12.2316 13.9115 11.282 14.2867 10.22C14.3443 10.0538 14.3339 9.87149 14.2577 9.71289C14.1816 9.55429 14.0458 9.43224 13.88 9.37333Z"/>'],
   mic: ['3 3 24 24', '<path d="M15 8.15391C17.3545 8.15391 19.2633 7.03218 19.2633 5.64844C19.2633 4.26471 17.3545 3.14297 15 3.14297C12.6454 3.14297 10.7367 4.26471 10.7367 5.64844C10.7367 7.03218 12.6454 8.15391 15 8.15391Z"/><path d="M15 26.857C17.3545 26.857 19.2633 25.7353 19.2633 24.3516C19.2633 22.9678 17.3545 21.8461 15 21.8461C12.6454 21.8461 10.7367 22.9678 10.7367 24.3516C10.7367 25.7353 12.6454 26.857 15 26.857Z"/><path d="M9.03385 23.3674C10.2322 22.6755 10.2493 20.4617 9.07201 18.4226C7.89474 16.3835 5.96892 15.2913 4.77057 15.9832C3.57222 16.6751 3.55514 18.8889 4.73241 20.928C5.90968 22.9671 7.8355 24.0593 9.03385 23.3674Z"/><path d="M25.2298 14.0171C26.4281 13.3252 26.4452 11.1113 25.2679 9.07223C24.0907 7.03313 22.1648 5.94099 20.9665 6.63285C19.7681 7.32472 19.7511 9.5386 20.9283 11.5777C22.1056 13.6168 24.0314 14.7089 25.2298 14.0171Z"/><path d="M25.3551 20.8363C26.5324 18.7878 26.5108 16.5664 25.307 15.8745C24.1031 15.1826 22.1729 16.2824 20.9956 18.3308C19.8183 20.3793 19.8399 22.6008 21.0437 23.2926C22.2476 23.9845 24.1778 22.8848 25.3551 20.8363Z"/><path d="M9.07054 11.5771C10.2478 9.53797 10.2307 7.32408 9.03238 6.63222C7.83404 5.94035 5.90822 7.0325 4.73094 9.07159C3.55367 11.1107 3.57076 13.3246 4.7691 14.0164C5.96745 14.7083 7.89327 13.6162 9.07054 11.5771Z"/>'],
 };
@@ -3165,9 +3187,9 @@ function analyticsYear() {
   /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
      降部的空隙，箭头就比中间那行字高出一两像素。 */
   const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:6px;display:flex;align-items:center;justify-content:center;cursor:' +
+    ' style="padding:2px;display:flex;align-items:center;justify-content:center;cursor:' +
     (on ? "pointer" : "default") + ";color:" +
-    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
+    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
   const sep = isEn() ? ", " : "、";
   return { tab: "dashboard", fab: "both",
@@ -3412,9 +3434,9 @@ function monthView() {
   /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
      降部的空隙，箭头就比中间那行字高出一两像素。 */
   const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:6px;display:flex;align-items:center;justify-content:center;cursor:' +
+    ' style="padding:2px;display:flex;align-items:center;justify-content:center;cursor:' +
     (on ? "pointer" : "default") + ";color:" +
-    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 17) + "</div>";
+    (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
   return { tab: "dashboard", fab: "both", navSplit: true,
     /* 顶栏按样机：头像 · 字标 · 月/年。月份的前后翻挪到下面那颗药丸里了。 */
     nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
@@ -5443,7 +5465,14 @@ function dockHtml(tab, fab) {
     : half(2, 4);
   dockSlots = { left, right };
   const acts = ui.navOpen;                 /* true = 露出说一句 / 记一笔 */
-  return '<div class="dock">' +
+  /* 悬浮的快速记一笔。只在「露着四个分区」那一态出现 —— 换出动作键之后
+     底栏本来就有「记一笔」，再浮一颗就是重复的入口。 */
+  const quick = acts ? "" :
+    /* 别挂 tapout —— .tapout{position:relative} 和 .qlog 特异度相同、写在后面，
+       会把 absolute 盖掉（第一版就是这么飞到左上角的）。42 本来就够热区。 */
+    '<div class="qlog" data-a="jot" title="' + esc(t("word.addOne")) + '">' +
+    ic("plus", 20) + "</div>";
+  return quick + '<div class="dock">' +
     '<div class="dockside">' + left(acts) + "</div>" +
     '<div class="gridb' + (acts ? " open" : "") + '" data-a="nav" title="' +
     esc(t("nav.sections")) + '">' + ic("dots", 17) + "</div>" +
