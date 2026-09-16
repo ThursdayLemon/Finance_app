@@ -938,23 +938,52 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  color:var(--on-tint);border:0}
 .avatar:active{background:var(--press)}
 /* ---- 结果页（稿子 34:454）-------------------------------------------
-   外层是一张实底卡（不是玻璃）：名字+价格一行、口径一行，
-   再套一张暖色的判定卡。分数是判定行右边的大数字，这一版没有表盘。 */
+   一张实底卡（不是玻璃），从上往下：点阵表盘、名字+价格（居中）、
+   判定文字。判定那块在稿子里底色和描边都关掉了 —— 它不是一张子卡，
+   是卡里的一段话，所以这里也不给它底也不给它框。 */
 .vcard{display:flex;flex-direction:column;
- background:#f3f3ef;border:1px solid var(--edge);gap:12px;padding:20px 16px}
-.vhead{display:flex;align-items:baseline;gap:8px}
-.vname{font-family:var(--font-display);font-size:22px;line-height:28px;color:var(--ink)}
-.vprice{font-family:var(--font-num);font-size:17px;line-height:22px;color:var(--ink)}
-.vmeta{font-size:12px;line-height:16px;color:var(--ink)}
-.vtone{border:1px solid var(--warn);border-radius:var(--r);padding:12px;
- display:flex;flex-direction:column;gap:6px}
+ /* 稿子那张卡左上角压着一层 20% 的暖色图；这里用一团渐变代替，
+    位置和衰减是照着导出图量的。 */
+ background:radial-gradient(86% 64% at -10% 34%,
+   rgba(211,118,65,.22) 0%, rgba(211,118,65,.07) 40%, rgba(211,118,65,0) 64%), #f3f3ef;
+ border:1px solid var(--edge);gap:12px;padding:20px 16px}
+/* ---- 点阵表盘（稿子 2259:9724 的 rounds 1）---------------------------
+   外圈 100 颗点就是百分比本身：分数多少就亮多少颗，颜色跟判定灯走
+   （绿/琥珀/红）。里面那层密点是稿子的底纹，7 圈 × 30 颗 = 210 颗，
+   半径 40→72，不带信息，只是让中间那个数字有个落脚的地方。
+   稿子里那圈粗琥珀点在半径 34，100 颗塞不下（周长 214，一颗只分到 2.1px），
+   所以计量环挪到了外面 96；中间留出来的空洞 80 和稿子的 68 差不多，
+   数字还是稿子的 22/28。 */
+.dialwrap{position:relative;width:220px;height:220px;align-self:center;flex-shrink:0}
+.dial{display:block;width:100%;height:100%}
+.dial .dtex{fill:var(--ink);opacity:.42}    /* 底纹 */
+.dial .doff{fill:var(--ink);opacity:.15}    /* 没亮的那些 */
+.dnum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+ font-family:var(--font-num);font-size:22px;line-height:28px;letter-spacing:-.03em;
+ pointer-events:none}
+/* 点是画在 <g transform=translate> 里的 circle，自己的原点就是圆心 ——
+   所以 scale() 是从点中心缩放的，不用再折腾 transform-box。 */
+@keyframes dialOn{from{opacity:0;transform:scale(.25)}to{opacity:1;transform:scale(1)}}
+@keyframes dialBreath{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.78)}}
+/* 依次亮：每颗的延迟是 i/100 × .9s，所以不管亮几颗，整条都走 .9 秒。
+   呼吸是所有亮着的点一起（同一个延迟）—— 做成波浪太闹了。 */
+.dial.anim .dlit{animation:dialOn .42s cubic-bezier(.22,.9,.3,1) var(--d) backwards,
+ dialBreath 3.2s ease-in-out 1.45s infinite}
+.dial:not(.anim) .dlit{animation:dialBreath 3.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.dial .dlit{animation:none!important}}
+.vhead{display:flex;align-items:baseline;justify-content:center;gap:8px}
+.vname{font-family:var(--font-display);font-size:22px;line-height:28px;color:var(--ink);
+ letter-spacing:-.03em}
+.vprice{font-family:var(--font-num);font-size:22px;line-height:28px;color:var(--ink);
+ letter-spacing:-.03em}
+/* 判定段：没有底色也没有描边，只靠左右各 12 的内缩和判定色说话 */
+.vtone{display:flex;flex-direction:column;gap:6px;padding:0 12px}
 .vrow{display:flex;align-items:center;gap:9px}
 .vlabel{flex:1;font-family:var(--font-display);font-size:17px;line-height:22px;
- color:var(--ink)}
-.vscore{font-family:var(--font-num);font-size:22px;line-height:28px;color:var(--ink)}
-.vtext{font-size:14px;line-height:18px;font-weight:var(--w-light);color:var(--ink)}
-.vactions{display:flex;justify-content:flex-end}
-.vactions .chip{background:var(--sunken);border:1px solid var(--edge);
+ letter-spacing:-.02em}
+.vtext{font-size:12px;line-height:16px;color:var(--ink)}
+.vactions{display:flex;justify-content:flex-end;margin-top:6px}
+.vactions .chip{background:rgba(255,255,255,.5);border:1px solid #ffffff;
  border-radius:var(--r-pill);padding:5px 13px;font-size:12px;cursor:pointer;
  display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
 .vcorner{font-size:11px;line-height:15px;color:var(--ink-muted);text-align:right}
@@ -1195,7 +1224,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v44";
+const BUILD = "v45";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4085,17 +4114,53 @@ const makeSnap = (it) => { const { r, b } = liveVerdict(it);
     at: now().getTime() }; };
 const lampOf = (v) => TONE(v)[2].split(" · ")[0];
 
+/* 点阵表盘：外圈 100 颗，分数是多少就亮多少颗 —— 那 100 颗本身就是百分比。
+   里面 7 圈 × 30 颗是稿子的底纹，静止不动。
+   animate=false 时只留呼吸，不重放「依次亮」：展开算式、改预算这些都会
+   触发一次 render，每次都从头点一遍灯太吵。 */
+const DIAL_N = 100;
+function scoreDial(pct, tone, animate) {
+  const C = 110, R = 100;
+  const lit = Math.max(0, Math.min(DIAL_N, Math.round(pct)));
+  const pt = (rad, deg) => [C + rad * Math.sin(deg * Math.PI / 180),
+    C - rad * Math.cos(deg * Math.PI / 180)];
+  let g = "";
+  /* 底纹的 5 圈是从稿子里量出来的：30/36/42/48/54 颗，半径 39.6→71.2。
+     每圈多 6 颗、半径多 7.9 —— 于是每颗之间的弧长恒定 8.3，圈距也是 8，
+     整片看着是均匀的。圈数固定、颗数不变会排出放射状的「辐条」，别改。 */
+  for (let k = 0; k < 5; k++) {
+    const rr = 39.6 + k * 7.9, n = 30 + k * 6;
+    for (let i = 0; i < n; i++) {
+      const [x, y] = pt(rr, i * (360 / n));
+      g += '<circle class="dtex" cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r=".78"/>';
+    }
+  }
+  for (let i = 0; i < DIAL_N; i++) {
+    const [x, y] = pt(R, i * (360 / DIAL_N));
+    const on = i < lit;
+    g += '<g transform="translate(' + x.toFixed(2) + "," + y.toFixed(2) + ')">' +
+      '<circle class="' + (on ? "dlit" : "doff") + '" r="' + (on ? "2.4" : "1.45") + '"' +
+      (on ? ' style="--d:' + (i / DIAL_N * 0.9).toFixed(3) + "s;fill:" + tone + '"' : "") +
+      "/></g>";
+  }
+  return '<div class="dialwrap"><svg class="dial' + (animate ? " anim" : "") +
+    '" viewBox="0 0 220 220" aria-hidden="true">' + g + "</svg>" +
+    '<div class="dnum" style="color:' + tone + '">' + Math.round(pct) + "%</div></div>";
+}
+
 function verdictCard(it, r, b, corner) {
   const [tone, bg, label] = TONE(r.verdict);
+  /* 同一件东西、同一个分数只点一次灯 */
+  const key = it.name + "|" + r.score;
+  const fresh = ui.dialKey !== key;
+  ui.dialKey = key;
   return '<div class="card vcard">' +
+    scoreDial(r.score, tone, fresh) +
     '<div class="vhead"><span class="vname">' + esc(it.name) + "</span>" +
     '<span class="vprice">' + yuan(it.price) + "</span></div>" +
-    '<div class="vmeta">' + t("bd.meta", { n: it.necessity,
-      mode: t(S.saveMode ? "set.modeSave" : "set.modeComfort"), budget: yuan(b) }) + "</div>" +
-    '<div class="vtone" style="border-color:' + tone + ";background:" + bg + '">' +
+    '<div class="vtone">' +
     '<div class="vrow"><span class="dot" style="background:' + tone + '"></span>' +
-    '<div class="vlabel">' + label + "</div>" +
-    '<div class="vscore">' + r.score.toFixed(1) + "</div></div>" +
+    '<div class="vlabel" style="color:' + tone + '">' + label + "</div></div>" +
     '<div class="vtext">' + ADVICE(r.verdict, r.dup) + "</div>" +
     '<div class="vtext">' + mainReason(it, r) + "</div>" +
     '<div class="vactions"><div class="chip" data-a="toggleCalc">' +
