@@ -546,15 +546,6 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* ---- 首页（按样机 2096-1015）---------------------------------------- */
 .hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
 /* 右上角的 Get Pro：86×30 深底白字 + 1px 浅灰描边（稿子 2188 实测） */
-/* 表盘：数字压在弧的中间。用 HTML 叠一层而不是 SVG <text>，
-   这样数字还是走 --font-num，和全站金额同一支字。 */
-.gauge{position:relative;display:flex;justify-content:center;margin:2px 0 4px}
-.gauge svg{display:block;max-width:100%;height:auto}
-.gaugev{position:absolute;left:0;right:0;top:46%;display:flex;
- align-items:baseline;justify-content:center;gap:3px}
-.gaugev .big{font-size:38px;line-height:42px}
-.gaugemax{font-family:var(--font-num);font-size:13px;color:var(--ink-faint);
- font-variant-numeric:lining-nums tabular-nums}
 .gopro{display:inline-flex;align-items:center;justify-content:center;gap:5px;
  height:30px;padding:0 12px;border-radius:var(--r-pill);flex:none;cursor:pointer;
  background:var(--accent);color:var(--on-accent);border:1px solid var(--soft-edge)}
@@ -930,6 +921,44 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 :root[data-skin="briefly"] .avatar{width:38px;height:38px;background:var(--mark);
  color:var(--on-tint);border:0}
 .avatar:active{background:var(--press)}
+/* ---- 结果页（稿子 34:454）-------------------------------------------
+   外层是一张实底卡（不是玻璃）：名字+价格一行、口径一行，
+   再套一张暖色的判定卡。分数是判定行右边的大数字，这一版没有表盘。 */
+.vcard{display:flex;flex-direction:column;
+ background:#f3f3ef;border:1px solid var(--edge);gap:12px;padding:20px 16px}
+.vhead{display:flex;align-items:baseline;gap:8px}
+.vname{font-family:var(--font-display);font-size:22px;line-height:28px;color:var(--ink)}
+.vprice{font-family:var(--font-num);font-size:17px;line-height:22px;color:var(--ink)}
+.vmeta{font-size:12px;line-height:16px;color:var(--ink)}
+.vtone{border:1px solid var(--warn);border-radius:var(--r);padding:12px;
+ display:flex;flex-direction:column;gap:6px}
+.vrow{display:flex;align-items:center;gap:9px}
+.vlabel{flex:1;font-family:var(--font-display);font-size:17px;line-height:22px;
+ color:var(--ink)}
+.vscore{font-family:var(--font-num);font-size:22px;line-height:28px;color:var(--ink)}
+.vtext{font-size:14px;line-height:18px;font-weight:var(--w-light);color:var(--ink)}
+.vactions{display:flex;justify-content:flex-end}
+.vactions .chip{background:var(--sunken);border:1px solid var(--edge);
+ border-radius:var(--r-pill);padding:5px 13px;font-size:12px;cursor:pointer;
+ display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
+.vcorner{font-size:11px;line-height:15px;color:var(--ink-muted);text-align:right}
+.calcbox{background:var(--sunken);border-radius:var(--r-sm);padding:8px 12px}
+.calcrow{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;
+ border-bottom:1px dotted var(--line)}
+.calcrow.tot{font-size:13px;padding:7px 0 0;border-bottom:0;font-weight:var(--w-bold)}
+/* ---- 打分页的表单卡（稿子 2188:6140）--------------------------------
+   整张表单一张玻璃卡，字段之间 24。标签是 Onest 15 的墨色，不是灰小字 ——
+   这一页每一行都要人动手填，标签得站得住。 */
+/* .card 默认是 display:block，gap 对块级容器无效（量出来三处间距都是 0）。
+   要用 gap 就得显式开 flex 列。 */
+.quizcard{display:flex;flex-direction:column;gap:24px;padding:16px}
+.quizcard .fld{gap:5px}
+.quizcard .lbl{font-size:15px;line-height:20px;color:var(--ink)}
+.quizcard .nec{gap:12px}
+.quizcard .ends{font-size:12px;line-height:16px;color:var(--ink-muted)}
+.duprow{display:flex;align-items:center;gap:12px;min-height:26px}
+.duprow > div:first-child{font-size:14px;line-height:18px;
+ font-weight:var(--w-light);color:var(--ink)}
 /* ---- 把设置补全（稿子 26:895 改版）---------------------------------
    整块是暖橘的虚线卡：warn-bg 打底、1px 虚线 warn 描边。
    每一项的副标题也是 warn —— 这块的意思是「这里还欠着东西」，
@@ -1145,7 +1174,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v38";
+const BUILD = "v39";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3984,57 +4013,38 @@ const makeSnap = (it) => { const { r, b } = liveVerdict(it);
     at: now().getTime() }; };
 const lampOf = (v) => TONE(v)[2].split(" · ")[0];
 
-/* 打分表盘：一段一段的半圆弧，圆头、留缝，填到分数为止。
-   分成 N 段而不是一条连续弧 —— 刻度感让「74」这种中间值有参照，
-   一条光弧只能看出「大概过半」。 */
-function scoreGauge(score, tone, bg) {
-  const W = 232, H = 150, cx = W / 2, cy = 114, r = 82, th = 13;
-  const N = 11, START = 158, SWEEP = 224;
-  const pt = (deg, rad) => {
-    const a = (deg * Math.PI) / 180;
-    return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)];
-  };
-  const arc = (from, sweep, color) => {
-    if (sweep <= 0.2) return "";
-    const [x0, y0] = pt(from, r), [x1, y1] = pt(from + sweep, r);
-    return '<path d="M' + x0.toFixed(1) + " " + y0.toFixed(1) + "A" + r + " " + r +
-      " 0 " + (sweep > 180 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1) +
-      '" fill="none" stroke="' + color + '" stroke-width="' + th +
-      '" stroke-linecap="round"></path>';
-  };
-  const v = Math.max(0, Math.min(100, score));
-  /* 一条整弧 + 一条填充弧，只有两端是圆的；段与段的分隔用背景色的细线切出来。
-     不这么做的话，圆头的帽子（半径 th/2=6.5px）会把 3° 那点缝整个吃掉 —— 
-     第一版就是这样，看着像一条连续的光弧，完全没有刻度感。 */
-  const ticks = [];
-  for (let i = 1; i < N; i++) {
-    const deg = START + (SWEEP / N) * i;
-    const [x0, y0] = pt(deg, r - th / 2 - 1), [x1, y1] = pt(deg, r + th / 2 + 1);
-    ticks.push('<line x1="' + x0.toFixed(1) + '" y1="' + y0.toFixed(1) +
-      '" x2="' + x1.toFixed(1) + '" y2="' + y1.toFixed(1) +
-      '" stroke="' + (bg || "var(--page)") + '" stroke-width="2.6"></line>');
-  }
-  return '<div class="gauge"><svg viewBox="0 0 ' + W + " " + H + '" width="' + W +
-    '" height="' + H + '" aria-hidden="true">' +
-    arc(START, SWEEP, "var(--track)") +
-    arc(START, (SWEEP * v) / 100, tone) +
-    ticks.join("") + "</svg>" +
-    '<div class="gaugev"><span class="big">' + Math.round(v) + "</span>" +
-    '<span class="gaugemax">/100</span></div></div>';
+function verdictCard(it, r, b, corner) {
+  const [tone, bg, label] = TONE(r.verdict);
+  return '<div class="card vcard">' +
+    '<div class="vhead"><span class="vname">' + esc(it.name) + "</span>" +
+    '<span class="vprice">' + yuan(it.price) + "</span></div>" +
+    '<div class="vmeta">' + t("bd.meta", { n: it.necessity,
+      mode: t(S.saveMode ? "set.modeSave" : "set.modeComfort"), budget: yuan(b) }) + "</div>" +
+    '<div class="vtone" style="border-color:' + tone + ";background:" + bg + '">' +
+    '<div class="vrow"><span class="dot" style="background:' + tone + '"></span>' +
+    '<div class="vlabel">' + label + "</div>" +
+    '<div class="vscore">' + r.score.toFixed(1) + "</div></div>" +
+    '<div class="vtext">' + ADVICE(r.verdict, r.dup) + "</div>" +
+    '<div class="vtext">' + mainReason(it, r) + "</div>" +
+    '<div class="vactions"><div class="chip" data-a="toggleCalc">' +
+    (ui.showCalc ? t("word.collapse") : t("bd.how")) + ic("chev", 12) + "</div></div>" +
+    (ui.showCalc ? calcRows(it, r) : "") +
+    (corner ? '<div class="vcorner">' + corner + "</div>" : "") +
+    "</div></div>";
 }
 
-function scoreCard(r, corner) {
-  const [tone, bg, label] = TONE(r.verdict);
-  return '<div class="card" style="border-color:' + tone + ";background:" + bg + '">' +
-    '<div style="display:flex;align-items:center;gap:9px">' +
-    '<span class="dot" style="background:' + tone + '"></span>' +
-    '<div class="h2" style="flex:1">' + label + "</div></div>" +
-    scoreGauge(r.score, tone, bg) +
-    '<div style="font-size:15px;text-align:center">' +
-    ADVICE(r.verdict, r.dup) + "</div>" +
-    /* 冷静期只是个信息提示，塞在右下角就够了 —— 单独占一张卡不值 */
-    (corner ? '<div class="sub" style="font-size:11px;text-align:right;margin-top:7px">' +
-      corner + "</div>" : "") + "</div>";
+/* 算式明细：展开「怎么算的」才出现 */
+function calcRows(it, r) {
+  const rows = [[t("bd.base", { n: it.necessity }), "+" + r.base.toFixed(1)],
+    [t("bd.priceRow", { pct: r.ratio.toFixed(2), mult: S.saveMode ? "4.0" : "1.5" }),
+      "−" + r.incomePenalty.toFixed(1)],
+    [t("bd.dupRow", { dup: it.dup }), "−" + r.dupPenalty.toFixed(1)],
+    [t("bd.modeRow", { save: S.saveMode }), "−" + r.modePenalty.toFixed(1)]];
+  return '<div class="calcbox">' +
+    rows.map((x) => '<div class="calcrow"><span class="sub">' + x[0] +
+      '</span><span class="money">' + x[1] + "</span></div>").join("") +
+    '<div class="calcrow tot"><span>' + t("bd.total") + '</span><span class="money">' +
+    t("sc.pointsN", { n: r.score.toFixed(1) }) + "</span></div></div>";
 }
 
 /* 分数不只属于这件东西 —— 预算和模式一变，同一件东西的灯色就会变 */
@@ -4074,32 +4084,6 @@ function mainReason(it, r) {
   return t("re.mainly", { what: top[2], n: top[1].toFixed(1) });
 }
 
-function breakdownCard(it, r, b) {
-  const rows = [[t("bd.base", { n: it.necessity }), "+" + r.base.toFixed(1)],
-    [t("bd.priceRow", { pct: r.ratio.toFixed(2), mult: S.saveMode ? "4.0" : "1.5" }),
-      "−" + r.incomePenalty.toFixed(1)],
-    [t("bd.dupRow", { dup: it.dup }), "−" + r.dupPenalty.toFixed(1)],
-    [t("bd.modeRow", { save: S.saveMode }), "−" + r.modePenalty.toFixed(1)]];
-  return '<div style="padding:0 2px">' +
-    '<div style="font-size:14px">' + esc(it.name) + "　" +
-    '<span class="money">' + yuan(it.price) + "</span></div>" +
-    '<div class="sub" style="font-size:11px;margin-top:2px">' + t("bd.meta", {
-      n: it.necessity, mode: t(S.saveMode ? "set.modeSave" : "set.modeComfort"),
-      budget: yuan(b) }) + "</div>" +
-    '<div style="display:flex;align-items:flex-start;gap:8px;margin-top:7px">' +
-    '<div class="sub" style="flex:1;font-size:12px">' + mainReason(it, r) + "</div>" +
-    '<div class="sub" data-a="toggleCalc" style="cursor:pointer;color:var(--accent);' +
-    'white-space:nowrap;font-size:12px">' +
-    (ui.showCalc ? t("word.collapse") : t("bd.how")) +
-    ic("chev", 12) + "</div></div>" +
-    (ui.showCalc ? '<div class="card" style="margin-top:8px;padding:8px 12px">' +
-      rows.map((x) => '<div style="display:flex;justify-content:space-between;font-size:12px;' +
-        'padding:5px 0;border-bottom:1px dotted var(--line)"><span class="sub">' + x[0] +
-        '</span><span class="money">' + x[1] + "</span></div>").join("") +
-      '<div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0 0;' +
-      'font-weight:600"><span>' + t("bd.total") + '</span><span class="money">' +
-      t("sc.pointsN", { n: r.score.toFixed(1) }) + "</span></div></div>" : "") + "</div>";
-}
 
 const actionStack = (btns) => '<div style="display:flex;flex-direction:column;gap:9px;' +
   'margin-top:4px">' + btns.map(([l, a, cls], i) =>
@@ -4140,24 +4124,27 @@ SCREENS.decisions = () => {
       /* 右上角是清单入口，不是 Get Pro —— 这一页本来就有自己的东西要放 */
       (editing ? "" : '<div class="chip" data-a="wishlist">' +
         t("de.wishlistN", { n: S.wishlist.length }) + "</div>"),
-    body: '<div class="sub">' + (editing
-      ? t("de.editIntro", { name: esc(editing.name) }) : t("de.intro")) + "</div>" +
+    /* 稿子 2188:6140：整张表单收进一张玻璃卡（gap 24），开场那行说明去掉了 ——
+       每个字段自己的标签已经够清楚。改测的时候那句提示还留着。 */
+    body: (editing ? '<div class="sub">' +
+        t("de.editIntro", { name: esc(editing.name) }) + "</div>" : "") +
       (clash ? '<div class="banner tap" data-a="wishItem:' + clash.id +
         '" style="border-color:var(--ink-faint);background:var(--sunken)">' +
         '<span style="margin-top:1px;color:var(--ink-muted)">' + ic("warn", 15) + "</span>" +
         '<div style="flex:1">' + t("de.clash", { name: esc(clash.name) }) + "</div>" +
         '<span style="color:var(--ink-muted);margin-top:2px">' + ic("chev", 14) + "</span></div>" : "") +
+      '<div class="card quizcard">' +
       field(t("de.name"), input("qname", q.name)) +
       field(t("de.price"), mInput("qprice", (q.price / unit()).toFixed(ccy().dec))) +
-      '<div class="fld"><div style="display:flex;justify-content:space-between">' +
-      '<div class="lbl">' + t("de.necessity") + '</div><div class="lbl money">' +
-      q.necessity + " / 10</div></div>" +
+      '<div class="fld nec"><div style="display:flex;justify-content:space-between">' +
+      '<div class="lbl">' + t("de.necessity") + "</div>" +
+      '<div class="lbl">' + q.necessity + " / 10</div></div>" +
       '<input type="range" min="1" max="10" step="1" data-f="qnec" value="' + q.necessity + '">' +
-      '<div class="sub" style="display:flex;justify-content:space-between">' +
+      '<div class="sub ends" style="display:flex;justify-content:space-between">' +
       "<span>" + t("de.necLow") + "</span><span>" + t("de.necHigh") + "</span></div></div>" +
-      '<div class="row" style="border-bottom:0"><div style="flex:1;font-size:15px">' +
-      t("de.dupQ") + "</div>" +
+      '<div class="duprow"><div style="flex:1">' + t("de.dupQ") + "</div>" +
       '<div class="toggle ' + (q.dup ? "on" : "") + '" data-a="qdup"><i></i></div></div>' +
+      "</div>" +
       budgetBanner() +
       btn(editing ? t("de.update") : t("de.go"),
         editing ? "retestSubmit" : "verdict", "pri") };
@@ -4174,7 +4161,7 @@ SCREENS.verdict = () => {
       : [A.plan, A.park, A.retest];
   return { tab: "decisions",
     nav: navBack() + '<div class="navt" style="flex:1">' + t("vd.title") + "</div>",
-    body: scoreCard(Object.assign({}, r, { dup: it.dup })) + breakdownCard(it, r, b) +
+    body: verdictCard(it, Object.assign({}, r, { dup: it.dup }), b) +
       (exists ? '<div class="banner tap" data-a="wishItem:' + exists.id +
         '" style="border-color:var(--ink-faint);background:var(--sunken)"><div style="flex:1">' +
         t("vd.already", { name: esc(it.name) }) + "</div>" +
@@ -4311,8 +4298,8 @@ SCREENS.wishItem = () => {
          [t("wi.buyTooSoon"), "tooSoon", "sm off"],
          [t("de.retest"), "retest"], [t("wi.drop"), "dropWish:" + w.id]];
   return { tab: "decisions", nav,
-    body: scoreCard(Object.assign({}, r, { dup: w.dup }), cooldownNote) +
-      snapNote(w.snap, r, b) + breakdownCard(w, r, b) + state + actionStack(acts) };
+    body: verdictCard(w, Object.assign({}, r, { dup: w.dup }), b, cooldownNote) +
+      snapNote(w.snap, r, b) + state + actionStack(acts) };
 };
 
 /* ==========================================================================
