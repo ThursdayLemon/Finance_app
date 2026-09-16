@@ -98,7 +98,8 @@
   --green-01:#8fc48e;
   --spend-bg:#fad9c6; --spend-edge:#eb9d6b;
   --income-bg:#deefde; --income-edge:#8fc48e;
-  --icon-ring:#e6e4dd;    /* 固定承诺那四颗白圆的描边（稿子 26:895）*/
+  --icon-ring:#e6e4dd;
+  --warn-line:#e3bba1;   /* 暖橘卡里的分隔线（稿子 26:895 的 setting up）*/    /* 固定承诺那四颗白圆的描边（稿子 26:895）*/
   --shadow-btn:4px 4px 15px -18px rgba(65,65,64,.15);
   --chip-edge:rgba(172,172,172,.3);
   --soft-edge:#b9b9b6;
@@ -184,6 +185,7 @@
     --spend-bg:rgba(224,138,88,.18); --spend-edge:rgba(224,138,88,.5);
     --income-bg:rgba(143,196,142,.16); --income-edge:rgba(143,196,142,.5);
     --icon-ring:rgba(255,255,255,.14);
+    --warn-line:rgba(224,138,88,.35);
     --shadow-btn:4px 4px 15px -18px rgba(0,0,0,.5);
     --chip-edge:rgba(255,255,255,.14);
     --soft-edge:rgba(255,255,255,.22);
@@ -240,6 +242,7 @@
     --spend-bg:rgba(224,138,88,.18); --spend-edge:rgba(224,138,88,.5);
     --income-bg:rgba(143,196,142,.16); --income-edge:rgba(143,196,142,.5);
     --icon-ring:rgba(255,255,255,.14);
+    --warn-line:rgba(224,138,88,.35);
     --shadow-btn:4px 4px 15px -18px rgba(0,0,0,.5);
     --chip-edge:rgba(255,255,255,.14);
     --soft-edge:rgba(255,255,255,.22);
@@ -927,16 +930,44 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 :root[data-skin="briefly"] .avatar{width:38px;height:38px;background:var(--mark);
  color:var(--on-tint);border:0}
 .avatar:active{background:var(--press)}
+/* ---- 把设置补全（稿子 26:895 改版）---------------------------------
+   整块是暖橘的虚线卡：warn-bg 打底、1px 虚线 warn 描边。
+   每一项的副标题也是 warn —— 这块的意思是「这里还欠着东西」，
+   所以整块用判定色说话，而不是又一张中性的玻璃卡。 */
+/* 注意是 --warn-tint 不是 --warn-bg：warn-bg 是 Figma 那边的变量名，
+   CSS 这边叫 tint。写错的 var() 不报错，只会静默变透明 —— 踩过一次。 */
+.setup{background:var(--warn-tint);border:1px dashed var(--warn);
+ box-shadow:none;backdrop-filter:none;padding:16px 16px 6px;gap:0}
+.setuphead{display:flex;align-items:baseline;gap:9px;padding-bottom:6px}
+.setup .later{font-size:12px;line-height:16px;font-weight:var(--w-light);
+ color:var(--warn);cursor:pointer}
+.setuprow{display:flex;align-items:center;gap:9px;padding:11px 0;cursor:pointer;
+ border-bottom:1px solid var(--warn-line)}
+.setuprow.last{border-bottom:0}
+.setup .sn{font-size:12px;line-height:16px;color:var(--ink)}
+.setup .ss{font-size:11px;line-height:13px;color:var(--warn);margin-top:2px;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 即将发生：暖色底的圆角条，和真实流水区分开 */
 .upcoming{display:flex;align-items:center;gap:11px;min-height:44px;padding:10px 14px;
  border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer;
  border:1px solid var(--edge);box-shadow:var(--shadow-card);
  backdrop-filter:blur(var(--glass))}
-/* 已经在一张玻璃卡里了，再套一层卡就是两层玻璃 —— 压平成一条内嵌的小带子 */
-.txcard .upcoming{background:var(--sunken);border:0;box-shadow:none;backdrop-filter:none;
+/* 稿子 26:895 改版：60% 白 + 1px 白描边、圆角 12，字号统一抬到 14。
+   里面那颗徽章的描边也是白的 —— 在白底上基本看不见，等于只剩文字，
+   这是有意的（不是漏画）。 */
+.txcard .upcoming{background:var(--surface);border:1px solid var(--icon-edge);
+ box-shadow:none;backdrop-filter:none;
  border-radius:var(--r-sm);padding:8px 12px;gap:8px;margin-bottom:2px}
-.txcard .upcoming .amts{flex:1;min-width:0;font-size:12px;color:var(--ink);
+.txcard .upcoming .amts{flex:1;min-width:0;font-size:14px;line-height:18px;
+ font-weight:var(--w-light);color:var(--ink);
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 徽章：透明底 + 白描边，左右不留内边距（稿子就是贴着字的） */
+.txcard .upcoming .badge.ol{background:transparent;border-color:var(--icon-edge);
+ padding:3px 0;font-size:14px;line-height:18px;font-weight:var(--w-light);
+ color:var(--ink)}
+/* 右边的展开/收起：同字号但用 Medium 压住 */
+.txcard .upcoming > .sub:last-child{font-size:14px;line-height:18px;
+ font-weight:var(--w-mid);color:var(--ink)}
 /* briefly 那边它是薄荷蓝便利贴 */
 :root[data-skin="briefly"] .upcoming{background:var(--accent2);color:var(--on-tint);
  border:0;box-shadow:none;padding:8px 12px}
@@ -1114,7 +1145,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v37";
+const BUILD = "v38";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3350,17 +3381,18 @@ function setupCard() {
   if (!S.debts.length) miss.push([cap(t("word.debtLong")), t("su.debtSub"), "route:debt"]);
   if (!S.goals.length) miss.push([cap(t("word.fixedSave")), t("su.saveSub"), "toSavings2"]);
   if (!miss.length) return "";
-  return '<div class="card" style="border-style:dashed">' +
-    '<div style="display:flex;align-items:baseline;gap:9px">' +
+  /* 稿子 26:895 改版：整块是暖橘的虚线卡（warn-bg + 1px 虚线 warn），
+     说明那一行去掉了 —— 每一项自己的副标题已经把话说清楚了。 */
+  return '<div class="card setup">' +
+    '<div class="setuphead">' +
     '<div class="h2" style="flex:1">' + t("su.title") + "</div>" +
-    '<div class="sub" data-a="dismissSetup" style="cursor:pointer">' + t("su.later") +
-    "</div></div>" +
-    '<div class="sub" style="font-size:11.5px;line-height:15px;margin:2px 0 6px">' +
-    t("su.hint") + "</div>" +
-    miss.map((x) => '<div class="row" data-a="' + x[2] + '" style="cursor:pointer;' +
-      'min-height:44px"><div style="flex:1"><div class="rowname">' + x[0] + "</div>" +
-      '<div class="sub" style="font-size:11.5px;line-height:15px">' + x[1] + "</div></div>" +
-      '<span style="color:var(--ink-faint)">' + ic("chev", 15) + "</span></div>").join("") + "</div>";
+    '<div class="later" data-a="dismissSetup">' + t("su.later") + "</div></div>" +
+    miss.map((x, i) => '<div class="setuprow' + (i === miss.length - 1 ? " last" : "") +
+      '" data-a="' + x[2] + '">' +
+      '<div style="flex:1;min-width:0"><div class="sn">' + x[0] + "</div>" +
+      '<div class="ss">' + x[1] + "</div></div>" +
+      '<span style="color:var(--ink);display:flex">' + ic("chev", 15) +
+      "</span></div>").join("") + "</div>";
 }
 
 /* 分析页：收入在轴上、支出在轴下，当月挑出来。
@@ -3549,7 +3581,7 @@ function txCard(m, out) {
     (future.length
       ? '<div class="upcoming" data-a="toggleFuture">' +
         '<span style="color:var(--ink-muted)">' + ic("clock", 16) + "</span>" +
-        '<div class="badge ol" style="font-size:11px">' +
+        '<div class="badge ol">' +
         t("mo.upcoming", { n: future.length }) + "</div>" +
         /* 笔数挪进徽章之后，剩下这几段自己 join —— 原来每段前面挂一个
            全角空格当分隔，第一段会多出一个空格顶在徽章旁边 */
@@ -3561,7 +3593,7 @@ function txCard(m, out) {
           .map(([list, key]) => t(key) + ' <span class="money">' +
             yuan(list.reduce((a, f) => a + f.amount, 0)) + "</span>")
           .join(" · ") + "</div>" +
-        '<span class="sub" style="font-size:11px;color:var(--ink)">' +
+        '<span class="sub">' +
         t(ui.showFuture ? "word.collapse" : "word.expand") + "</span></div>"
       : "") +
     '<div id="txlist">' + txRows(m) + "</div></div>" +
