@@ -512,7 +512,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .wordmark{font-size:17px;letter-spacing:3.7px;line-height:22px;
  text-align:center;color:var(--ink)}
 /* 卡片标题 Total income / Committed：14/18 */
-.cardtitle{font-size:14px;line-height:18px;color:var(--ink)}
+/* 稿子 26:895：Analytics / Committed 这类卡标题是 17/22，和 Transactions 同一档 */
+.cardtitle{font-size:17px;line-height:22px;color:var(--ink)}
 /* 分区标题 Transactions：17/22 */
 .secttl{font-size:17px;line-height:22px;letter-spacing:-.34px;color:var(--ink)}
 /* 条目名：15/20 */
@@ -521,7 +522,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 界面字一律 Onest。这几处以前跟着正文走，会被衬线带跑。 */
 .hlbl,.dhead,.tn > span,.ta > span,.act,.mochip > span,.sparkl span,.chartax span{
  font-family:var(--font)}
-.hlbl{margin:16px 0 2px;font-size:14px;font-weight:var(--w-body);line-height:20px;
+/* 标签到下面那个大数字之间 12（稿子 26:895 量出来的，原来只有 2）*/
+.hlbl{margin:16px 0 12px;font-size:14px;font-weight:var(--w-body);line-height:20px;
  color:var(--ink-muted)}
 .dhead{font-size:12.5px;line-height:16px;color:var(--ink-muted);margin:6px 0 2px}
 /* 奶油纸不用衬线 —— 它的性格在 Bricolage + 荧光笔上，衬线一律退回正文字体 */
@@ -550,15 +552,17 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  height:30px;padding:0 12px;border-radius:var(--r-pill);flex:none;cursor:pointer;
  background:var(--accent);color:var(--on-accent);border:1px solid var(--soft-edge)}
 .gopro>span{font-size:12px;line-height:14px;font-weight:var(--w-body)}
-.mochip{display:inline-flex;align-items:center;gap:2px;background:var(--icon-bg);
- border:3px solid var(--chip-edge);border-radius:var(--r-pill);padding:0 6px;
+/* 稿子 26:895：191×34、内边距 7/14、里面间隔 8、3px 浅灰描边。
+   所有页面（首页月份、分析页月份和年份）共用这一条，不许各写各的。 */
+.mochip{display:inline-flex;align-items:center;gap:8px;background:var(--icon-bg);
+ border:3px solid var(--chip-edge);border-radius:var(--r-pill);padding:0 14px;
  min-height:34px;backdrop-filter:blur(8px)}
 /* 稿子里英文月份是全大写；中文没有大小写，套上去无害 */
 .mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
  min-width:78px;text-align:center;text-transform:uppercase}
 .heroamt{display:flex;align-items:center;gap:8px}
 /* 主数字：42/46，字距 −1.47px；小数同号但压灰 */
-.heroamt .big{font-size:42px;line-height:46px;letter-spacing:-1.47px}
+.heroamt .big{font-size:48px;line-height:54px;letter-spacing:-1.68px}
 .heroamt .big .dec{color:var(--ink-faint)}
 /* 分析页那两个大数：小数降到 26；支出那个整串同色 */
 .heroamt.an .big .dec{font-size:26px}
@@ -577,8 +581,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  justify-content:center;padding:6px 0 10px}
 /* 卡里的大数字是「display 金额」，还是衬线 —— 24/24，字距 −.48（稿子 26:895）。
    上一版把 .money 整族改成 Onest 时把它一起带走了，这里单独拉回来。 */
-.figure .money{font-family:var(--font-num);font-size:24px;font-weight:var(--w-body);
- line-height:24px;letter-spacing:-.48px}
+.figure .money{font-family:var(--font-num);font-size:22px;font-weight:var(--w-body);
+ line-height:28px;letter-spacing:-.44px}
 .figure .money .dec{font-size:13px;color:var(--ink-faint)}
 .figure .sub{font-size:11.5px;line-height:15px}
 .spark{display:flex;align-items:flex-end;gap:6px;height:50px}
@@ -602,8 +606,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .chartcol > .callout.bot{top:100%}
 .chartcol > .callout{text-align:center;padding:0 0 3px}
 .chartcol > .callout.bot{padding:3px 0 0}
-/* 稿子 2150:2125：第一张卡没有底色，只有 1px 白描边 */
-.anchart{gap:0;background:transparent;border:1px solid var(--edge)}
+/* 稿子 2150:2125：第一张卡既没有底色，也没有描边 —— 它就是一块透明的版面 */
+.anchart{gap:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none}
 /* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
 .chart{padding:18px 0 6px;position:relative}
 /* 每根柱子现在自己一列（列里还要放那个数字标注），所以行是 stretch，
@@ -1181,7 +1185,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v40";
+const BUILD = "v41";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3291,7 +3295,7 @@ function analyticsYear() {
   /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
      降部的空隙，箭头就比中间那行字高出一两像素。 */
   const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:2px;display:flex;align-items:center;justify-content:center;cursor:' +
+    ' style="padding:0;display:flex;align-items:center;justify-content:center;cursor:' +
     (on ? "pointer" : "default") + ";color:" +
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
   const monthNames = act.map((x) => t("date.monthShort", { m: x.slice(5) }));
@@ -3539,7 +3543,7 @@ function monthView() {
   /* display:flex 不能省 —— svg 是行内元素，默认贴基线排，底下会多出一截
      降部的空隙，箭头就比中间那行字高出一两像素。 */
   const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
-    ' style="padding:2px;display:flex;align-items:center;justify-content:center;cursor:' +
+    ' style="padding:0;display:flex;align-items:center;justify-content:center;cursor:' +
     (on ? "pointer" : "default") + ";color:" +
     (on ? "var(--ink)" : "var(--ink-faint)") + '">' + ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
   return { tab: "dashboard", fab: "both", navSplit: true,
