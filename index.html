@@ -390,8 +390,15 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .qlog:active{transform:scale(.92)}
 /* 底部不再是通栏，是一簇悬浮的东西：一条玻璃药丸，内容从底下滑过去 */
 /* 稿子 26:895：整条 350×66，内边距 4（66 = 4 + 58 + 4），背景模糊 20 */
+/* 底色不是平的 80% 白：Figma 把那层 drop shadow 画在半透明填充的**下面**，
+   所以它透过来、把底栏下半截压暗了；CSS 规范里外投影会被裁掉，不画进元素
+   自己的边框盒，同样的参数浏览器就是平的。
+   逐点采样反推：顶上等效白 ≈ 253，底下 ≈ 238，中间基本线性。
+   所以这里用一条渐变把那个效果补回来，而不是照抄「一个纯白 + 一层投影」。 */
 .dock{position:absolute;left:20px;right:20px;bottom:30px;z-index:4;
- display:flex;align-items:center;gap:8px;background:var(--nav);
+ display:flex;align-items:center;gap:8px;
+ background:linear-gradient(180deg,
+   rgba(255,255,255,.8) 0%, rgba(237,237,237,.8) 100%);
  border:1px solid var(--edge);border-radius:var(--r-pill);padding:4px;
  box-shadow:var(--shadow-nav);backdrop-filter:blur(20px)}
 /* ---- 底栏三（四）颗：说一句 · 点阵 · [返回] · 记一笔 ---------------------- */
@@ -1080,7 +1087,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v34";
+const BUILD = "v35";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
