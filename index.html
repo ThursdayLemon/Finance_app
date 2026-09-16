@@ -1004,7 +1004,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  font-weight:var(--w-light);color:var(--ink);
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 徽章：透明底 + 白描边，左右不留内边距（稿子就是贴着字的） */
-.txcard .upcoming .badge.ol{background:transparent;border-color:var(--icon-edge);
+/* 不带描边：稿子里那圈是纯白的，压在 60% 白的条上本该看不见 —— 
+   但在实际渲染里它比周围还亮，反而像给文字套了个框。直接去掉。
+   左右也不留内边距，它就是一段文字。 */
+.txcard .upcoming .badge.ol{background:transparent;border:0;
  padding:3px 0;font-size:14px;line-height:18px;font-weight:var(--w-light);
  color:var(--ink)}
 /* 右边的展开/收起：同字号但用 Medium 压住 */
@@ -1187,7 +1190,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v42";
+const BUILD = "v43";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
