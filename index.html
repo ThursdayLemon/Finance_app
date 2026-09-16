@@ -623,6 +623,30 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .chartcol > i.on{background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 4px)}
 .chartcol > i.bad{background:repeating-linear-gradient(90deg,var(--bad) 0 1px,transparent 1px 4px)}
 .chartax{display:flex;gap:6px;padding:9px 0}
+/* ---- 环形图（稿子 2168:4139）----------------------------------------
+   段是 SVG，标签是浮在外面的白药丸 —— 没有引线了。
+   整块固定 268 高，切支出/收入/储蓄不会让页面跳。 */
+.pie{position:relative;height:268px;width:100%}
+.piesvg{position:absolute;left:50%;transform:translateX(-50%);
+ width:132px;height:132px;overflow:visible}
+.pienum{position:absolute;left:0;right:0;transform:translateY(-50%);
+ text-align:center;pointer-events:none;line-height:1.2}
+.pienum .sub{font-size:11px;line-height:15px}
+.pienum .pietot{font-family:var(--font-num);font-size:17px;line-height:22px;
+ letter-spacing:-.02em;color:var(--ink)}
+/* 稿子里的药丸：50% 白底 + 1px 纯白边，左边那颗点用它自己那段的颜色 ——
+   稿子用的是品类图标，但这个 app 的分组名是自由文本（固定支出、目标名、
+   自定义品类都在里面），配不出图标；用同色的点反而能把药丸和段对上。 */
+/* 稿子是 padding 5/13、gap 5；这里收到 11 和 4，是为了「固定还贷 56%」
+   这种长名字在抽屉里（左右还各站着一个翻月箭头）不用打点。 */
+.pchip{position:absolute;display:inline-flex;align-items:center;gap:4px;
+ padding:5px 11px;border-radius:var(--r-pill);
+ /* 稿子写的是 50% 白 + 1px 纯白；这里走 token，深色下才不会是浅底浅字 */
+ background:var(--surface);border:1px solid var(--edge);
+ font-size:12px;line-height:14px;color:var(--ink);white-space:nowrap}
+.pchip .pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pchip .pname{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pchip .ppct{color:var(--ink-muted);flex-shrink:0;font-size:11px}
 .chartax>span{flex:1;text-align:center;font-size:11.5px;color:var(--ink-faint)}
 .chartax>span.on{color:var(--ink);font-weight:var(--w-bold)}
 .callout{text-align:right;font-size:12px;font-weight:var(--w-body);line-height:16px;
@@ -979,7 +1003,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  letter-spacing:-.02em}
 .vtext{font-size:12px;line-height:16px;color:var(--ink)}
 .vactions{display:flex;justify-content:flex-end;margin-top:6px}
-.vactions .chip{background:rgba(255,255,255,.5);border:1px solid #ffffff;
+.vactions .chip{background:var(--surface);border:1px solid var(--edge);
  border-radius:var(--r-pill);padding:5px 13px;font-size:12px;cursor:pointer;
  display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
 .vcorner{font-size:11px;line-height:15px;color:var(--ink-muted);text-align:right}
@@ -1220,7 +1244,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v46";
+const BUILD = "v47";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4807,67 +4831,109 @@ function foldSmall(rows) {
   return keep.concat([[other, lump]]);
 }
 
-/* 环形图自己带标签：左右两列分栏排，用引线连到切片，天生不会重叠。
-   整块是固定高度，所以切「支出 / 收入」时页面不会跳。 */
+/* 环形图（稿子 2168:4139）------------------------------------------------
+   一个色相，按大小排名往下降透明度（1 → .3），段与段之间留 4.5° 的缝。
+   标签不再用引线，是浮在环外面的白药丸；左右两列分栏，天生不会重叠。
+   整块固定 268 高，所以切「支出 / 收入 / 储蓄」时页面不会跳。 */
+const PIE_H = 268, PIE_R = 66, PIE_TH = 22, PIE_CY = 124;
+const PIE_GAP = 4.5 * Math.PI / 180;      /* 段与段之间的缝 */
+const PIE_CH = 24;                        /* 药丸高度 */
+const PIE_K = 4;                          /* 段的四个角的圆角 */
+
+/* 一段带圆角的环形扇区。先把内外半径各往里收 K、两头各收对应的角度，
+   再用同色的 2K 圆角描边把它「吹」回原尺寸 —— 四个角就自然圆了 K。
+   直接使用 round 线帽会圆掉半个环宽（11），比稿子圆一倍还多。 */
+function ringSeg(cx, cy, Ro, Ri, a0, a1, fill, op) {
+  const k = Math.max(0, Math.min(PIE_K, (Ro - Ri) / 2 - 0.5,
+    (a1 - a0) * (Ro + Ri) / 4 - 0.5));
+  const ro = Ro - k, ri = Ri + k;
+  const dO = k / ro, dI = k / ri;
+  const b0 = a0 + dO, b1 = Math.max(a0 + dO, a1 - dO);
+  const c0 = a0 + dI, c1 = Math.max(a0 + dI, a1 - dI);
+  const P = (rad, a) => (cx + rad * Math.sin(a)).toFixed(2) + " " +
+    (cy - rad * Math.cos(a)).toFixed(2);
+  const big = (b1 - b0) > Math.PI ? 1 : 0;
+  const d = "M" + P(ro, b0) + "A" + ro + " " + ro + " 0 " + big + " 1 " + P(ro, b1) +
+    "L" + P(ri, c1) + "A" + ri + " " + ri + " 0 " + big + " 0 " + P(ri, c0) + "Z";
+  /* 透明度必须写在元素上：半透明的 fill 和同色半透明的 stroke 叠在一起会加深，
+     段里会浮出一圈更深的描边（踩过）。元素级 opacity 只合成一次。 */
+  return '<path d="' + d + '" fill="' + fill + '" stroke="' + fill +
+    '" stroke-width="' + (2 * k).toFixed(2) + '" stroke-linejoin="round"' +
+    ' opacity="' + op.toFixed(3) + '"/>';
+}
+
 function labeledDonut(rows, kind) {
-  /* r 是路径半径，环的外沿是 r + th/2 —— 引线和标签都要从外沿算，
-     否则标签会压在环上（第一版就压了） */
-  /* 圆头会让每一段往两头各长出 th/2，所以画的时候要先把这 th 减掉，
-     再减掉想要的那道缝，视觉长度才是对的。第一版没减，段段相连看不出缝。 */
-  const W = 302, H = 268, cx = W / 2, cy = H / 2, r = 46, th = 16, GAP = 7;
-  const OUT = r + th / 2;
   const total = rows.reduce((a, c) => a + c[1], 0) || 1;
-  const C = 2 * Math.PI * r;
+  const n = rows.length;
+  /* 支出走暖色，收入和储蓄走绿 —— 和上面镜像柱状图用的是同两个颜色。
+     绿这里用 --green-01（柱子那支柔和的绿），不是 --good：--good 是判定灯
+     用的饱和绿，铺成一整个环会把整页的调子打掉。 */
+  const hue = kind === "out" ? "var(--warn)" : "var(--green-01)";
+  /* 透明度按排名降，不按占比：稿子里两块一样大的也是 .6 / .5 */
+  const alpha = (i) => n < 2 ? 1 : Math.max(0.3, 1 - (i / (n - 1)) * 0.7);
+  const Ro = PIE_R, Ri = PIE_R - PIE_TH, cx = PIE_R, cy = PIE_R;
   let off = 0;
-  const segs = [], labels = { left: [], right: [] };
+  const segs = [], marks = [];
   rows.forEach(([name, v], i) => {
-    const len = (v / total) * C;
-    const mid = off + len / 2;
-    /* 只剩一段时不留缝，否则首尾会咬在一起 */
-    const trim = rows.length > 1 ? th + GAP : 0;
-    const draw = Math.max(0.1, len - trim);
-    segs.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' +
-      RAMP[Math.min(i, RAMP.length - 1)] + '" stroke-width="' + th +
-      '" stroke-linecap="' + (rows.length > 1 ? "round" : "butt") + '"' +
-      ' stroke-dasharray="' + draw.toFixed(2) + " " + (C - draw).toFixed(2) +
-      '" stroke-dashoffset="' + (-(off + trim / 2)).toFixed(2) + '"></circle>');
-    const ang = (mid / C) * Math.PI * 2 - Math.PI / 2;
-    const side = Math.cos(ang) >= 0 ? "right" : "left";
-    labels[side].push({ name, v, i, ang });
-    off += len;
+    const span = (v / total) * Math.PI * 2;
+    /* 缝从两头各吃一半；整块太小就留一道最细的 */
+    const trim = n > 1 ? Math.min(PIE_GAP, span * 0.7) : 0;
+    const a0 = off + trim / 2, a1 = off + span - trim / 2;
+    /* 只有一段时画一个整环：走扇形那条路的话，两头的圆角会在 12 点方向
+       咬出一个缺口，看着像坏了。 */
+    segs.push(n === 1
+      ? '<circle cx="' + cx + '" cy="' + cy + '" r="' + ((Ro + Ri) / 2) +
+        '" fill="none" stroke="' + hue + '" stroke-width="' + (Ro - Ri) + '"/>'
+      : ringSeg(cx, cy, Ro, Ri, a0, a1, hue, alpha(i)));
+    marks.push({ name, v, i, ang: off + span / 2 });
+    off += span;
   });
-  const leaders = [], texts = [];
+
+  /* 标签分左右两列、纵向均分 —— 天生不会叠在一起。
+     两边强行分得一样多（最右边的那一半去右列），不按「落在哪半边」分：
+     小切片常常挤在同一侧，真按角度分会排出 6 : 2 这种一边倒的版面。
+     药丸上那颗点已经把它和哪一段对上了，所以位置不必贴着切片。 */
+  const chips = [], CH = PIE_CH;
+  const byRight = marks.slice().sort((a, b) => Math.sin(b.ang) - Math.sin(a.ang));
+  const rightSet = new Set(byRight.slice(0, Math.ceil(n / 2)).map((m) => m.i));
   ["left", "right"].forEach((side) => {
-    const list = labels[side].sort((a, b) => Math.sin(a.ang) - Math.sin(b.ang));
-    const n = list.length;
-    list.forEach((L, k) => {
-      /* 一侧只有一个标签时按它自己的角度放；多个就均匀分栏，天生不重叠 */
-      const y = n === 1
-        ? Math.max(30, Math.min(H - 30, cy + (OUT + 20) * Math.sin(L.ang)))
-        : 30 + ((H - 60) / (n - 1)) * k;
-      const ex = side === "right" ? cx + OUT + 12 : cx - OUT - 12;
-      const tx = side === "right" ? W - 4 : 4;
-      leaders.push('<path d="M' + (cx + (OUT + 3) * Math.cos(L.ang)).toFixed(1) + " " +
-        (cy + (OUT + 3) * Math.sin(L.ang)).toFixed(1) + "L" + ex.toFixed(1) + " " + y.toFixed(1) +
-        "H" + (side === "right" ? tx - 2 : tx + 2) + '" fill="none" stroke="var(--ink-faint)" ' +
-        'stroke-width="1"></path>');
-      texts.push('<text x="' + tx + '" y="' + (y - 3) + '" text-anchor="' +
-        (side === "right" ? "end" : "start") + '" font-size="12.5" font-weight="600" ' +
-        'fill="var(--ink)">' + esc(L.name) + "</text>" +
-        '<text x="' + tx + '" y="' + (y + 12) + '" text-anchor="' +
-        (side === "right" ? "end" : "start") + '" font-size="10" fill="var(--ink-muted)">' +
-        pctLabel(L.v, total) + " · " + yuan(L.v) + "</text>");
+    const list = marks.filter((m) => rightSet.has(m.i) === (side === "right"))
+      .sort((a, b) => Math.cos(b.ang) - Math.cos(a.ang));
+    const k = list.length;
+    list.forEach((L, j) => {
+      /* 纵向不是平均分，是往两头推：环最宽的地方在正中间，越靠中间药丸
+         能用的宽度越窄（50% - 72px）。把位置按 ^.6 往两端拉一把，中间那两格
+         就从环的「腰」挪到了「肩」上，能多拿 15~20px，名字少打点。 */
+      const u = k === 1 ? 0.5 : j / (k - 1);
+      const uu = 0.5 + 0.5 * Math.sign(u - 0.5) * Math.pow(Math.abs(2 * u - 1), 0.6);
+      let top = k === 1
+        ? PIE_CY - CH / 2 - PIE_R * Math.cos(L.ang)
+        : 12 + ((PIE_H - 24 - CH) * uu);
+      /* 一侧只有一个的时候把它推到环带外面去 —— 贴着环的那一格只有
+         50% - 72px 的宽度，长一点的名字（「固定还贷」）就得打点。 */
+      if (k === 1) top = top + CH / 2 < PIE_CY ? 12 : PIE_H - 12 - CH;
+      top = Math.max(12, Math.min(PIE_H - 12 - CH, top));
+      /* 能用多宽，按圆在这一段高度上的真实轮廓算，不是拿外接方框一刀切 */
+      const dy = (top <= PIE_CY && top + CH >= PIE_CY) ? 0
+        : Math.min(Math.abs(top - PIE_CY), Math.abs(top + CH - PIE_CY));
+      const half = dy < PIE_R ? Math.sqrt(PIE_R * PIE_R - dy * dy) : 0;
+      chips.push('<div class="pchip" title="' + esc(L.name) + '" style="top:' +
+        Math.round(top) + "px;" + (side === "right" ? "right:0;" : "left:0;") +
+        "max-width:calc(50% - " + Math.round(half + 6) + 'px)">' +
+        '<span class="pdot" style="background:' + hue + ";opacity:" +
+        alpha(L.i).toFixed(3) + '"></span>' +
+        '<span class="pname">' + esc(L.name) + "</span>" +
+        '<span class="ppct">' + pctLabel(L.v, total) + "</span></div>");
     });
   });
-  return '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" height="' + H + '" ' +
-    'style="display:block;font-family:inherit">' +
-    '<g transform="rotate(-90 ' + cx + " " + cy + ')">' + segs.join("") + "</g>" +
-    leaders.join("") + texts.join("") +
-    '<text x="' + cx + '" y="' + (cy - 3) + '" text-anchor="middle" font-size="11" ' +
-    'fill="var(--ink-muted)">' + t(kind === "in" ? "word.income"
-      : kind === "save" ? "word.savings" : "word.spending") + "</text>" +
-    '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="13" ' +
-    'font-weight="600" fill="var(--ink)">' + yuan(total) + "</text></svg>";
+
+  return '<div class="pie">' +
+    '<svg class="piesvg" viewBox="0 0 ' + (PIE_R * 2) + " " + (PIE_R * 2) + '" ' +
+    'style="top:' + (PIE_CY - PIE_R) + 'px">' + segs.join("") + "</svg>" +
+    '<div class="pienum" style="top:' + PIE_CY + 'px"><div class="sub">' +
+    t(kind === "in" ? "word.income" : kind === "save" ? "word.savings" : "word.spending") +
+    '</div><div class="pietot">' + yuan(total) + "</div></div>" +
+    chips.join("") + "</div>";
 }
 
 SHEETS.cats = () => {
