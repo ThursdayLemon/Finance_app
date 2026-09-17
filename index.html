@@ -8,10 +8,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<!-- 状态栏那条不是我们画的：iOS 独立模式拿 body 的背景色（以及 theme-color）去涂它。
-     body 原来是 --page #f2f1ef，而珠光底真正的顶色是 #e0e0dc —— 差 18/255，真机上
-     就是「最上面一块比背景浅的色块，下边缘一条直线」。两边现在都读 --ground。 -->
+<!-- 顶上那块浅色：写 default 的时候，iOS 独立模式把网页整个压到状态栏下面，
+     上面那条是系统自己涂的（浅色下接近纯白），网页碰不到它 —— 所以 v44 把 body
+     和 theme-color 改成 --ground 并没有用，那块根本不是我们画的。
+     black-translucent 才会让网页铺满整屏、自己盖住状态栏那条，
+     env(safe-area-inset-top) 也才有值（.inset 就是吃这个的）。
+     代价：状态栏的时间/电量由系统决定深浅，浅底上万一变成白字就得换回来。 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Safari 标签页里顶上那条还是拿 theme-color 涂的，跟 body 一起读 --ground -->
 <meta name="theme-color" content="#e0e0dc">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- 字体请求一旦写错是静默失败的：整条 css2 返回 400，六个字体一个都不下来，
@@ -1244,7 +1248,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v47";
+const BUILD = "v48";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
