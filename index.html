@@ -1130,6 +1130,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  align-items:center;justify-content:center;gap:8px;font-size:12px;
  font-weight:var(--w-body);cursor:pointer;white-space:nowrap}
 .jotmini.wide{padding:0 18px}
+/* 空着的时候不画确认键（稿子那张就没有）——
+   但它得在 DOM 里等着，打字时靠 class 显形，不然一重绘光标就没了 */
+.jotmini.hide{display:none}
 .jotmini:active{transform:scale(.96)}
 /* 稿子给的是 35 高，低于 44 的下限：视觉照稿子，可点区域往外撑到 44 */
 .jotmini{position:relative}
@@ -1250,7 +1253,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v52";
+const BUILD = "v53";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4664,8 +4667,8 @@ function speakBtn(listening) {
 SHEETS.jot = () => {
   if (ui.f.parsed) return parsePreview(ui.f.parsed);
   const said = ui.f.text || "";
-  return '<textarea class="jotin" data-f="text" autofocus placeholder="' +
-    esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" +
+  return '<textarea class="jotin" data-f="text" autofocus enterkeyhint="send" ' +
+    'placeholder="' + esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" +
     '<div class="jotrow">' +
     '<div class="jotmini" data-a="detail" title="' + esc(t("as.manual")) + '">' +
     ic("ellipsis", 15) + '</div><div class="sp"></div>' +
@@ -4673,8 +4676,9 @@ SHEETS.jot = () => {
        这颗一消失那条路就断了（稿子那张靠键盘回车提交，没画确认键）。 */
     (micOK() ? '<div class="jotmini wide" data-a="assistant">' + ic("mic", 14) +
       "<span>" + t("as.speak") + "</span></div>" : "") +
-    (said.trim() ? '<div class="jotmini wide" data-a="parse">' +
-      t("as.confirm") + "</div>" : "") +
+    /* 一直在 DOM 里，空着就藏起来 —— 打字不重绘，只能靠 class 切 */
+    '<div class="jotmini wide' + (said.trim() ? "" : " hide") +
+      '" id="jotok" data-a="parse">' + t("as.confirm") + "</div>" +
     "</div>" + errline();
 };
 
@@ -6264,7 +6268,21 @@ app.addEventListener("input", (e) => {
   else if (f === "qnec") { ui.quiz.necessity = +v; liveLabel(e.target, v + " / 10"); }
   else if (f === "renec") { ui.f.renec = +v; liveLabel(e.target, v + " / 10"); }
   else ui.f[f] = v;
+  if (f === "text") { const ok = document.getElementById("jotok");
+    if (ok) ok.classList.toggle("hide", !v.trim()); }
   if (needsSetup(S)) liveWizardButton();
+});
+/* 「记一笔」里回车就是确认 —— 稿子那张贴着键盘，submit 键就是提交键。
+   Shift+回车留给换行；中文输入法选词按的也是回车，isComposing 那一下得放过，
+   不然拼音还没落地就被拿去解析了。 */
+app.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.shiftKey) return;
+  if (e.isComposing || e.keyCode === 229) return;
+  if (!e.target.classList || !e.target.classList.contains("jotin")) return;
+  e.preventDefault();
+  ui.f.text = e.target.value;
+  buzz("light");
+  ACT.parse();
 });
 /* 打字时只存值，不重绘 —— 重绘会重建抽屉，光标和滚动位置都会丢 */
 app.addEventListener("change", (e) => {
