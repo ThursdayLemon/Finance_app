@@ -817,9 +817,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .sw{position:relative;overflow:hidden;border-radius:0;display:flex;flex-direction:column}
 .sw.boxed{border-radius:var(--r)}
 /* 自己也圆一下：不然它的直角顶在卡片圆角的抗锯齿边上，会透出一条红发丝 */
+/* 平时整块停在行外（右侧 76），靠 .sw 的 overflow:hidden 裁掉 ——
+   不是「铺在行底下用 opacity 开关」。行的底色是透明的（见下面 .card .sw-body），
+   铺在底下的话红色会从金额底下透出来，而且是滑 6px 就整块透出来。
+   跟着行一起往左挪，露出来的红才刚好等于行让开的那一段。
+   transition 跟 .sw-body 一模一样，两层必须同步，差一点就看得出来错位。 */
 .sw-del{position:absolute;top:0;right:0;bottom:0;width:76px;color:#fff;
- border-radius:inherit;display:flex;
+ border-radius:inherit;display:flex;transform:translateX(76px);
+ transition:transform .18s ease;
  align-items:center;justify-content:center;cursor:pointer;background:var(--bad)}
+.sw.open .sw-del{transform:translateX(0)}
 /* 跟外壳一样圆：卡片圆角外那一圈才不会露出底下的红 */
 .sw-body{position:relative;flex:1 0 auto;background:var(--page);border-radius:inherit;
  transition:transform .18s ease;touch-action:pan-y}
@@ -830,12 +837,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .srt.lift .sw-body,.srt.lift.card{background:var(--page)}
 .dragging{touch-action:none;user-select:none}
 /* 行一律不刷底 —— 刷了就把底下的珠光挡死，而且和玻璃卡永远对不齐。
-   删除层平时不画，滑起来才露；见 .sw.sliding。 */
+   正因为不刷底，删除层才不能铺在行底下：它停在行外，见 .sw-del。 */
 .card .sw-body,.listcard .sw-body,.daycard .sw-body{background:transparent}
-.card .sw-del,.listcard .sw-del,.daycard .sw-del{opacity:0;transition:opacity .1s ease}
-.card .sw.sliding .sw-del,.card .sw.open .sw-del,
-.listcard .sw.sliding .sw-del,.listcard .sw.open .sw-del,
-.daycard .sw.sliding .sw-del,.daycard .sw.open .sw-del{opacity:1}
 .sw.open .sw-body{transform:translateX(-76px)}
 .dim{position:absolute;inset:0;background:rgba(34,32,28,.36)}
 /* 抽屉就老老实实贴在「手机」的底上。键盘来了不是把抽屉往上挪 ——
@@ -944,8 +947,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 卡片是玻璃的，行要是自己刷一层不透明底，和卡片永远对不齐，行的上下就会出现
    一条淡边。改成：行不刷底，删除层平时不画，滑起来才露出来。 */
 .txcard .sw-body{background:transparent}
-.txcard .sw-del{opacity:0;transition:opacity .1s ease}
-.txcard .sw.sliding .sw-del,.txcard .sw.open .sw-del{opacity:1}
 .txempty{text-align:center;color:var(--ink-muted);font-size:13.5px;padding:22px 0 26px}
 .daycard{display:flex;gap:12px;background:var(--surface);border-radius:var(--r);
  border:1px solid var(--edge);padding:0 12px;margin-top:-4px;
@@ -1253,7 +1254,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v54";
+const BUILD = "v55";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6103,13 +6104,16 @@ app.addEventListener("pointermove", (e) => {
     if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { swState = null; return; }
     if (Math.abs(dx) < 6) return;
     swState.locked = true;
-    /* 玻璃卡里的行没有自己的底色，删除层平时是不画的 —— 滑起来才让它露出来 */
-    swState.el.classList.add("sliding");
   }
   swState.dx = dx;
   const body = swState.el.querySelector(".sw-body");
   const base = swState.el.classList.contains("open") ? -76 : 0;
-  body.style.transform = "translateX(" + Math.max(-76, Math.min(0, base + dx)) + "px)";
+  const move = Math.max(-76, Math.min(0, base + dx));
+  body.style.transform = "translateX(" + move + "px)";
+  /* 删除层跟着走，位移差正好是一个身位：行让开多少，红就进来多少。
+     行的底色是透明的，红块要是留在原地就会从金额底下透上来。 */
+  const del = swState.el.querySelector(".sw-del");
+  if (del) del.style.transform = "translateX(" + (76 + move) + "px)";
 });
 const endSwipe = () => {
   if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
@@ -6118,7 +6122,9 @@ const endSwipe = () => {
   const { el, dx } = swState;
   swState = null;
   el.querySelector(".sw-body").style.transform = "";
-  el.classList.remove("sliding");
+  /* 交回给 CSS：open 的停在 0，没 open 的弹回行外 */
+  const delEl = el.querySelector(".sw-del");
+  if (delEl) delEl.style.transform = "";
   if (Math.abs(dx) > 6) swallowClick = true;
   closeSwipes(el);
   if (dx < -38) el.classList.add("open");
