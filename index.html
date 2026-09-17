@@ -1253,7 +1253,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v53";
+const BUILD = "v54";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1321,6 +1321,7 @@ zh: {
   "word.breakdown": "分类", "word.expand": "展开", "word.collapse": "收起",
   "cat.food": "餐饮", "cat.transport": "交通", "cat.fun": "娱乐",
   "cat.shopping": "购物", "cat.social": "人情往来", "cat.salary": "工资",
+  "cat.bills": "账单", "cat.clothes": "服饰", "cat.gym": "健身", "cat.pet": "宠物",
   "cat.other": "其他",
 
   "yr.empty": (v) => v.y + " 年还没有任何记录。",
@@ -1743,6 +1744,7 @@ en: {
   "word.breakdown": "Breakdown", "word.expand": "Show", "word.collapse": "Hide",
   "cat.food": "Food", "cat.transport": "Transport", "cat.fun": "Fun",
   "cat.shopping": "Shopping", "cat.social": "Gifts", "cat.salary": "Salary",
+  "cat.bills": "Bills", "cat.clothes": "Clothes", "cat.gym": "Gym", "cat.pet": "Pet",
   "cat.other": "Other",
 
   "yr.empty": (v) => "Nothing recorded in " + v.y + " yet.",
@@ -2386,13 +2388,27 @@ const cooled = (item) => hoursLeft(item) === 0;
    语序、单复数、还有 "paid" 到底是收还是支，都不一样，得各写各的。 */
 const RULES = {
 zh: {
+  /* 顺序就是优先级：谁在前谁先命中。「买衣服」里既有「买」也有「衣服」，
+     clothes 必须排在 shopping 前面，不然全落进购物。
+     「狗」不单列 —— 热狗是饭不是宠物；「猫」也不单列，猫眼电影是电影。 */
   cats: [
     ["food", ["吃", "饭", "拉面", "咖啡", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食",
       "买菜", "生鲜", "菜市场"]],
+    /* 顺序跟英文那张表对齐 —— 中文没有 train 那种子串问题，
+       但两张表排得一样，以后改一边才会想起来另一边 */
+    ["gym", ["健身", "健身房", "私教", "瑜伽", "普拉提", "游泳", "跑步机", "羽毛球",
+      "球馆", "训练课"]],
+    ["clothes", ["衣服", "裤子", "鞋", "外套", "裙子", "T恤", "袜子", "内衣",
+      "羽绒服", "优衣库", "服饰", "帽子"]],
     ["transport", ["车", "打车", "地铁", "公交", "航空", "高德", "滴滴", "出行", "路费"]],
+    ["pet", ["宠物", "狗粮", "猫粮", "猫砂", "遛狗", "铲屎", "狗狗", "猫咪",
+      "驱虫", "疫苗", "宠物医院", "洗澡美容"]],
     ["fun", ["玩", "电影", "游戏", "娱乐", "网吧", "剧本杀"]],
-    ["shopping", ["买", "衣服", "鞋", "网购", "淘宝", "拼多多", "京东", "美团", "超市"]],
+    ["shopping", ["买", "网购", "淘宝", "拼多多", "京东", "美团", "超市"]],
     ["social", ["礼物", "红包", "人情", "随礼", "送礼"]],
+    /* 账单排在最后：「房租」这类词容易被前面的表蹭到，让它们先挑完 */
+    ["bills", ["账单", "水电", "电费", "水费", "燃气", "煤气", "取暖", "物业",
+      "话费", "宽带", "网费", "房租", "保险"]],
   ],
   /* 方向比话题重要：出租（不是租）、收房租（不是房租）、收到（不是红包） */
   income: ["收入", "发工资", "工资", "薪水", "月薪", "奖金", "年终奖", "提成",
@@ -2470,17 +2486,36 @@ zh: {
   },
 },
 en: {
+  /* has() 是子串匹配，不是整词 —— 短词会咬到别的词里去，这几个是踩过的坑：
+     "pet" 在 petrol / carpet 里，"cat" 在 catering 里，"dog" 在 hot dog 里，
+     "vet" 在 velvet 里，"dress" 在 address 里 —— 所以下面一个都不单列。
+     顺序即优先级：clothes 要在 shopping 前（shoes/clothes 两边都有），
+     bills 放最后（"rent" 会咬到 parent/current，让前面的表先挑完）。 */
   cats: [
     ["food", ["lunch", "dinner", "breakfast", "brunch", "coffee", "cafe", "café",
       "restaurant", "takeaway", "takeout", "pizza", "snack", "ate", "eating out"]],
+    /* 这三个排在 transport 前面都是因为一个词：train。
+       "trainers"（鞋）和 "personal trainer"（私教）都含它，排后面全成了交通。
+       gym 又得排在 clothes 前 —— "personal trainer" 里也含 "trainer"。
+       反向不会出事："train ticket" 不含这两张表里的任何一个词。
+       "membership" 不单列：Prime membership 不是健身房。 */
+    ["gym", ["gym", "fitness", "workout", "pilates", "yoga", "personal trainer",
+      "peloton", "climbing", "swimming"]],
+    ["clothes", ["clothes", "clothing", "shoes", "trainers", "jacket", "coat",
+      "jeans", "shirt", "jumper", "socks", "trousers", "uniqlo", "zara", "primark"]],
     ["transport", ["taxi", "uber", "bolt", "cab", "bus", "train", "tube", "metro",
       "subway", "tram", "petrol", "fuel", "parking", "flight", "oyster", "travelcard",
       "commute"]],
+    ["pet", ["puppy", "kitten", "dog food", "cat food", "dog walk", "pet food",
+      "pet shop", "pet insurance", "vets", "veterinar", "kibble", "cat litter",
+      "grooming", "kennel", "flea", "microchip"]],
     ["fun", ["cinema", "movie", "film", "game", "concert", "gig", "pub", "bar",
       "drinks", "netflix", "spotify", "museum", "bowling"]],
-    ["shopping", ["bought", "clothes", "shoes", "amazon", "ebay", "argos", "shop",
+    ["shopping", ["bought", "amazon", "ebay", "argos", "shop",
       "shopping", "supermarket", "tesco", "sainsbury", "groceries", "ikea"]],
     ["social", ["gift", "present", "birthday", "wedding", "charity", "donation"]],
+    ["bills", ["bill", "rent", "council tax", "electric", "water rates", "broadband",
+      "wifi", "utilities", "insurance", "gas and electric", "energy"]],
   ],
   /* "paid" 故意不算收入 —— "I paid 20 for lunch" 是支出。
      只有明确是钱进来的说法才算：got paid / payday / refund … */
@@ -2937,6 +2972,16 @@ const P = {
   house: '<path d="M3.6 9.2 10 4l6.4 5.2v6.8a1 1 0 0 1-1 1H4.6a1 1 0 0 1-1-1z"/><path d="M8 16.8v-5h4v5"/>',
   gift: '<rect x="3.2" y="8" width="13.6" height="8.8" rx="1.4"/><path d="M2.6 5.6h14.8v2.4H2.6zM10 5.6v11.2"/>',
   film: '<rect x="3.2" y="5" width="13.6" height="10" rx="2"/><path d="M7.2 5v10M12.8 5v10"/>',
+  /* 哑铃：中间一根杠，两头各一对配重，横着居中在 y=10 */
+  gym: '<path d="M4.4 7.6v4.8M7.1 6v8M12.9 6v8M15.6 7.6v4.8M7.1 10h5.8"/>',
+  /* 狗爪：三个脚趾 + 一块掌垫。四趾在 20 的框里太挤，三趾更认得出 */
+  paw: '<circle cx="6.3" cy="7.4" r="1.7"/><circle cx="10" cy="5.9" r="1.8"/>' +
+    '<circle cx="13.7" cy="7.4" r="1.7"/>' +
+    '<path d="M10 10.2c2.5 0 4.4 1.7 4.4 3.5 0 1.4-1.1 2.3-2.4 2.3-.9 0-1.3-.4-2-.4' +
+    's-1.1.4-2 .4c-1.3 0-2.4-.9-2.4-2.3 0-1.8 1.9-3.5 4.4-3.5z"/>',
+  /* T 恤：领口一个弧，肩线落到袖口，下摆收平 */
+  shirt: '<path d="M7.6 3.6 3.9 5.4l1.1 3.1 1.7-.6v8.5h6.6V7.9l1.7.6 1.1-3.1-3.7-1.8"/>' +
+    '<path d="M7.6 3.6a2.4 2.4 0 0 0 4.8 0"/>',
 };
 /* 实心图标 —— 直接来自 Figma 分支导出，[viewBox, 路径]。
    跟 P 里的线性图标分开放：两套的 viewBox 和描边/填充规则都不一样。 */
@@ -3022,7 +3067,10 @@ const ADVICE = (v, dup) => v === "red" ? t(dup ? "advice.redDup" : "advice.red")
 /* 系统分类不可改；用户自己加的可以改名、删除 */
 /* 系统分类用 code 当 ID，中文和英文都只是显示名 —— 原来直接拿「餐饮」当 ID，
    等于把一种语言焊死进数据里。用户自己加的分类保持原样：那是内容，不翻译。 */
-const SYS_CATS = ["food", "transport", "fun", "shopping", "social", "salary", "other"];
+/* 展示顺序按「一个月里占多大」排，不是解析顺序 —— 解析那张表在 RULES 里，
+   它得按「谁容易被谁抢走」排，两张表的顺序本来就不该一样 */
+const SYS_CATS = ["food", "transport", "bills", "clothes", "gym", "pet",
+  "fun", "shopping", "social", "salary", "other"];
 const catLabel = (c) => { const k = t("cat." + c); return k === "cat." + c ? c : k; };
 const allCats = () => SYS_CATS.concat(S.customCats || []);
 const catOpts = () => allCats().map((c) => [c, catLabel(c)]);
@@ -3781,7 +3829,9 @@ function txCard(m, out) {
 const txDir = (x) => x.xfer ? "move" : (x.fixed === "in" || x.type === "in") ? "in" : "out";
 /* 分类 → 图标。样机里每一行都是白圆底上压一个线描图形。 */
 const TX_GLYPH = { food: "food", transport: "car", fun: "outing", shopping: "shopping",
-  social: "ticket", salary: "arrowUp", other: "tag" };
+  social: "ticket", salary: "arrowUp", other: "tag",
+  /* bills 借固定支出那颗 bill —— 一次性的水电和每月扣的房贷是一件事的两种样子 */
+  bills: "bill", clothes: "shirt", gym: "gym", pet: "paw" };
 /* 自定义分类也得有个像样的图标 —— 按名字里的词猜一个，猜不到才退回标签。
    中英文都列，因为分类名是用户自己打的。 */
 const CAT_WORDS = [
@@ -3791,7 +3841,12 @@ const CAT_WORDS = [
   [/电影|演出|门票|票|演唱|ticket|movie|show/i, "ticket"],
   [/打车|地铁|公交|加油|停车|车|taxi|transport|fuel|park/i, "car"],
   [/吃|饭|餐|外卖|咖啡|奶茶|food|lunch|dinner|coffee/i, "food"],
-  [/购物|衣|鞋|包|shop|cloth/i, "shopping"],
+  [/健身|瑜伽|私教|普拉提|游泳|gym|fitness|yoga|workout/i, "gym"],
+  /* cat / vet 不单列：catering、velvet 会被咬中，这儿的分类名是用户自己打的 */
+  [/宠物|狗|猫|遛|铲屎|pet|dog|puppy|kitten|vets|kennel/i, "paw"],
+  [/衣|裤|鞋|裙|外套|袜|cloth|shirt|shoe|jacket|jeans/i, "shirt"],
+  [/水电|电费|水费|燃气|话费|宽带|物业|房租|账单|bill|rent|utilit/i, "bill"],
+  [/购物|包|shop/i, "shopping"],
   [/玩|娱乐|旅游|露营|outing|fun|leisure/i, "outing"],
 ];
 const catGlyph = (c) => TX_GLYPH[c] ||
