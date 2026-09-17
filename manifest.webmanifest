@@ -1,6 +1,6 @@
 {
-  "name": "储蓄教练 Saving Coach",
-  "short_name": "储蓄教练",
+  "name": "MARGIN",
+  "short_name": "MARGIN",
   "description": "记账、固定收支、金库、买不买测验。数据只存在你自己的设备上。",
   "start_url": "./",
   "scope": "./",
