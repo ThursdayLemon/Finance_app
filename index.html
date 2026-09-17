@@ -1248,7 +1248,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v48";
+const BUILD = "v49";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4639,6 +4639,7 @@ function speakBtn(listening) {
    没有把手、没有问候语、没有内层的白框 —— 抽屉自己就是那个框。
    这一张是「马上记一笔」，要快；想填分类日期再点左边那颗去详细页。 */
 SHEETS.jot = () => {
+  if (ui.f.parsed) return parsePreview(ui.f.parsed);
   const said = ui.f.text || "";
   return '<textarea class="jotin" data-f="text" autofocus placeholder="' +
     esc(t("as.placeholder")) + '">' + esc(said) + "</textarea>" +
@@ -4654,17 +4655,9 @@ SHEETS.jot = () => {
     "</div>" + errline();
 };
 
-SHEETS.assistant = () => {
-  const p = ui.f.parsed;
-  if (!p) {
-    const listening = !!ui.listening;
-    const said = (ui.f.text || "").trim();
-    return '<div class="grab"></div>' +
-      '<div class="asgreet">' + esc(t("as.greet", { hi: greeting() })) + "</div>" +
-      '<div class="asbox">' + speakBox(said, listening) + "</div>" +
-      errline() +
-      speakBtn(listening);
-  }
+/* 解析结果那一屏。说话和快速记都走它 —— 两条路一个解析器，也该是同一屏
+   确认。稿子里只有「更详细」那条（addTx 表单）是直接填、不用解析的。 */
+function parsePreview(p) {
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
     'background:var(--sunken);border-style:dashed">' +
     esc(t("intent." + p.intent) === "intent." + p.intent ? p.intent : t("intent." + p.intent)) +
@@ -4732,6 +4725,17 @@ SHEETS.assistant = () => {
     '<div class="sub">' + t("as.readonly") + "</div>" +
     btn(t("as.openQuiz"), "toQuiz", "pri") +
     btn(t("vd.startPlan"), "startPlanFromVoice", "sm");
+}
+
+SHEETS.assistant = () => {
+  if (ui.f.parsed) return parsePreview(ui.f.parsed);
+  const listening = !!ui.listening;
+  const said = (ui.f.text || "").trim();
+  return '<div class="grab"></div>' +
+    '<div class="asgreet">' + esc(t("as.greet", { hi: greeting() })) + "</div>" +
+    '<div class="asbox">' + speakBox(said, listening) + "</div>" +
+    errline() +
+    speakBtn(listening);
 };
 
 /* 这一屏的合计必须等于概况里的「支出」，否则占大头的固定支出就被藏起来了。
@@ -5917,7 +5921,9 @@ function render() {
       /* 语音和打字是「被推上来」的，给一条会过冲的曲线；别的抽屉稳稳滑上来 */
       '<div class="sheet' + (ui.anim ? " anim" : "") +
       (/^(assistant|jot)$/.test(ui.sheet) ? " bouncy" : "") +
-      (ui.sheet === "jot" ? " quick" : "") + '">' +
+      /* quick 那套 8px 的紧内边距是给贴着键盘的输入屏的；
+         走到解析预览就是一张普通抽屉了，再压着就挤成一团 */
+      (ui.sheet === "jot" && !ui.f.parsed ? " quick" : "") + '">' +
       SHEETS[ui.sheet]() + "</div>" : "") +
     (ui.toast ? '<div class="toast' + (ui.sheet ? " high" : "") + '">' + ic("check", 17) +
       '<div style="flex:1">' + esc(ui.toast) + "</div></div>" : "");
