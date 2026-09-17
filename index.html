@@ -512,11 +512,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    换成旧式数字的衬线 —— Bona Nova 那种 —— 时它就是救命的那一条。） */
 .big,.tileval,.callout{font-family:var(--font-num);
  font-variant-numeric:lining-nums tabular-nums}
-/* 行里的金额走 Onest。这里**不要** tabular-nums：等宽会把每个数字撑成一样的
-   advance，「1」两边就空出一截，看着像字距被拉开了（真机上就是这个症状）。
-   稿子用的是比例数字。金额是右对齐的，右边缘本来就齐，不靠等宽。
+/* 行里的金额一律 Inter Medium（--font-amt）。展示用的大数字不在此列 ——
+   .big / .figure .money / .tileval / .callout 各自写死了衬线，别动。
    lining 留着：万一以后换成有旧式数字的字体，它是救命的那一条。 */
-.money,.num,.ta b{font-family:var(--font);font-variant-numeric:lining-nums}
+.money,.num,.ta b{font-family:var(--font-amt);font-variant-numeric:lining-nums}
 /* 字标 COACH：17/22，字距 +3.7px */
 .wordmark{font-size:17px;letter-spacing:3.7px;line-height:22px;
  text-align:center;color:var(--ink)}
@@ -703,12 +702,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  padding:0 6px;margin-left:-6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 /* 结余罩薄荷蓝 —— 缺口黄、结余蓝，方向一眼看得出 */
 .big.mark.pos{background-image:linear-gradient(var(--accent2),var(--accent2))}
-.num{font-family:var(--font-num);font-size:17px;font-weight:var(--w-body);
+.num{font-family:var(--font-amt);font-size:17px;font-weight:var(--w-mid);
  font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.02em}
 :root[data-skin="briefly"] .num{font-family:var(--font);font-weight:var(--w-bold)}
 /* 负字距只给数字，压中文会让字挤在一起 */
-.money{font-variant-numeric:lining-nums tabular-nums;font-weight:var(--w-body);
+.money{font-variant-numeric:lining-nums tabular-nums;font-weight:var(--w-mid);
  letter-spacing:-.02em}
+/* 大数字还是衬线，而衬线只请求了 400 —— 让它跟着 .money 变 500 会被浏览器伪粗 */
+.big.money{font-family:var(--font-num);font-weight:var(--w-body)}
 :root[data-skin="briefly"] .money,:root[data-skin="briefly"] .tileval,
 :root[data-skin="briefly"] .ta b,:root[data-skin="briefly"] .callout{
  font-family:var(--font);font-weight:var(--w-bold)}
@@ -929,7 +930,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 金额：15/20，字距 −0.37px；小数降到 12 并压灰 */
 /* 账本里的金额用 Inter（稿子指定）。字距 0：负字距是衬线数字才需要的。 */
 .ta b{font-family:var(--font-amt);display:block;font-size:15px;
- font-weight:var(--w-body);line-height:20px;
+ font-weight:var(--w-mid);line-height:20px;
  letter-spacing:0;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .ta b .dec{font-size:12px;color:var(--ink-faint)}
 /* 收入绿、支出砖橙 —— 稿子里就是这两个色，用的是判定色 token */
@@ -1248,7 +1249,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v49";
+const BUILD = "v50";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
