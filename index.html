@@ -1200,7 +1200,11 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
   .stage{display:block;padding:0;gap:0}
   .side{display:none}
   .phone{width:100%;height:100vh;height:100dvh;border:0;border-radius:0;box-shadow:none}
-  .inset{height:env(safe-area-inset-top)}
+  /* black-translucent 下 iOS 在独立模式里**不报** safe-area-inset-top（恒为 0）：
+     网页是铺满整屏了，可拿不到状态栏有多高。直接吃 env 的话顶栏会顶进状态栏，
+     整页看着被抬起来一截、底下空出一块（v48 就是这个症状）。
+     所以按屏幕高度兜个底；env 哪天报对了，max() 自然跟着走。 */
+  .inset{height:max(20px, env(safe-area-inset-top))}
   /* 稿子里悬浮簇离屏幕底 30 —— 用 max() 而不是加法：加法等于在 home 条上面
      又垫了一层，簇会整个飘起来。别去改胶囊自己的高度，那会把它撑变形。 */
   .dock{bottom:max(30px, env(safe-area-inset-bottom))}
@@ -1210,6 +1214,12 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
   .body,.body.hasfab{padding-bottom:calc(118px + max(30px, env(safe-area-inset-bottom)))}
   .sheet{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
   .toast.high{bottom:auto}
+}
+/* 屏幕高过 800 的都是刘海 / 灵动岛机型，状态栏 47~62，兜底取 59。
+   量出来偏大的那几台会多出十来像素的留白，总比顶栏钻进状态栏强。 */
+@media (max-width:600px) and (min-height:800px),
+       (display-mode:standalone) and (min-height:800px) {
+  .inset{height:max(59px, env(safe-area-inset-top))}
 }
 </style>
 </head>
@@ -1249,7 +1259,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v50";
+const BUILD = "v51";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3187,6 +3197,20 @@ function applyTheme() {
   else el.removeAttribute("data-theme");
 }
 /* 皮肤：pearl 是默认（不打标记），briefly 整套还在 CSS 里，打个标记就换回去 */
+/* 真机上的安全区到底是多少 —— env() 塞进自定义属性读出来还是字面量，
+   只能拿个探针元素量。设置页底下那行会把它显示出来：顶上/底下对不上的时候，
+   不用猜，直接念这几个数就行。 */
+function safeInsets() {
+  const d = document.createElement("div");
+  d.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;visibility:hidden;" +
+    "padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)";
+  document.body.appendChild(d);
+  const cs = getComputedStyle(d);
+  const out = [Math.round(parseFloat(cs.paddingTop) || 0),
+    Math.round(parseFloat(cs.paddingBottom) || 0)];
+  d.remove();
+  return out;
+}
 function applySkin() {
   const el = document.documentElement;
   if (S.skin === "briefly") el.setAttribute("data-skin", "briefly");
@@ -4126,7 +4150,14 @@ SCREENS.settings = () => {
       " " + t("set.saved") + "</div>" +
       '<div class="sub" style="font-size:11px;text-align:center">' + BUILD + " · " +
       lastSavedLine() +
-      "</div>" };
+      "</div>" +
+      '<div class="sub" style="font-size:10px;text-align:center;opacity:.7">' +
+      (() => { const [tp, bt] = safeInsets();
+        return "safe " + tp + "/" + bt + " · " + window.innerWidth + "×" +
+          window.innerHeight + "/" + (screen.height || "?") +
+          (window.matchMedia("(display-mode:standalone)").matches ||
+            navigator.standalone ? " · standalone" : "");
+      })() + "</div>" };
 };
 
 /* --- 结果页的几块，测验后和清单详情共用 ------------------------------- */
