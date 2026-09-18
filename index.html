@@ -73,6 +73,9 @@
   --on-tint:#414140;
   /* 这一套终于有红有绿了 —— 不用再靠涂层和字号喊话 */
   --good:#38bc37;
+  /* 账户卡堆的第三色（稿子 2310:18341 采出来是 #8FC48E）。
+     --good 那个 #38bc37 太艳，卡上铺满会吵，所以单开一个。 */
+  --leaf:#8fc48e;
   --warn:#d37641;
   --bad:#d37641;            /* 你把 #F44336 改软成了这个 */
   --good-tint:color-mix(in srgb, var(--good) 12%, #ffffff);
@@ -757,6 +760,39 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 稿子 2188:5694：加号按钮是**全圆角**的药丸，不是 12 的小圆角；
    3-3 的虚线、透明底（它已经在一张玻璃卡里了，再铺一层底就是两层玻璃）。
    Vault 的「新建账户」、Bills 的「录入还贷」、我页面那些都走这一条。 */
+/* ---- 金库的账户卡堆（稿子 2282:1587）--------------------------------
+   每张卡 150 高，但只露出 65 —— 负 margin 叠上去，最后一张整张露出来。
+   后面的卡盖住前面的下半截，靠的就是 DOM 顺序，不用 z-index。 */
+/* 稿子 2304:10056：不套卡，就是居中的三行。金额走 .big（展示用衬线） */
+/* 建账户时挑卡的颜色。34 的点，可点区靠 ::after 撑到 44 */
+.tints{display:flex;gap:12px;align-items:center;min-height:48px}
+.tdot{width:34px;height:34px;border-radius:50%;cursor:pointer;position:relative;
+ border:1px solid color-mix(in srgb,var(--ink) 10%,transparent);
+ box-shadow:var(--shadow-card)}
+.tdot::after{content:"";position:absolute;left:50%;top:50%;
+ transform:translate(-50%,-50%);width:44px;height:44px}
+.tdot.on{outline:2px solid var(--ink);outline-offset:3px}
+.totblk{text-align:center;padding:12px 0 20px}
+.totblk .big{margin:2px 0 4px}
+.cstack{display:flex;flex-direction:column}
+.acard{position:relative;height:150px;flex-shrink:0;box-sizing:border-box;
+ border-radius:var(--r-lg);box-shadow:var(--shadow-card);border:1px solid;
+ padding:17px 18px;display:flex;flex-direction:column;justify-content:space-between;
+ color:var(--on-accent);cursor:pointer;overflow:hidden}
+.cstack .acard + .acard{margin-top:-85px}
+.acard:active{filter:brightness(.97)}
+/* 详情页顶上那张不是按钮，只是同一张卡飞过来停在这儿 */
+.acard.still{cursor:default}
+.acard.still:active{filter:none}
+/* 名字和金额同一行，两头顶格 —— 都走 display 字体（稿子量的 22/26 和 30/35） */
+.ahead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+ font-family:var(--font-display);font-weight:var(--w-body);white-space:nowrap;min-width:0}
+.aname{font-size:22px;line-height:26px;letter-spacing:-.66px;
+ overflow:hidden;text-overflow:ellipsis}
+.aamt{font-size:30px;line-height:35px;letter-spacing:-.9px;flex-shrink:0}
+.afoot{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ font-size:12px;line-height:16px}
+.afoot span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dash{border:1px dashed var(--ink-faint);border-radius:var(--r-pill);
  background:transparent;min-height:54px;
  display:flex;align-items:center;justify-content:center;gap:8px;
@@ -1256,7 +1292,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v56";
+const BUILD = "v57";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1373,6 +1409,7 @@ zh: {
   "va.overBalance": "（超过余额了）",
   "va.shareOf": (v) => "占总资产 " + v.pct + "%",
   "va.addAccount": "新建账户",
+  "va.accountsOnly": (v) => v.n + " 个账户",
   "va.history": "变动记录", "va.noHistory": "还没有变动 —— 改了余额、转账、攒物计划存钱，都会记在这儿。",
   "va.setAsideOf": (v) => "其中 " + v.amt + " 是划出去的",
   "va.why.edit": "改了余额", "va.why.buy": "买下了",
@@ -1432,6 +1469,7 @@ zh: {
   "lg.drop": "取消这个目标",
   "ja.new": "新建账户", "ja.namePh": "如：建设银行卡",
   "ja.edit": "这个账户", "ja.balanceHint": "直接改成现在的真实余额就行",
+  "ja.colour": "卡片颜色",
   "ja.del": "删除这个账户", "ja.noneYet": "还没有账户", "ja.addShort": "新建",
   "ca.rename": "改个名字", "ca.new": "新建分类", "ca.namePh": "如：宠物、医疗、学习",
   "ca.addSelect": "加上并选中",
@@ -1803,6 +1841,7 @@ en: {
   "va.overBalance": " (more than the balance)",
   "va.shareOf": (v) => v.pct + "% of everything",
   "va.addAccount": "New account",
+  "va.accountsOnly": (v) => v.n + (v.n === 1 ? " account" : " accounts"),
   "va.history": "Changes", "va.noHistory": "Nothing yet — edits, transfers and money you raise all land here.",
   "va.setAsideOf": (v) => v.amt + " of this is set aside",
   "va.why.edit": "Balance updated", "va.why.buy": "Bought it",
@@ -1867,6 +1906,7 @@ en: {
   "lg.drop": "Drop this goal",
   "ja.new": "New account", "ja.namePh": "e.g. Monzo current account",
   "ja.edit": "This account", "ja.balanceHint": "Just type what's actually in it now",
+  "ja.colour": "Card colour",
   "ja.del": "Delete this account", "ja.noneYet": "No accounts yet", "ja.addShort": "New",
   "ca.rename": "Rename it", "ca.new": "New category",
   "ca.namePh": "e.g. Pets, Health, Learning",
@@ -3405,6 +3445,28 @@ const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") +
   (sort ? ' data-sg="' + sort[0] + '" data-si="' + esc(String(sort[1])) + '"' : "") +
   '><div class="sw-del" data-a="' + delAct +
   '">' + ic("trash", 19) + '</div><div class="sw-body">' + inner + "</div></div>";
+/* 账户卡的三个色。--warn 和 --accent 是稿子直接引的 token，--leaf 是为卡堆新开的。
+   存进账户的是 key 不是色值 —— 换皮肤时卡跟着皮肤走，不会卡死一个死色。 */
+const TINTS = [["warn", "var(--warn)"], ["ink", "var(--accent)"], ["leaf", "var(--leaf)"]];
+const tintCss = (k) => (TINTS.find((x) => x[0] === k) || TINTS[0])[1];
+/* 建账户时选的存在 a.tint；老账户没有这个字段，按它在列表里的位置轮一个 —— 
+   三色交替，看着就像本来就选过 */
+const cardTint = (a, i) => (a && a.tint) ? tintCss(a.tint) : TINTS[i % TINTS.length][1];
+
+/* 一张账户卡（稿子 2310:18330）：名字和金额顶格一行，副标题和 chev 贴底。
+   卡堆里和详情页顶上用的是同一张 —— 点进去的动画就是同一张卡飞过去，
+   两边要是长得不一样，飞到一半就穿帮了。 */
+const acctCard = (a, i, sub, still) => {
+  const c = cardTint(a, i);
+  return '<div class="acard' + (still ? " still" : "") +
+    '" data-card="' + esc(a.name) + '" ' +
+    (still ? "" : 'data-a="openJar:' + a.name + '" ') +
+    'style="background:' + c + ';border-color:color-mix(in srgb,' + c + ' 25%,#fff)">' +
+    '<div class="ahead"><div class="aname">' + esc(a.name) + "</div>" +
+    '<div class="aamt">' + yuan(a.balance) + "</div></div>" +
+    '<div class="afoot"><span>' + sub + "</span>" + ic("chev", 12) + "</div></div>";
+};
+
 const listrow = (mid, right, sub, act) =>
   '<div class="row"' + (act ? ' data-a="' + act + '" style="cursor:pointer"' : "") + ">" +
   '<div style="flex:1;min-width:0"><div style="font-size:15px;line-height:20px">' +
@@ -3968,36 +4030,29 @@ SCREENS.jars = () => {
   return { tab: "jars", fab: "mic",
     nav: navBack() + '<div class="navt" style="flex:1">' + t("va.title") + "</div>" +
       lifeBar(),
-    body: '<div class="card"><div class="lbl">' + t("va.total") + "</div>" +
-      '<div class="big" style="margin:2px 0">' + yuan(netAssets(S)) + "</div>" +
-      '<div class="sub">' + t("va.accountsN", { n: S.accounts.length,
-        reserved: yuan(S.goals.reduce((a, g) => a + g.saved, 0)) }) + "</div>" +
-      (S.lifeGoal ? '<div class="sub taph" data-a="lifeGoal" style="font-size:11px;margin-top:7px;' +
-        'padding-top:7px;border-top:1px solid var(--line);cursor:pointer">' +
-        esc(S.lifeGoal.name) + " · " +
-        (netAssets(S) >= S.lifeGoal.target ? t("va.lifeDone")
-          : t("va.lifeLeft", { amt: yuan(S.lifeGoal.target - netAssets(S)) })) +
-        "　" + ic("chev", 12) + "</div>" : "") + "</div>" +
-
-      seg("jars", [[t("va.tabAccounts", { n: plain.length }), "accounts"],
+    /* 稿子 2282:1435 的次序：分段 → 总额 → 卡堆 → 新建 → 提示条。
+       原来顶上那张「金库总资产」大卡拆了：总额改成居中的一块，不套卡；
+       人生目标那一行撤掉 —— 顶栏那个百分比条本来就是 data-a="lifeGoal"，
+       同一个入口留两个反而多余。 */
+    body: seg("jars", [[t("va.tabAccounts", { n: plain.length }), "accounts"],
         [t("va.tabSavings", { n: S.goals.length }), "savings"]], tab) +
+      (tab === "accounts"
+        ? '<div class="totblk"><div class="lbl">' + t("va.total") + "</div>" +
+          '<div class="big">' + yuan(netAssets(S)) + "</div>" +
+          '<div class="sub">' + t("va.accountsOnly", { n: plain.length }) + "</div></div>"
+        : "") +
 
       (tab === "accounts"
-        ? '<div class="banner" style="border-color:var(--ink-faint);background:var(--sunken)">' +
-          '<span style="margin-top:1px;color:var(--ink-muted)">' + ic("warn", 15) + "</span>" +
-          "<div>" + t("va.notice") + "</div></div>" +
-          '<div class="listcard">' + plain.map((a) => swipe(listrow(esc(a.name), yuan(a.balance),
-            earmarkOn(a.name) > 0
-              ? t("va.reservedOn", { amt: yuan(earmarkOn(a.name)) }) +
-                (earmarkOn(a.name) > a.balance ? t("va.overBalance") : "")
-              : t("va.shareOf", {
-                  pct: Math.round((a.balance / Math.max(1, netAssets(S))) * 100) }),
-            "openJar:" + a.name), "delJar:" + a.name, ["acct", a.name])).join("") +
-          /* 加号按钮收进卡里 —— 和账单/我那两页同一套（稿子 2188:5694）*/
-          '<div class="dash" data-a="addJar">' + ic("plus", 16) + " " +
-          t("va.addAccount") + "</div></div>" +
+        /* 整张卡就是那个可点区域，不再套 swipe —— 卡是叠着的，左滑删除会连带
+           滑到底下那张，删错账户的代价太大；删除挪进详情页的「改这个账户」。
+           也别在外面套 wrapper：.acard + .acard 得是亲兄弟，
+           叠放全靠那条负 margin。 */
+        ? '<div class="cstack">' +
+          plain.map((a, i) => acctCard(a, i, jarSubline(a))).join("") + "</div>" +
+          '<div class="dash" data-a="addJar" style="margin-top:12px">' + ic("plus", 16) +
+          " " + t("va.addAccount") + "</div>" +
           (planJars.length
-            ? '<div class="lbl" style="margin-top:8px">' + t("va.planJars") + "</div>" +
+            ? '<div class="lbl" style="margin-top:18px">' + t("va.planJars") + "</div>" +
               '<div class="sub" style="margin-top:-8px">' + t("va.planJarsHint") + "</div>" +
               planJars.map((a) => '<div class="row" style="opacity:.75">' +
                 '<div style="flex:1"><div style="font-size:15px">' + esc(a.name) + "</div>" +
@@ -4005,7 +4060,7 @@ SCREENS.jars = () => {
                 "</div></div>" +
                 '<div class="money" style="font-size:15px">' + yuan(a.balance) +
                 "</div></div>").join("")
-            : "")
+            : "") + vaultNotice()
         : '<div class="sub">' + t("va.savingsHint") + "</div>" +
           (S.goals.length ? S.goals.map(goalCard).join("")
             : '<div class="dash" style="min-height:80px;cursor:default;padding:0 24px;' +
@@ -4014,7 +4069,8 @@ SCREENS.jars = () => {
           t("va.addGoal") + "</div>" +
           '<div class="card"><div style="display:flex;align-items:baseline;gap:9px">' +
           '<div class="lbl" style="flex:1">' + t("va.sumGoal") + "</div>" +
-          '<div class="num money">' + yuan(goalCommit(S)) + "</div></div></div>") };
+          '<div class="num money">' + yuan(goalCommit(S)) + "</div></div></div>" +
+          vaultNotice()) };
 };
 
 /* 一行「按月发生」的东西：固定支出 / 还贷 都用它 */
@@ -4434,15 +4490,12 @@ SCREENS.account = () => {
   return { tab: "jars", fab: "mic",
     nav: navBack() + '<div class="navt">' + esc(a.name) + "</div>" + navRight(),
     body:
-      /* 顶栏已经写着账户名了，卡里不用再来一遍 */
-      '<div class="card" style="align-items:center">' +
-      '<div class="heroamt" style="justify-content:center"><span class="big">' +
-      withDec(yuan(a.balance)) + "</span></div>" +
-      (ear > 0 ? '<div class="sub" style="text-align:center;margin-top:8px">' +
-        t("va.setAsideOf", { amt: yuan(ear) }) + "</div>" : "") +
-      "</div>" +
+      /* 顶上这张和卡堆里那张是同一个 acctCard —— 点进来的动画就是它飞过来的，
+         两边但凡长得不一样，飞到一半就穿帮。加 .still 只是去掉按钮感。 */
+      acctCard(a, S.accounts.filter((x) => !x.earmark).indexOf(a),
+        ear > 0 ? t("va.setAsideOf", { amt: yuan(ear) }) : jarSubline(a), true) +
 
-      '<div class="listcard">' +
+      '<div class="listcard acctlog" style="margin-top:14px">' +
       '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
       t("va.history") + "</div>" +
       '<div class="sumamt">' + log.length + "</div></div>" +
@@ -4616,6 +4669,19 @@ const errline = () => ui.f.err
   ? '<div class="errline"><span style="margin-top:2px">' + ic("warn", 14) + "</span><div>" +
     ui.f.err + "</div></div>" : "";
 const jarOpts = () => S.accounts.filter((a) => !a.earmark).map((a) => a.name);
+/* 卡底下那一行。没有「描述」这个字段，就用列表原来那句 ——
+   有储蓄预留说预留，没有说占总资产多少。 */
+/* 「数字你自己维护」那条。稿子里三屏都钉在最底下，所以抽出来共用一份 */
+const vaultNotice = () => '<div class="banner" style="margin-top:18px;' +
+  'border-color:var(--ink-faint);background:var(--sunken)">' +
+  '<span style="margin-top:1px;color:var(--ink-muted)">' + ic("warn", 15) + "</span>" +
+  "<div>" + t("va.notice") + "</div></div>";
+
+const jarSubline = (a) => earmarkOn(a.name) > 0
+  ? t("va.reservedOn", { amt: yuan(earmarkOn(a.name)) }) +
+    (earmarkOn(a.name) > a.balance ? t("va.overBalance") : "")
+  : t("va.shareOf", { pct: Math.round((a.balance / Math.max(1, netAssets(S))) * 100) });
+
 const jarLine = (n) => { const j = jar(n); return j ? t("f.balance", { amt: yuan(j.balance) }) : ""; };
 
 const SHEETS = {};
@@ -5114,15 +5180,21 @@ SHEETS.lifeGoal = () => {
       ";border-color:" + RED + '">' + t("lg.drop") + "</div>" : "");
 };
 
+const tintField = () => field(t("ja.colour"), '<div class="tints">' +
+  TINTS.map(([k, c]) => '<div class="tdot' + ((ui.f.tint || TINTS[0][0]) === k ? " on" : "") +
+    '" data-a="pickTint:' + k + '" style="background:' + c + '"></div>').join("") + "</div>");
+
 SHEETS.addJar = () => grab + head(t("ja.new")) +
   field(t("f.name"), input("name", ui.f.name,
     'placeholder="' + esc(t("ja.namePh")) + '"')) +
   field(t("f.amount"), mInput("balance", ui.f.balance)) +
+  tintField() +
   errline() + btn(t("f.create"), "submitJar", "pri");
 
 SHEETS.editJar = () => grab + head(t("ja.edit")) +
   field(t("f.name"), input("name", ui.f.name)) +
   field(t("f.amount"), mInput("balance", ui.f.balance), t("ja.balanceHint")) +
+  tintField() +
   errline() + btn(t("f.save"), "submitEditJar", "pri") +
   '<div class="mbtn sm" data-a="delJar:' + esc(ui.f.was || "") + '" style="color:' + RED +
   ";border-color:" + RED + '">' + t("ja.del") + "</div>";
@@ -5572,9 +5644,17 @@ const ACT = {
 
   /* 金库 */
   /* 点进账户先看变动记录，要改在里面点「改这个账户」 */
-  openJar: (name) => { ui.jarName = name; push("account"); },
+  openJar: (name) => {
+    /* FLIP 的第一步：卡现在在哪。必须赶在 push 重建 DOM 之前量，
+       之后这个元素就没了。量不到就当没有动画，照常翻页。 */
+    let el = null;
+    app.querySelectorAll(".acard").forEach((x) => {
+      if (x.dataset.card === name) el = x; });
+    ui.flip = el ? el.getBoundingClientRect() : null;
+    ui.jarName = name; push("account"); },
   editJar: (name) => { const j = jar(name);
-    sheet("editJar", { was: name, name, balance: (j.balance / 100).toFixed(2) }); },
+    sheet("editJar", { was: name, name, balance: (j.balance / 100).toFixed(2),
+      tint: j.tint || TINTS[0][0] }); },
   submitEditJar: () => {
     const n = (ui.f.name || "").trim(), bal = num(ui.f.balance);
     const j = jar(ui.f.was);
@@ -5583,7 +5663,7 @@ const ACT = {
       return render(); }
     if (bal < 0) { ui.f.err = t("e.notNegative"); return render(); }
     S.plans.forEach((pl) => { if (pl.jar === ui.f.was) pl.jar = n; });
-    j.name = n; jarSet(j, bal, "edit");
+    j.name = n; if (ui.f.tint) j.tint = ui.f.tint; jarSet(j, bal, "edit");
     close(); toast(t("k.saved")); },
   delJar: (name) => { const j = jar(name);
     if (j && j.earmark) { toast(t("k.jarLockedDel")); return render(); }
@@ -5599,12 +5679,17 @@ const ACT = {
     close(); toast(t("k.lifeSet", { pct: Math.round(lifePct()) })); },
   delLifeGoal: () => { S.lifeGoal = null; ui.sheet = null; ui.f = {};
     toast(t("k.cancelled")); render(); },
-  addJar: () => (ui.sheet ? pushSheet("addJar", {}) : sheet("addJar", {})),
+  addJar: () => { /* 默认色往下轮一个，连着建几个账户不会全是同一张脸 */
+    const init = { tint: TINTS[S.accounts.filter((a) => !a.earmark).length %
+      TINTS.length][0] };
+    return ui.sheet ? pushSheet("addJar", init) : sheet("addJar", init); },
+  pickTint: (k) => { ui.f.tint = k; render(); },
   submitJar: () => {
     const n = (ui.f.name || "").trim();
     if (!n) { ui.f.err = t("e.nameEmpty"); return render(); }
     if (jar(n)) { ui.f.err = t("e.dupJar", { name: n }); return render(); }
-    S.accounts.push({ name: n, balance: Math.max(0, num(ui.f.balance)), earmark: null });
+    S.accounts.push({ name: n, balance: Math.max(0, num(ui.f.balance)), earmark: null,
+      tint: ui.f.tint || TINTS[0][0] });
     /* 从别的抽屉里点进来的：回去并把它选上 */
     if ((ui.fStack || []).length) popSheet({ account: n });
     else close();
@@ -6030,6 +6115,39 @@ function render() {
         b.scrollTop = keepTop; }); }
   }
   if (animating) ui.anim = false;
+  if (ui.flip) playFlip();
+}
+
+/* 卡从列表里飞到详情页顶上。FLIP：旧位置已经量好了（First），
+   现在这一帧是新位置（Last），先用 transform 把它推回旧位置（Invert），
+   下一帧松手让它自己滑回来（Play）。全程只动 transform，不碰布局，
+   所以 60 帧稳得住。history 那一列晚 60ms 从下面跟上来。 */
+function playFlip() {
+  const from = ui.flip; ui.flip = null;
+  const card = app.querySelector(".acard.still");
+  if (!card) return;
+  const to = card.getBoundingClientRect();
+  const dx = from.left - to.left, dy = from.top - to.top;
+  if (!dx && !dy) return;
+  const log = app.querySelector(".acctlog");
+  const EASE = "cubic-bezier(.22,1,.36,1)";
+  card.style.transition = "none";
+  card.style.transform = "translate(" + dx + "px," + dy + "px)";
+  if (log) { log.style.transition = "none"; log.style.transform = "translateY(26px)";
+    log.style.opacity = "0"; }
+  requestAnimationFrame(() => {
+    card.style.transition = "transform .42s " + EASE;
+    card.style.transform = "translate(0,0)";
+    if (log) {
+      log.style.transition = "transform .42s " + EASE + " .06s,opacity .28s ease .06s";
+      log.style.transform = "translateY(0)"; log.style.opacity = "1";
+    }
+  });
+  /* 收尾：inline 的 transform 留着会压住后面的 :active 之类，清掉 */
+  setTimeout(() => {
+    [card, log].forEach((el) => { if (el && el.isConnected) {
+      el.style.transition = ""; el.style.transform = ""; el.style.opacity = ""; } });
+  }, 520);
 }
 /* ---- 触感 ------------------------------------------------------------
    你说的那个「点下去有重量」是 Taptic Engine。Web 上没有直通它的 API：
