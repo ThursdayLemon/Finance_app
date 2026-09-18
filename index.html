@@ -24,7 +24,7 @@
      drive.mjs 里有一条断言专门请求这几条 URL 验 200。 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Libre+Caslon+Text:wght@400&family=Gulzar&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Libre+Caslon+Text:wght@400&family=Gulzar&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="MARGIN">
@@ -95,9 +95,11 @@
   --font:"Onest","PingFang SC","Hiragino Sans GB",
     -apple-system,"Helvetica Neue",Helvetica,sans-serif;
   /* 你把标题、名字、数字都换成了衬线 —— 这是这一版最大的性格 */
-  --font-display:"Gulzar","Libre Caslon Text","Songti SC",Georgia,serif;
+  /* display 换成 Bricolage Grotesque（稿子 2304:10840 起）。Gulzar 退到后面
+     当兜底 —— 它还在字体表里，换皮肤的人可能还要。 */
+  --font-display:"Bricolage Grotesque","Archivo Black","Gulzar","Songti SC",sans-serif;
   /* 数字和标题同一支 —— 这一版只留两支字 */
-  --font-num:"Gulzar","Libre Caslon Text","Songti SC",Georgia,serif;
+  --font-num:"Bricolage Grotesque","Archivo Black","Gulzar","Songti SC",sans-serif;
   /* 账本行里的金额单独一支 Inter —— 稿子就是这么定的 */
   --font-amt:"Inter",-apple-system,"Helvetica Neue",Helvetica,sans-serif;
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -508,13 +510,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 衬线只留给标题和「大的 display 金额」。条目名和行里的金额都走 Onest ——
    稿子 26:895 量出来：Lunch 是 Onest 16、−£10.00 是 Onest 15。 */
 .serif,.cardtitle,.wordmark,.secttl{font-family:var(--font-display);
- font-weight:var(--w-body)}
+ font-weight:var(--w-body);font-variation-settings:"opsz" 14,"wdth" 100}
 /* 数字统一走 --font-num。只声明字族 —— 字号和字距各处自己写，别在这儿一起设，
    不然会盖掉后面那些按稿子量出来的值。
    数字一律要 lnum + tnum：等高、等宽，金额列才对得齐。
    （Caslon 本来就是等高数字，没有 lnum 这个 feature，写上也无害；
    换成旧式数字的衬线 —— Bona Nova 那种 —— 时它就是救命的那一条。） */
 .big,.tileval,.callout{font-family:var(--font-num);
+ font-variation-settings:"opsz" 14,"wdth" 100;
  font-variant-numeric:lining-nums tabular-nums}
 /* 行里的金额一律 Inter Medium（--font-amt）。展示用的大数字不在此列 ——
    .big / .figure .money / .tileval / .callout 各自写死了衬线，别动。
@@ -776,10 +779,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .totblk .big{margin:2px 0 4px}
 .cstack{display:flex;flex-direction:column}
 .acard{position:relative;height:150px;flex-shrink:0;box-sizing:border-box;
- border-radius:var(--r-lg);box-shadow:var(--shadow-card);border:1px solid;
+ border-radius:var(--r-lg);
  padding:17px 18px;display:flex;flex-direction:column;justify-content:space-between;
- color:var(--on-accent);cursor:pointer;overflow:hidden}
-.cstack .acard + .acard{margin-top:-85px}
+ cursor:pointer;overflow:hidden}
+/* 稿子把描边和卡自己那圈 shadow 都撤了，换成卡跟卡之间的一道影：
+   每张卡往上投，压在前一张的下缘上（量出来约 16 深、最重 15%）。
+   第一张上面没有卡，所以只给「有哥哥的」那些。 */
+.cstack .acard + .acard{margin-top:-85px;
+ box-shadow:0 -6px 28px -6px rgba(0,0,0,.2)}
 .acard:active{filter:brightness(.97)}
 /* 详情页顶上那张不是按钮，只是同一张卡飞过来停在这儿 */
 .acard.still{cursor:default;touch-action:none}
@@ -1292,7 +1299,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v58";
+const BUILD = "v59";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3447,8 +3454,13 @@ const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") +
   '">' + ic("trash", 19) + '</div><div class="sw-body">' + inner + "</div></div>";
 /* 账户卡的三个色。--warn 和 --accent 是稿子直接引的 token，--leaf 是为卡堆新开的。
    存进账户的是 key 不是色值 —— 换皮肤时卡跟着皮肤走，不会卡死一个死色。 */
-const TINTS = [["warn", "var(--warn)"], ["ink", "var(--accent)"], ["leaf", "var(--leaf)"]];
+const TINTS = [["warn", "var(--warn)", "#fad9c6"], ["ink", "var(--accent)", "#ececea"],
+  ["leaf", "var(--leaf)", "#e7f7e7"]];
 const tintCss = (k) => (TINTS.find((x) => x[0] === k) || TINTS[0])[1];
+/* 卡上的字不是白的 —— 每张卡用自己底色的提亮版，稿子三张各挑了一个，
+   不是一条公式能算出来的，所以跟底色成对存着 */
+const tintInk = (k) => (TINTS.find((x) => x[0] === k) || TINTS[0])[2];
+const cardInk = (a, i) => (a && a.tint) ? tintInk(a.tint) : TINTS[i % TINTS.length][2];
 /* 建账户时选的存在 a.tint；老账户没有这个字段，按它在列表里的位置轮一个 —— 
    三色交替，看着就像本来就选过 */
 const cardTint = (a, i) => (a && a.tint) ? tintCss(a.tint) : TINTS[i % TINTS.length][1];
@@ -3461,7 +3473,7 @@ const acctCard = (a, i, sub, still) => {
   return '<div class="acard' + (still ? " still" : "") +
     '" data-card="' + esc(a.name) + '" ' +
     (still ? "" : 'data-a="openJar:' + a.name + '" ') +
-    'style="background:' + c + ';border-color:color-mix(in srgb,' + c + ' 25%,#fff)">' +
+    'style="background:' + c + ';color:' + cardInk(a, i) + '">' +
     '<div class="ahead"><div class="aname">' + esc(a.name) + "</div>" +
     '<div class="aamt">' + yuan(a.balance) + "</div></div>" +
     '<div class="afoot"><span>' + sub + "</span>" + ic("chev", 12) + "</div></div>";
