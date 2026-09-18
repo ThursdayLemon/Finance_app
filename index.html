@@ -782,7 +782,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .cstack .acard + .acard{margin-top:-85px}
 .acard:active{filter:brightness(.97)}
 /* 详情页顶上那张不是按钮，只是同一张卡飞过来停在这儿 */
-.acard.still{cursor:default}
+.acard.still{cursor:default;touch-action:none}
 .acard.still:active{filter:none}
 /* 名字和金额同一行，两头顶格 —— 都走 display 字体（稿子量的 22/26 和 30/35） */
 .ahead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
@@ -1292,7 +1292,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v57";
+const BUILD = "v58";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6116,6 +6116,36 @@ function render() {
   }
   if (animating) ui.anim = false;
   if (ui.flip) playFlip();
+  else if (ui.flipBack) playFlipBack();
+}
+
+/* 回程。和 playFlip 是同一套，只是这次动的是列表里的那张卡：
+   它现在在原位（Last），把它推到详情页卡松手时的位置（Invert），再放开。 */
+function playFlipBack() {
+  const from = ui.flipBack; ui.flipBack = null;
+  let card = null;
+  app.querySelectorAll(".acard").forEach((x) => {
+    if (x.dataset.card === ui.jarName) card = x; });
+  if (!card) return;
+  /* 列表是从头渲染的，目标卡可能在屏幕外 —— 先滚到它，再量位置，顺序反了就白量 */
+  const body = app.querySelector(".body");
+  if (body) {
+    const r = card.getBoundingClientRect(), br = body.getBoundingClientRect();
+    if (r.top < br.top || r.bottom > br.bottom) card.scrollIntoView({ block: "center" });
+  }
+  const to = card.getBoundingClientRect();
+  const dx = from.left - to.left, dy = from.top - to.top;
+  if (!dx && !dy) return;
+  card.style.transition = "none";
+  card.style.transform = "translate(" + dx + "px," + dy + "px)";
+  /* 卡堆里后面的卡会盖住它，飞回来这一路得压在最上面 */
+  card.style.zIndex = "3";
+  requestAnimationFrame(() => {
+    card.style.transition = "transform .4s cubic-bezier(.22,1,.36,1)";
+    card.style.transform = "translate(0,0)";
+  });
+  setTimeout(() => { if (card.isConnected) {
+    card.style.transition = ""; card.style.transform = ""; card.style.zIndex = ""; } }, 440);
 }
 
 /* 卡从列表里飞到详情页顶上。FLIP：旧位置已经量好了（First），
@@ -6243,6 +6273,71 @@ app.addEventListener("pointermove", (e) => {
   const del = swState.el.querySelector(".sw-del");
   if (del) del.style.transform = "translateX(" + (76 + move) + "px)";
 });
+/* 详情页那张卡上往下拉 = 送它回列表。
+   卡是 touch-action:none 的，纵向也归我们管，所以得自己分流：
+   列表还没滚到顶就当滚动使（手动同步 scrollTop），滚到顶了再往下拉才是 dismiss。
+   一路滚回顶还在继续下拉的，中途把棒交给 dismiss，不用松手重来。 */
+let cardDrag = null;
+app.addEventListener("pointerdown", (e) => {
+  const card = e.target.closest(".acard.still");
+  if (!card) return;
+  const body = app.querySelector(".body");
+  cardDrag = { card, body, y0: e.clientY, x0: e.clientX,
+    top0: body ? body.scrollTop : 0, dy: 0, mode: null };
+});
+function paintCardDrag(dy) {
+  const d = cardDrag; if (!d) return;
+  const k = Math.min(1, dy / 300);
+  d.card.style.transition = "none";
+  d.card.style.transform = "translateY(" + dy + "px)";
+  /* history 跟着走，但只走 55% —— 有点视差，卡才像是被拉起来的那一层 */
+  const log = app.querySelector(".acctlog");
+  if (log) { log.style.transition = "none";
+    log.style.transform = "translateY(" + dy * 0.55 + "px)";
+    log.style.opacity = String(Math.max(0, 1 - k * 1.3)); }
+}
+app.addEventListener("pointermove", (e) => {
+  const d = cardDrag; if (!d) return;
+  const dy = e.clientY - d.y0, dx = e.clientX - d.x0;
+  if (!d.mode) {
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) { cardDrag = null; return; }
+    if (Math.abs(dy) < 6) return;
+    d.mode = (dy > 0 && d.top0 <= 0) ? "dismiss" : "scroll";
+  }
+  if (d.mode === "scroll") {
+    if (d.body) {
+      d.body.scrollTop = d.top0 - dy;
+      if (dy > 0 && d.body.scrollTop <= 0) {   /* 滚到顶了，接着往下就是送回去 */
+        d.mode = "dismiss"; d.y0 = e.clientY; d.dy = 0;
+      }
+    }
+    return;
+  }
+  d.dy = Math.max(0, dy);
+  paintCardDrag(d.dy);
+});
+const endCardDrag = () => {
+  const d = cardDrag; if (!d) return;
+  cardDrag = null;
+  if (d.mode !== "dismiss") return;
+  const log = app.querySelector(".acctlog");
+  if (d.dy > 90) {
+    /* 过线：把卡此刻的位置交给下一屏，让列表里的那张从这儿飞回原位 */
+    ui.flipBack = d.card.getBoundingClientRect();
+    swallowClick = true;
+    pop();
+    return;
+  }
+  const EASE = "cubic-bezier(.22,1,.36,1)";
+  [d.card, log].forEach((el) => { if (!el) return;
+    el.style.transition = "transform .3s " + EASE + ",opacity .2s ease";
+    el.style.transform = ""; el.style.opacity = ""; });
+  setTimeout(() => { [d.card, log].forEach((el) => {
+    if (el && el.isConnected) el.style.transition = ""; }); }, 340);
+};
+app.addEventListener("pointerup", endCardDrag);
+app.addEventListener("pointercancel", endCardDrag);
+
 const endSwipe = () => {
   if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
   if (dragState) { endDrag(); swState = null; return; }
