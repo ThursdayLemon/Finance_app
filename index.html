@@ -1305,7 +1305,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v62";
+const BUILD = "v63";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6187,19 +6187,20 @@ function playFlipBack() {
   void card.offsetHeight;
   /* 时序是这一段的全部：
        0    卡起飞（360）
-       280  紧邻的那张开始上来 —— 它要赶在卡落位的同时压住卡沿
-       300  撤 z-index。撤晚了就能看见卡浮在已经归位的邻居上面（v61 就是这样）
-       360  卡落位，此时它已经在邻居下面了
-       340+ 剩下的每隔 60 依次上来 */
+       210  紧邻的那张就开始上来，卡还在半路
+       240  撤 z-index —— 飞行还剩三分之一，卡是「钻进去」落位的，
+            不是落到顶上再被盖住。再早就会在半路被前面的卡挡住。
+       360  卡落位，这时邻居已经压了它 150ms
+       270+ 剩下的每隔 60 依次上来 */
   requestAnimationFrame(() => {
     card.style.transition = "transform .36s cubic-bezier(.22,1,.36,1)";
     card.style.transform = "translate(0,0)";
     below.forEach((c, k) => {
-      c.style.transition = "transform .3s " + SPRING + " " + (280 + k * 60) + "ms";
+      c.style.transition = "transform .3s " + SPRING + " " + (210 + k * 60) + "ms";
       c.style.transform = "";
     });
   });
-  setTimeout(() => { if (card.isConnected) card.style.zIndex = ""; }, 300);
+  setTimeout(() => { if (card.isConnected) card.style.zIndex = ""; }, 240);
   setTimeout(() => { if (card.isConnected) {
     card.style.transition = ""; card.style.transform = ""; } }, 400);
   setTimeout(() => { below.forEach((c) => { if (c.isConnected) {
