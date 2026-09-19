@@ -787,6 +787,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    第一张上面没有卡，所以只给「有哥哥的」那些。 */
 .cstack .acard + .acard{margin-top:-85px;
  box-shadow:0 -6px 28px -6px rgba(0,0,0,.2)}
+/* 卡堆的纵向手势归我们（见 stackDrag）——「拉皮筋」和滚动得自己分流 */
+.cstack .acard{touch-action:none}
 .acard:active{filter:brightness(.97)}
 /* 详情页顶上那张不是按钮，只是同一张卡飞过来停在这儿 */
 .acard.still{cursor:default;touch-action:none}
@@ -1299,7 +1301,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v59";
+const BUILD = "v60";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6152,12 +6154,33 @@ function playFlipBack() {
   card.style.transform = "translate(" + dx + "px," + dy + "px)";
   /* 卡堆里后面的卡会盖住它，飞回来这一路得压在最上面 */
   card.style.zIndex = "3";
+  /* 它底下的那些先让开一点，等它落位了再依次收回来 —— 
+     不然卡飞回一个纹丝不动的堆里，像插进去的，不像回到自己那一格。 */
+  const below = [];
+  const stack = card.parentNode;
+  if (stack && stack.classList.contains("cstack")) {
+    let seen = false;
+    stack.querySelectorAll(".acard").forEach((c) => {
+      if (c === card) { seen = true; return; }
+      if (seen) below.push(c);
+    });
+  }
+  below.forEach((c, k) => {
+    c.style.transition = "none";
+    c.style.transform = "translateY(" + (24 + k * 9) + "px)";
+  });
   requestAnimationFrame(() => {
     card.style.transition = "transform .4s cubic-bezier(.22,1,.36,1)";
     card.style.transform = "translate(0,0)";
+    below.forEach((c, k) => {
+      c.style.transition = "transform .46s " + SPRING + " " + (90 + k * 55) + "ms";
+      c.style.transform = "";
+    });
   });
   setTimeout(() => { if (card.isConnected) {
     card.style.transition = ""; card.style.transform = ""; card.style.zIndex = ""; } }, 440);
+  setTimeout(() => { below.forEach((c) => { if (c.isConnected) {
+    c.style.transition = ""; c.style.transform = ""; } }); }, 640 + below.length * 55);
 }
 
 /* 卡从列表里飞到详情页顶上。FLIP：旧位置已经量好了（First），
@@ -6349,6 +6372,64 @@ const endCardDrag = () => {
 };
 app.addEventListener("pointerup", endCardDrag);
 app.addEventListener("pointercancel", endCardDrag);
+
+/* 卡堆往下拉：越靠下的卡走得越远，卡堆就被拉开了（Wallet 那个手感）。
+   位移不是线性跟手的 —— 走 rubber() 这条指数饱和曲线，越拉越沉、
+   拉到底也就到 RUB_MAX，松手再依次弹回去，像一根橡皮筋。 */
+const RUB_MAX = 170;
+const rubber = (d) => RUB_MAX * (1 - Math.exp(-Math.max(0, d) / RUB_MAX));
+const SPRING = "cubic-bezier(.2,1.25,.35,1)";
+let stackDrag = null;
+app.addEventListener("pointerdown", (e) => {
+  const stack = e.target.closest(".cstack");
+  if (!stack) return;
+  const body = app.querySelector(".body");
+  const cards = [];
+  stack.querySelectorAll(".acard").forEach((c) => cards.push(c));
+  if (!cards.length) return;
+  stackDrag = { stack, body, cards, y0: e.clientY, x0: e.clientX,
+    top0: body ? body.scrollTop : 0, dy: 0, mode: null };
+});
+app.addEventListener("pointermove", (e) => {
+  const d = stackDrag; if (!d) return;
+  const dy = e.clientY - d.y0, dx = e.clientX - d.x0;
+  if (!d.mode) {
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) { stackDrag = null; return; }
+    if (Math.abs(dy) < 6) return;
+    /* 和详情页那张卡同一套分流：没到顶就当滚动使，到顶了往下拉才是拉皮筋 */
+    d.mode = (dy > 0 && d.top0 <= 0) ? "rub" : "scroll";
+  }
+  if (d.mode === "scroll") {
+    if (d.body) {
+      d.body.scrollTop = d.top0 - dy;
+      if (dy > 0 && d.body.scrollTop <= 0) { d.mode = "rub"; d.y0 = e.clientY; }
+    }
+    return;
+  }
+  d.dy = Math.max(0, dy);
+  const pull = rubber(d.dy);
+  d.cards.forEach((c, i) => {
+    /* 阶梯：第一张跟手最少，每往下一张多拽一截 —— 卡缝就这么拉开的 */
+    c.style.transition = "none";
+    c.style.transform = "translateY(" + (pull * (0.35 + i * 0.2)).toFixed(2) + "px)";
+  });
+});
+const endStackDrag = () => {
+  const d = stackDrag; if (!d) return;
+  stackDrag = null;
+  if (d.mode !== "rub") return;
+  if (d.dy > 6) swallowClick = true;   /* 拉过就别再当成点卡 */
+  /* 从上往下依次松手 —— 底下那张被拽得最远、最后归位，像鞭子收回来 */
+  d.cards.forEach((c, i) => {
+    c.style.transition = "transform .52s " + SPRING + " " + (i * 18) + "ms";
+    c.style.transform = "";
+  });
+  const cards = d.cards;
+  setTimeout(() => { cards.forEach((c) => {
+    if (c.isConnected) c.style.transition = ""; }); }, 560 + cards.length * 18);
+};
+app.addEventListener("pointerup", endStackDrag);
+app.addEventListener("pointercancel", endStackDrag);
 
 const endSwipe = () => {
   if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
