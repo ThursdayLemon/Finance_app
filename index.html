@@ -768,7 +768,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    后面的卡盖住前面的下半截，靠的就是 DOM 顺序，不用 z-index。 */
 /* 稿子 2304:10056：不套卡，就是居中的三行。金额走 .big（展示用衬线） */
 /* 建账户时挑卡的颜色。34 的点，可点区靠 ::after 撑到 44 */
-.tints{display:flex;gap:12px;align-items:center;min-height:48px}
+.tints{display:flex;gap:12px;align-items:center;flex-wrap:wrap;min-height:48px;
+ padding:6px 0}
 .tdot{width:34px;height:34px;border-radius:50%;cursor:pointer;position:relative;
  border:1px solid color-mix(in srgb,var(--ink) 10%,transparent);
  box-shadow:var(--shadow-card)}
@@ -786,19 +787,22 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    每张卡往上投，压在前一张的下缘上（量出来约 16 深、最重 15%）。
    第一张上面没有卡，所以只给「有哥哥的」那些。 */
 .cstack .acard + .acard{margin-top:-85px;
- box-shadow:0 -6px 28px -6px rgba(0,0,0,.2)}
-/* 卡堆的纵向手势归我们（见 stackDrag）——「拉皮筋」和滚动得自己分流 */
-.cstack .acard{touch-action:none}
+ box-shadow:0 -27px 9.5px -18px rgba(0,0,0,.16)}
+/* 这里故意不写 touch-action —— 写了 none 就把原生滚动的惯性和减速一起关了，
+   经过卡片时手感会发钝。拉皮筋改由 touchmove 按需 preventDefault，见 stackDrag。 */
 .acard:active{filter:brightness(.97)}
 /* 详情页顶上那张不是按钮，只是同一张卡飞过来停在这儿 */
-.acard.still{cursor:default;touch-action:none}
+.acard.still{cursor:default}
 .acard.still:active{filter:none}
 /* 名字和金额同一行，两头顶格 —— 都走 display 字体（稿子量的 22/26 和 30/35） */
+/* 22/26/-0.66 设在这一层，名字和金额都继承 —— 稿子把金额从 30 收到了
+   和名字一样大，两个并排才是一条线 */
 .ahead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
- font-family:var(--font-display);font-weight:var(--w-body);white-space:nowrap;min-width:0}
-.aname{font-size:22px;line-height:26px;letter-spacing:-.66px;
- overflow:hidden;text-overflow:ellipsis}
-.aamt{font-size:30px;line-height:35px;letter-spacing:-.9px;flex-shrink:0}
+ font-family:var(--font-display);font-weight:var(--w-body);white-space:nowrap;min-width:0;
+ font-size:22px;line-height:26px;letter-spacing:-.66px;
+ font-variation-settings:"opsz" 14,"wdth" 100}
+.aname{overflow:hidden;text-overflow:ellipsis}
+.aamt{flex-shrink:0}
 .afoot{display:flex;align-items:center;justify-content:space-between;gap:10px;
  font-size:12px;line-height:16px}
 .afoot span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1301,7 +1305,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v60";
+const BUILD = "v61";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3456,8 +3460,18 @@ const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") +
   '">' + ic("trash", 19) + '</div><div class="sw-body">' + inner + "</div></div>";
 /* 账户卡的三个色。--warn 和 --accent 是稿子直接引的 token，--leaf 是为卡堆新开的。
    存进账户的是 key 不是色值 —— 换皮肤时卡跟着皮肤走，不会卡死一个死色。 */
-const TINTS = [["warn", "var(--warn)", "#fad9c6"], ["ink", "var(--accent)", "#ececea"],
-  ["leaf", "var(--leaf)", "#e7f7e7"]];
+/* 稿子 2282:1587 的八张。一半是现成的 token（墨/纸/橙/绿），
+   青蓝黄红是新加的。文字色只有两档：深底 --line，浅底（纸、黄）--ink。 */
+const TINTS = [
+  ["ink",   "var(--accent)", "#ececea"],
+  ["paper", "var(--page)",   "#414140"],
+  ["warn",  "var(--warn)",   "#ececea"],
+  ["teal",  "#41b4b4",       "#ececea"],
+  ["leaf",  "var(--leaf)",   "#ececea"],
+  ["blue",  "#5584cf",       "#ececea"],
+  ["gold",  "#eecb3b",       "#414140"],
+  ["red",   "#d53b3d",       "#ececea"],
+];
 const tintCss = (k) => (TINTS.find((x) => x[0] === k) || TINTS[0])[1];
 /* 卡上的字不是白的 —— 每张卡用自己底色的提亮版，稿子三张各挑了一个，
    不是一条公式能算出来的，所以跟底色成对存着 */
@@ -6169,6 +6183,8 @@ function playFlipBack() {
     c.style.transition = "none";
     c.style.transform = "translateY(" + (24 + k * 9) + "px)";
   });
+  /* 逼浏览器把「让开」这一帧真画出来，不然它会和下面的「归位」合并掉 */
+  void card.offsetHeight;
   requestAnimationFrame(() => {
     card.style.transition = "transform .4s cubic-bezier(.22,1,.36,1)";
     card.style.transform = "translate(0,0)";
@@ -6338,15 +6354,8 @@ app.addEventListener("pointermove", (e) => {
     if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) { cardDrag = null; return; }
     if (Math.abs(dy) < 6) return;
     d.mode = (dy > 0 && d.top0 <= 0) ? "dismiss" : "scroll";
-  }
-  if (d.mode === "scroll") {
-    if (d.body) {
-      d.body.scrollTop = d.top0 - dy;
-      if (dy > 0 && d.body.scrollTop <= 0) {   /* 滚到顶了，接着往下就是送回去 */
-        d.mode = "dismiss"; d.y0 = e.clientY; d.dy = 0;
-      }
-    }
-    return;
+    /* 判成滚动就彻底撒手 —— 这一手全交给浏览器，才有惯性和减速 */
+    if (d.mode === "scroll") { cardDrag = null; return; }
   }
   d.dy = Math.max(0, dy);
   paintCardDrag(d.dy);
@@ -6398,13 +6407,7 @@ app.addEventListener("pointermove", (e) => {
     if (Math.abs(dy) < 6) return;
     /* 和详情页那张卡同一套分流：没到顶就当滚动使，到顶了往下拉才是拉皮筋 */
     d.mode = (dy > 0 && d.top0 <= 0) ? "rub" : "scroll";
-  }
-  if (d.mode === "scroll") {
-    if (d.body) {
-      d.body.scrollTop = d.top0 - dy;
-      if (dy > 0 && d.body.scrollTop <= 0) { d.mode = "rub"; d.y0 = e.clientY; }
-    }
-    return;
+    if (d.mode === "scroll") { stackDrag = null; return; }
   }
   d.dy = Math.max(0, dy);
   const pull = rubber(d.dy);
@@ -6428,6 +6431,16 @@ const endStackDrag = () => {
   setTimeout(() => { cards.forEach((c) => {
     if (c.isConnected) c.style.transition = ""; }); }, 560 + cards.length * 18);
 };
+/* 只有「按下时就在顶端 + 正在往下拉」这一手才拦，其余一概放行给原生滚动。
+   必须在第一次 touchmove 就拦下 —— 让浏览器先滚起来之后再拦是拦不住的。 */
+app.addEventListener("touchmove", (e) => {
+  const d = stackDrag || cardDrag;
+  if (!d) return;
+  if (d.mode === "rub" || d.mode === "dismiss") { e.preventDefault(); return; }
+  if (d.mode) return;
+  const tY = e.touches && e.touches[0] ? e.touches[0].clientY : null;
+  if (tY != null && d.top0 <= 0 && tY - d.y0 > 0) e.preventDefault();
+}, { passive: false });
 app.addEventListener("pointerup", endStackDrag);
 app.addEventListener("pointercancel", endStackDrag);
 
