@@ -383,8 +383,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    标题就会偏（量出来最多偏了 36px）。脱离文档流钉在正中最稳，
    pointer-events:none 保证它不会挡住两边的按钮。 */
 .nav{position:relative}
-.navt{font-family:var(--font-display);font-size:20px;font-weight:var(--w-body);
- color:var(--ink);letter-spacing:-.01em;
+/* 稿子 2188:5990 的 CJK/Title：17/22。原来写的是 20，压着那一行别的东西。 */
+.navt{font-family:var(--font-display);font-size:17px;line-height:22px;
+ font-weight:var(--w-body);color:var(--ink);letter-spacing:-.01em;
  position:absolute;left:56px;right:56px;text-align:center;pointer-events:none;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 顶栏里的字标（首页）本来就是居中的，别被上面那条带跑 */
@@ -521,7 +522,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  padding:18px;box-shadow:var(--shadow-card);backdrop-filter:blur(var(--glass))}
 .card.tap{cursor:pointer}
 .card.tap:active{background:var(--page)}
-.lbl,.sub{font-size:12px;color:var(--ink-muted)}
+/* 稿子的 CJK/Caption 是 12/16 —— 字号一直对，行高一直没写 */
+.lbl,.sub{font-size:12px;line-height:16px;color:var(--ink-muted)}
 /* ---- 排版 ------------------------------------------------------------------
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
    三套字各管一摊：
@@ -866,7 +868,9 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
  background:transparent;border-radius:var(--r-sm)}
 :root[data-skin="briefly"] .seg>span{border-radius:0}
 :root[data-skin="briefly"] .segpill{border-radius:0}
-.seg>span{flex:1;padding:11px 0;text-align:center;font-size:14px;cursor:pointer;color:var(--ink)}
+/* 稿子的 Latin/Label：14/18 */
+.seg>span{flex:1;padding:11px 0;text-align:center;font-size:14px;line-height:18px;
+ cursor:pointer;color:var(--ink)}
 .seg>span.on{color:var(--on-accent);font-weight:var(--w-mid)}
 /* 轨道 4px 是视觉；外面套一层 44 高的透明盒子当热区 */
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;
@@ -1334,7 +1338,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v68";
+const BUILD = "v69";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3560,7 +3564,7 @@ const listrow = (mid, right, sub, act) =>
   mid + "</div>" +
   (sub ? '<div class="sub" style="font-size:11px;line-height:13px;margin-top:2px">' +
     sub + "</div>" : "") + "</div>" +
-  '<div class="money" style="font-size:15px">' + right + "</div>" +
+  '<div class="money" style="font-size:15px;line-height:20px">' + right + "</div>" +
   (act ? '<span style="color:var(--ink-faint);display:flex">' + ic("chev", 20) +
     "</span>" : "") + "</div>";
 
@@ -6229,12 +6233,27 @@ function playNav() {
     const x = on.offsetLeft;
     was[key] = x;
     sl.style.width = on.offsetWidth + "px";
-    if (reduced()) {                       /* 不滑也不淡，直接在位 */
-      sl.style.transition = "none";
-      sl.style.opacity = "1";
-      sl.style.transform = "translateX(" + x + "px)";
-      void sl.offsetHeight;
-      sl.style.transition = "";
+    if (reduced()) {
+      /* 不横滑，但也不硬跳：原地淡掉、换到新位置、再淡回来。
+         这就是苹果 Reduce Motion 的做法 —— 位移换成淡入淡出，不是没有动画。 */
+      if (prev == null || prev === x) {
+        sl.style.transition = "none";
+        sl.style.transform = "translateX(" + x + "px)";
+        void sl.offsetHeight;
+        sl.style.transition = "opacity .18s ease";
+        sl.style.opacity = "1";
+        return;
+      }
+      sl.style.transition = "opacity .14s ease";
+      sl.style.opacity = "0";
+      setTimeout(() => {
+        if (!sl.isConnected) return;
+        sl.style.transition = "none";
+        sl.style.transform = "translateX(" + x + "px)";
+        void sl.offsetHeight;
+        sl.style.transition = "opacity .18s ease";
+        sl.style.opacity = "1";
+      }, 150);
       return;
     }
     if (prev == null) {                    /* 这半边刚亮起来：位置直接就位，只淡入 */
@@ -6266,7 +6285,14 @@ function playSeg() {
     const key = el.dataset.seg, now = +el.dataset.i;
     const prev = was[key];
     was[key] = now;
-    if (prev == null || prev === now || reduced()) return;
+    if (prev == null || prev === now) return;
+    if (reduced()) {          /* 同上：位移换成淡入淡出 */
+      el.style.transition = "opacity .14s ease";
+      el.style.opacity = "0";
+      setTimeout(() => { if (el.isConnected) {
+        el.style.transition = "opacity .18s ease"; el.style.opacity = "1"; } }, 150);
+      return;
+    }
     el.style.transition = "none";
     el.style.transform = "translateX(calc(100% * " + prev + "))";
     void el.offsetHeight;
@@ -6536,15 +6562,20 @@ app.addEventListener("pointercancel", endCardDrag);
 const REDUCE = window.matchMedia
   ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 const reduced = () => !!(REDUCE && REDUCE.matches);
+/* 苹果的 Reduce Motion 不是「不动」，是把**位移**换成**淡入淡出** —— 动画还在。
+   而且它从不砍「手指按着的东西跟着走」：那是直接操作的反馈，不是转场修辞。
+   所以这一版的分界是「谁在动」而不是「动不动」：
+     自动播放的位移（飞入、归位、滑块横移）→ 换成淡入淡出
+     手指拖着的跟随（拉皮筋、下拉返回）→ 留着，只把修辞去掉（阶梯、视差） */
 /* 换一屏时用的那次淡入 —— 位移的替身 */
 function fadeIn(els) {
   els.forEach((el) => { if (!el) return;
     el.style.transition = "none"; el.style.opacity = "0"; });
   if (els[0]) void els[0].offsetHeight;
   els.forEach((el) => { if (!el) return;
-    el.style.transition = "opacity .16s ease"; el.style.opacity = "1"; });
+    el.style.transition = "opacity .22s ease"; el.style.opacity = "1"; });
   setTimeout(() => { els.forEach((el) => { if (el && el.isConnected) {
-    el.style.transition = ""; el.style.opacity = ""; } }); }, 200);
+    el.style.transition = ""; el.style.opacity = ""; } }); }, 260);
 }
 const RUB_MAX = 170;
 const rubber = (d) => RUB_MAX * (1 - Math.exp(-Math.max(0, d) / RUB_MAX));
@@ -6554,7 +6585,6 @@ const SPRING = "cubic-bezier(.2,1.25,.35,1)";
 const ARRIVE = "cubic-bezier(.16,1,.3,1)";
 let stackDrag = null;
 app.addEventListener("pointerdown", (e) => {
-  if (reduced()) return;        /* 拉皮筋不改变任何状态，减弱动效时直接不接管 */
   const stack = e.target.closest(".cstack");
   if (!stack) return;
   const body = app.querySelector(".body");
@@ -6577,9 +6607,11 @@ app.addEventListener("pointermove", (e) => {
   d.dy = Math.max(0, dy);
   const pull = rubber(d.dy);
   d.cards.forEach((c, i) => {
-    /* 阶梯：第一张跟手最少，每往下一张多拽一截 —— 卡缝就这么拉开的 */
+    /* 阶梯：第一张跟手最少，每往下一张多拽一截 —— 卡缝就这么拉开的。
+       减弱动效时整摞一起走、不拉开：跟手留着（手指按着呢），阶梯是修辞，去掉。 */
     c.style.transition = "none";
-    c.style.transform = "translateY(" + (pull * (0.35 + i * 0.2)).toFixed(2) + "px)";
+    const k = reduced() ? 0.5 : (0.35 + i * 0.2);
+    c.style.transform = "translateY(" + (pull * k).toFixed(2) + "px)";
   });
 });
 const endStackDrag = () => {
@@ -6589,7 +6621,8 @@ const endStackDrag = () => {
   if (d.dy > 6) swallowClick = true;   /* 拉过就别再当成点卡 */
   /* 从上往下依次松手 —— 底下那张被拽得最远、最后归位，像鞭子收回来 */
   d.cards.forEach((c, i) => {
-    c.style.transition = "transform .42s " + SPRING + " " + (i * 18) + "ms";
+    c.style.transition = reduced() ? "transform .3s " + ARRIVE
+      : "transform .42s " + SPRING + " " + (i * 18) + "ms";
     c.style.transform = "";
   });
   const cards = d.cards;
