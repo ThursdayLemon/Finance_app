@@ -1338,7 +1338,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v70";
+const BUILD = "v71";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3605,10 +3605,11 @@ const navBack = () => atHome() ? ""
 /* 只有分析页用它 —— 拨的是 ui.anScope，管不到别的页面 */
 const scopeToggle = () => '<div class="seg" style="border-width:1px;border-radius:999px;' +
   'overflow:hidden;flex:none">' +
-  segPill((ui.anScope || "month") === "year" ? 1 : 0, 2) +
+  segPill("anScope", (ui.anScope || "month") === "year" ? 1 : 0, 2) +
   [[t("scope.month"), "month"], [t("scope.year"), "year"]].map(([l, v]) =>
     '<span class="' + ((ui.anScope || "month") === v ? "on" : "") + '" data-a="anScope:' + v +
-    '" style="padding:4px 15px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
+    '" style="padding:4px 15px;font-size:12px;line-height:16px;flex:none">' +
+    l + "</span>").join("") + "</div>";
 
 /* 原来的年度首页 —— 现在是分析页的「年」模式。正文一行没动，
    只把顶栏从「头像·字标·月/年」换成「返回·分析·月/年」。 */
@@ -3675,7 +3676,9 @@ function analyticsYear() {
           t("yr.emptyHint") + "</div>"
         : '<div class="card">' +
           '<div class="badge">' + t("yr.headline", { y, neg: net < 0 }) + "</div>" +
-          '<div class="big mark' + (net < 0 ? "" : " pos") + '" style="margin:2px 0">' +
+          /* 和月视图那张对齐：那边写死了 30，这边原来没写、吃了 .big 默认的 42 */
+          '<div class="big mark' + (net < 0 ? "" : " pos") +
+          '" style="margin:2px 0;font-size:30px">' +
           (net < 0 ? neg(-net) : plus(net)) + "</div>" +
           '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px">' +
           '<div class="sub">' + t("word.income") +
@@ -5199,10 +5202,11 @@ SHEETS.cats = () => {
   const months = isYear() ? activeMonths(viewYear()) : [viewMonth()];
   const rows = foldSmall(breakdownOver(months, kind));
   const toggle = '<div class="seg" style="border-width:1px;border-radius:999px;overflow:hidden">' +
-    segPill(kind === "in" ? 1 : 0, 2) +
+    segPill("cats", kind === "in" ? 1 : 0, 2) +
     [[t("word.spending"), "out"], [t("word.income"), "in"]].map(([l, v]) =>
       '<span class="' + (v === kind ? "on" : "") + '" data-a="seg:cats:' + v +
-      '" style="padding:5px 13px;font-size:12px;flex:none">' + l + "</span>").join("") + "</div>";
+      '" style="padding:5px 13px;font-size:12px;line-height:16px;flex:none">' +
+      l + "</span>").join("") + "</div>";
   const arrow = (dir, on) => '<div class="tapout" ' + (on ? 'data-a="month:' + dir + '"' : "") +
     ' style="width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
     "cursor:" + (on ? "pointer" : "default") + ";color:" + (on ? "var(--ink)" : "var(--ink-faint)") + '">' +
