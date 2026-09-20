@@ -458,7 +458,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .gridb.open{background:rgba(255,255,255,.6);color:var(--ink)}
 /* 展开时，两颗药丸里各坐两个分区。按样机：药丸和收起时的 .act 同底，
    药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
-.navpill{flex:1;min-width:0;height:58px;border-radius:var(--r-pill);
+.navpill{position:relative;flex:1;min-width:0;height:58px;border-radius:var(--r-pill);
  background:rgba(236,236,236,.2);border:1px solid var(--icon-edge);
  display:flex;align-items:center;justify-content:space-between;
  gap:0;padding:0 4px}
@@ -466,19 +466,27 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    没选中的就是透明。不再靠透明度分主次 —— 白底更直接。 */
 /* 稿子把每一格做成了「图标 + 名字」：65×50、r30、1px 白描边 + 很浅的投影。
    50 高已经过了 44 的下限，不用再撑热区了。 */
-.navb{width:65px;height:50px;border-radius:30px;flex-shrink:0;display:flex;
+/* 白底从 .navb.on 的背景里抽出来，做成一条独立的滑块 —— 原来那条
+   .18s 的背景过渡一次也没跑过：render 是整屏重画，每格都是新节点，
+   新节点没有「上一个状态」。抽出来之后它能在两格之间横着滑（见 playNav）。 */
+.navslide{position:absolute;top:4px;left:0;height:50px;border-radius:30px;
+ background:linear-gradient(180deg,#ffffff 0%,#f4f4f4 100%);
+ border:1px solid var(--icon-edge);
+ box-shadow:0 2px 6px -1px rgba(65,65,64,.12),0 1px 2px rgba(65,65,64,.06);
+ z-index:0;pointer-events:none;opacity:0;
+ transition:transform .34s cubic-bezier(.22,1,.36,1),opacity .18s ease}
+.navb{position:relative;z-index:1;
+ width:65px;height:50px;border-radius:30px;flex-shrink:0;display:flex;
  flex-direction:column;align-items:center;justify-content:center;gap:2px;
- color:var(--ink);cursor:pointer;border:1px solid transparent;
- transition:background .18s ease,box-shadow .18s ease}
+ color:var(--ink);cursor:pointer;border:1px solid transparent}
 /* 图标和名字之间 2（稿子 2219:7801） */
 .navb > span{font-size:11px;line-height:13px;font-weight:var(--w-body);
  color:var(--ink);white-space:nowrap}
 /* 选中的那格是白到浅灰的竖向渐变，不是纯白 */
 /* 只有选中那格有描边和投影。稿子里那层是 3% + 负 18 扩散，等于看不见，
    这里给一层真的托得起来的。 */
-.navb.on{background:linear-gradient(180deg,#ffffff 0%,#f4f4f4 100%);
- border-color:var(--icon-edge);
- box-shadow:0 2px 6px -1px rgba(65,65,64,.12),0 1px 2px rgba(65,65,64,.06)}
+/* 选中那格自己不画底了，底是上面那条滑块 */
+.navb.on{background:none;border-color:transparent;box-shadow:none}
 .navb:active{transform:scale(.92)}
 /* 收起时如果这一页没有语音键，左边留一颗同宽的空药丸，点阵才不会跑偏 */
 .act.ghost{background:transparent;pointer-events:none}
@@ -799,9 +807,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 稿子把描边和卡自己那圈 shadow 都撤了，换成卡跟卡之间的一道影：
    每张卡往上投，压在前一张的下缘上（量出来约 16 深、最重 15%）。
    第一张上面没有卡，所以只给「有哥哥的」那些。 */
-/* 卡高 150，只露 46（稿子 2282:1587 量的 stride），所以往上收 104。
-   投影也跟着换了新值：更贴、更柔。 */
-.cstack .acard + .acard{margin-top:-104px;
+/* 卡高 150，露 65，所以往上收 85。稿子后来收到过 46，真机上太挤，退回 65。
+   投影还是用稿子的新值：更贴、更柔。 */
+.cstack .acard + .acard{margin-top:-85px;
  box-shadow:0 -20px 15px -18px rgba(0,0,0,.15)}
 /* 这里故意不写 touch-action —— 写了 none 就把原生滚动的惯性和减速一起关了，
    经过卡片时手感会发钝。拉皮筋改由 touchmove 按需 preventDefault，见 stackDrag。 */
@@ -824,7 +832,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 稿子把 opacity:.5 加在这两行的容器上，不是写进文字色里 —— 所以 chev 也一起淡。
    前缀是 .cstack：只有堆在列表里的卡才淡（叠着的，只露一条，淡一点才不抢）。
    详情页那张是 .still、不在 .cstack 里，天生就不受这条管 —— 它是主角，保持满。 */
-.cstack .acard .ahead,.cstack .acard .afoot{opacity:.5}
+.cstack .acard .ahead,.cstack .acard .afoot{opacity:.8}
 .dash{border:1px dashed var(--ink-faint);border-radius:var(--r-pill);
  background:transparent;min-height:54px;
  display:flex;align-items:center;justify-content:center;gap:8px;
@@ -1326,7 +1334,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v67";
+const BUILD = "v68";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6019,7 +6027,8 @@ function dockHtml(tab, fab) {
        点中间那颗 —— 换成 说一句 · 记一笔，点阵变深
      ui.navOpen 为真 = 露出那两颗动作键。 */
   const secs = TABS();
-  const half = (from, to) => '<div class="navpill">' +
+  const half = (from, to) => '<div class="navpill" data-pill="' + from + '">' +
+    '<i class="navslide"></i>' +
     secs.slice(from, to).map(([i, l, k]) =>
       '<div class="navb' + (k === tab ? " on" : "") + '" data-a="tab:' + k +
       '" title="' + esc(l) + '">' + ic(i, 22) + "<span>" + esc(l) + "</span></div>")
@@ -6065,6 +6074,7 @@ function paintDock() {
     sides[0].innerHTML = dockSlots.left(acts);
     sides[1].innerHTML = dockSlots.right(acts);
     sides.forEach((el) => el.classList.remove("swapping"));
+    playNav();     /* 这条路不走 render，滑块得自己就位 */
   }, 110);
 }
 
@@ -6199,6 +6209,51 @@ function render() {
   if (ui.flip) playFlip();
   else if (ui.flipBack) playFlipBack();
   playSeg();
+  playNav();
+}
+
+/* 底栏那颗白底：同一半边里换格子就横着滑过去（苹果那个手感），
+   换到另一半边就没法滑了 —— 中间隔着点阵那颗按钮，滑过去要穿过它。
+   那种情况旧的淡出、新的在目标位置淡入。
+   位置是量出来的不是算出来的：两格之间是 space-between，
+   间隔随药丸宽度变，写死一个数迟早对不上。 */
+function playNav() {
+  const was = ui.navWas || (ui.navWas = {});
+  app.querySelectorAll(".navpill").forEach((pill) => {
+    const sl = pill.querySelector(".navslide");
+    if (!sl) return;
+    const key = pill.dataset.pill;
+    const on = pill.querySelector(".navb.on");
+    const prev = was[key];
+    if (!on) { was[key] = null; sl.style.opacity = "0"; return; }
+    const x = on.offsetLeft;
+    was[key] = x;
+    sl.style.width = on.offsetWidth + "px";
+    if (reduced()) {                       /* 不滑也不淡，直接在位 */
+      sl.style.transition = "none";
+      sl.style.opacity = "1";
+      sl.style.transform = "translateX(" + x + "px)";
+      void sl.offsetHeight;
+      sl.style.transition = "";
+      return;
+    }
+    if (prev == null) {                    /* 这半边刚亮起来：位置直接就位，只淡入 */
+      sl.style.transition = "none";
+      sl.style.opacity = "0";
+      sl.style.transform = "translateX(" + x + "px)";
+      void sl.offsetHeight;
+      sl.style.transition = "";
+      sl.style.opacity = "1";
+      return;
+    }
+    sl.style.opacity = "1";
+    if (prev === x) return;                /* 没换格，别白动一次 */
+    sl.style.transition = "none";          /* 先退回上一格，逼画一帧，再放它滑 */
+    sl.style.transform = "translateX(" + prev + "px)";
+    void sl.offsetHeight;
+    sl.style.transition = "";
+    sl.style.transform = "translateX(" + x + "px)";
+  });
 }
 
 /* 分段滑块那条 .34s 的过冲曲线，在这之前一次都没跑过 —— render 是整屏
@@ -6255,7 +6310,7 @@ function playFlipBack() {
   }
   below.forEach((c, k) => {
     c.style.transition = "none";
-    c.style.transform = "translateY(" + (18 + k * 7) + "px)";
+    c.style.transform = "translateY(" + (24 + k * 9) + "px)";
   });
   /* 逼浏览器把「让开」这一帧真画出来，不然它会和下面的「归位」合并掉 */
   void card.offsetHeight;
