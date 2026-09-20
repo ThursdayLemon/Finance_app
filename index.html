@@ -1338,7 +1338,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v69";
+const BUILD = "v70";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -5529,7 +5529,11 @@ const ACT = {
     if (ui.txSearch) { const i = app.querySelector('.sbar input'); if (i) i.focus(); } },
   txFilter: () => { ui.txFilter = !ui.txFilter; render(); },
   txF: (k) => { ui.txF = k; ui.txFilter = false; render(); },
-  analytics: () => push("analytics"),
+  analytics: () => {
+    /* 首页那张小卡的位置和大小，待会儿让分析页的大卡从这儿长出来 */
+    const el = app.querySelector('.gcard[data-a="analytics"]');
+    ui.grow = el ? el.getBoundingClientRect() : null;
+    push("analytics"); },
   /* 换语言时顺手把币种也换成常见的那个，省得英文界面配 ￥ */
   lang: (k) => { S.lang = k;
     if (k === "en" && S.currency === "CNY") S.currency = "GBP";
@@ -6176,7 +6180,10 @@ function wizardView() {
    编辑完一笔回到列表就弹回顶部，翻了半天的位置全丢。
    同一个屏幕就把 .body 的 scrollTop 接回去；换屏幕才回到顶部（那是对的）。 */
 function render() {
-  if (sheetOut) return;   /* 抽屉正在往下走，别把它冲掉；等它落完一起画 */
+  /* 抽屉正在往下走的时候，本来是整个跳过 render 让动画演完的（v65）。
+     那 180ms 里点底栏，go() 改了状态却画不出来 —— 看着就是「点了没反应、
+     导航状态也不变」。画面正确性比动画完整重要：有新东西要画就提前收场。 */
+  if (sheetOut) sheetOut = false;
   settleAutoGoals();
   if (needsSetup(S)) { app.innerHTML = wizardView(); return; }
   const key = screen();
@@ -6212,6 +6219,7 @@ function render() {
   if (animating) ui.anim = false;
   if (ui.flip) playFlip();
   else if (ui.flipBack) playFlipBack();
+  else if (ui.grow) playGrow();
   playSeg();
   playNav();
 }
@@ -6273,6 +6281,42 @@ function playNav() {
     sl.style.transition = "";
     sl.style.transform = "translateX(" + x + "px)";
   });
+}
+
+/* 首页那张小卡长成分析页那张大卡。和 playFlip 是同一套 FLIP，只是这次
+   连尺寸一起变 —— 两张卡的宽高比不一样，非等比 scale 会把里面的字和图
+   压扁。所以内容不跟着缩：卡在长的时候内容是透明的，长到一半才淡进来，
+   变形那一段根本看不见。 */
+function playGrow() {
+  const from = ui.grow; ui.grow = null;
+  const card = app.querySelector(".anchart");
+  if (!card) return;
+  if (reduced()) return fadeIn([card]);
+  const to = card.getBoundingClientRect();
+  if (!to.width || !to.height) return;
+  const sx = from.width / to.width, sy = from.height / to.height;
+  const dx = from.left - to.left, dy = from.top - to.top;
+  const kids = [];
+  card.childNodes.forEach((k) => { if (k.nodeType === 1) kids.push(k); });
+  card.style.transformOrigin = "top left";
+  card.style.transition = "none";
+  card.style.transform = "translate(" + dx + "px," + dy + "px) scale(" +
+    sx.toFixed(4) + "," + sy.toFixed(4) + ")";
+  kids.forEach((k) => { k.style.transition = "none"; k.style.opacity = "0"; });
+  void card.offsetHeight;
+  requestAnimationFrame(() => {
+    card.style.transition = "transform .34s " + ARRIVE;
+    card.style.transform = "translate(0,0) scale(1,1)";
+    kids.forEach((k) => {
+      k.style.transition = "opacity .24s ease .1s"; k.style.opacity = "1"; });
+  });
+  setTimeout(() => {
+    if (card.isConnected) {
+      card.style.transition = ""; card.style.transform = "";
+      card.style.transformOrigin = ""; }
+    kids.forEach((k) => { if (k.isConnected) {
+      k.style.transition = ""; k.style.opacity = ""; } });
+  }, 420);
 }
 
 /* 分段滑块那条 .34s 的过冲曲线，在这之前一次都没跑过 —— render 是整屏
@@ -6430,7 +6474,10 @@ function buzz(kind) {
 const SOLID = /^(commit|submit|delTx|delFixed|delGoal|delDebt|delAcct|delWish|wipeData|parse|confirm|goalDone|debtDone)/;
 
 app.addEventListener("click", (e) => {
-  if (swallowClick) { swallowClick = false; e.stopPropagation(); return; }
+  if (swallowClick) {
+    swallowClick = false;
+    if (Date.now() - swallowAt < 400) { e.stopPropagation(); return; }
+  }
   /* 分区展开着的时候点别处 —— 收起来。没有蒙版可点，只能在这儿兜。 */
   if (ui.navOpen && !e.target.closest(".dock")) { ui.navOpen = false; render(); }
   const el = e.target.closest("[data-a]");
@@ -6444,7 +6491,11 @@ app.addEventListener("click", (e) => {
   if (ACT[act]) { buzz(SOLID.test(act) ? "solid" : "light"); e.stopPropagation(); ACT[act](arg); }
 });
 /* 手势：只认横向；纵向一律让给滚动。滑过阈值就吞掉这次 click，避免误触发行内动作 */
-let swState = null, swallowClick = false;
+/* 只吞紧跟其后的那一次 click。按下时会清一次，但手势要是没能正常收尾
+   （pointerup 丢了、DOM 被重建导致 click 压根没派发），它就会挂在那儿，
+   下一次点哪儿都被吃掉。加个时效兜底：过了 400ms 自动失效。 */
+let swState = null, swallowClick = false, swallowAt = 0;
+const swallow = () => { swallowClick = true; swallowAt = Date.now(); };
 const closeSwipes = (except) => app.querySelectorAll(".sw.open")
   .forEach((el) => { if (el !== except) el.classList.remove("open"); });
 app.addEventListener("pointerdown", (e) => {
@@ -6536,7 +6587,7 @@ const endCardDrag = () => {
   if (d.dy > 90) {
     /* 过线：把卡此刻的位置交给下一屏，让列表里的那张从这儿飞回原位 */
     ui.flipBack = d.card.getBoundingClientRect();
-    swallowClick = true;
+    swallow();
     pop();
     return;
   }
@@ -6618,7 +6669,7 @@ const endStackDrag = () => {
   const d = stackDrag; if (!d) return;
   stackDrag = null;
   if (d.mode !== "rub") return;
-  if (d.dy > 6) swallowClick = true;   /* 拉过就别再当成点卡 */
+  if (d.dy > 6) swallow();   /* 拉过就别再当成点卡 */
   /* 从上往下依次松手 —— 底下那张被拽得最远、最后归位，像鞭子收回来 */
   d.cards.forEach((c, i) => {
     c.style.transition = reduced() ? "transform .3s " + ARRIVE
@@ -6652,7 +6703,7 @@ const endSwipe = () => {
   /* 交回给 CSS：open 的停在 0，没 open 的弹回行外 */
   const delEl = el.querySelector(".sw-del");
   if (delEl) delEl.style.transform = "";
-  if (Math.abs(dx) > 6) swallowClick = true;
+  if (Math.abs(dx) > 6) swallow();
   closeSwipes(el);
   if (dx < -38) el.classList.add("open");
   else el.classList.remove("open");
@@ -6789,7 +6840,7 @@ function startDrag(el, y0) {
     h: el.getBoundingClientRect().height + 8 };
   el.classList.add("lift");
   app.classList.add("dragging");
-  swallowClick = true;
+  swallow();
   if (navigator.vibrate) navigator.vibrate(8);
 }
 
