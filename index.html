@@ -392,6 +392,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 :root[data-skin="briefly"] .navt{font-family:var(--font);font-weight:700}
 .body{flex:1;padding:14px 16px 148px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
+/* 底栏压住的那一段，内容淡出去，不是被硬切在底栏边缘。
+   用 mask 而不是盖一层渐变色：底下那层珠光不是纯色，盖色块永远对不上；
+   mask 是让内容自己变透明，露出来的就是真背景。
+   只给真的有底栏的那些页加（见 render 里的 dockfade）。
+   底栏坐在 bottom:30、高 66，所以 96 是它的上沿 —— 从上沿再往上 14 开始淡。 */
+.body.dockfade{
+ -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 110px),transparent calc(100% - 30px));
+ mask-image:linear-gradient(to bottom,#000 calc(100% - 110px),transparent calc(100% - 30px))}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
    一律不许收缩，超出就滚动 */
 .body > *{flex-shrink:0}
@@ -791,8 +799,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 稿子把描边和卡自己那圈 shadow 都撤了，换成卡跟卡之间的一道影：
    每张卡往上投，压在前一张的下缘上（量出来约 16 深、最重 15%）。
    第一张上面没有卡，所以只给「有哥哥的」那些。 */
-.cstack .acard + .acard{margin-top:-85px;
- box-shadow:0 -27px 9.5px -18px rgba(0,0,0,.16)}
+/* 卡高 150，只露 46（稿子 2282:1587 量的 stride），所以往上收 104。
+   投影也跟着换了新值：更贴、更柔。 */
+.cstack .acard + .acard{margin-top:-104px;
+ box-shadow:0 -20px 15px -18px rgba(0,0,0,.15)}
 /* 这里故意不写 touch-action —— 写了 none 就把原生滚动的惯性和减速一起关了，
    经过卡片时手感会发钝。拉皮筋改由 touchmove 按需 preventDefault，见 stackDrag。 */
 .acard:active{filter:brightness(.97)}
@@ -1312,7 +1322,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v65";
+const BUILD = "v66";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6159,7 +6169,8 @@ function render() {
   const tab = v.tab === undefined ? TAB_OF[key] : v.tab;
   app.innerHTML = '<div class="inset"></div><div class="nav' +
     (v.navSplit ? " split" : "") + '">' + v.nav + "</div>" +
-    '<div class="body' + (v.fab ? " hasfab" : "") + '">' + v.body + "</div>" +
+    '<div class="body' + (v.fab ? " hasfab" : "") +
+      (!ui.sheet && (tab || v.fab) ? " dockfade" : "") + '">' + v.body + "</div>" +
     (!ui.sheet && (tab || v.fab) ? dockHtml(tab, v.fab) : "") +
     (ui.sheet ? '<div class="dim' + (ui.anim ? " anim" : "") + '" data-a="close"></div>' +
       /* 语音和打字是「被推上来」的，给一条会过冲的曲线；别的抽屉稳稳滑上来 */
@@ -6240,7 +6251,7 @@ function playFlipBack() {
   }
   below.forEach((c, k) => {
     c.style.transition = "none";
-    c.style.transform = "translateY(" + (24 + k * 9) + "px)";
+    c.style.transform = "translateY(" + (18 + k * 7) + "px)";
   });
   /* 逼浏览器把「让开」这一帧真画出来，不然它会和下面的「归位」合并掉 */
   void card.offsetHeight;
