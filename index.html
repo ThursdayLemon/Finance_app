@@ -1312,7 +1312,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v64";
+const BUILD = "v65";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3376,10 +3376,38 @@ function focusJot() {
   ta.focus();
   ta.setSelectionRange(ta.value.length, ta.value.length);
 }
+/* 抽屉进场排了 400ms，退场却是 0 —— 除了「往下拖着关」那一条路，
+   点遮罩、点按钮、提交完、返回，全都是 render() 一刷、DOM 凭空没了。
+   那不只是少了个装饰：抽屉是从下面升上来的，它该从下面回去，
+   不然「它去哪了」这件事没有交代。
+
+   退场 180，比进场的 400 快一半 —— 走的时候不该让人等。
+
+   难点在这一版是整屏 innerHTML 重绘：退场动画播到一半，
+   随便谁调一次 render()（比如紧跟着的 toast）就把 DOM 冲了。
+   所以这 180ms 里让 render 让路 —— 状态全在 ui/S 上，
+   动画放完那一次 render 会把攒下的变更一起画出来。 */
+let sheetOut = false;
+function closeNow() {
+  ui.sheet = null; ui.f = {}; ui.fStack = []; render();
+}
 function close() {
   /* 抽屉关了麦克风也得关，不然它在后台一直听着 */
   if (typeof micStop === "function") micStop();
-  ui.sheet = null; ui.f = {}; ui.fStack = []; render();
+  const sh = app.querySelector(".sheet");
+  if (!sh || sheetOut) return closeNow();
+  sheetOut = true;
+  const d = app.querySelector(".dim"); if (d) d.classList.add("fading");
+  if (reduced()) {
+    /* 减弱动效时不往下滑，但也别硬切 —— 抽屉没了这件事还是要交代一下，
+       透明度不是位移，该留 */
+    sh.style.transition = "opacity .12s ease"; sh.style.opacity = "0";
+    setTimeout(() => { sheetOut = false; closeNow(); }, 120);
+    return;
+  }
+  sh.classList.add("snap");
+  sh.style.transform = "translateY(110%)";
+  setTimeout(() => { sheetOut = false; closeNow(); }, 180);
 }
 /* 抽屉里再开抽屉（比如新建分类）—— 回来时要把原来填的东西还回去 */
 function pushSheet(name, init) {
@@ -6120,6 +6148,7 @@ function wizardView() {
    编辑完一笔回到列表就弹回顶部，翻了半天的位置全丢。
    同一个屏幕就把 .body 的 scrollTop 接回去；换屏幕才回到顶部（那是对的）。 */
 function render() {
+  if (sheetOut) return;   /* 抽屉正在往下走，别把它冲掉；等它落完一起画 */
   settleAutoGoals();
   if (needsSetup(S)) { app.innerHTML = wizardView(); return; }
   const key = screen();
@@ -6613,7 +6642,7 @@ const endSheetDrag = () => {
     sh.classList.add("snap");
     sh.style.transform = "translateY(110%)";
     const d = app.querySelector(".dim"); if (d) d.classList.add("fading");
-    setTimeout(close, 180);
+    setTimeout(closeNow, 180);   /* 这条路自己放过动画了，别再走一遍 close */
   } else {
     sh.classList.add("snap");
     sh.style.transform = "";
