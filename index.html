@@ -348,7 +348,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
   100% {transform:scale(1.10) translate3d(-1%,2%,0)    rotate(.2deg)}
 }
 /* 系统里关了动效就别动 */
-@media (prefers-reduced-motion: reduce){ .phone::before{animation:none} }
+@media (prefers-reduced-motion: reduce){
+  /* 动画都关了就别再占着合成层 */
+  .phone::before{animation:none;will-change:auto} }
+/* 64 秒的循环，页面切走了就没必要还在跑 */
+:root.bg-still .phone::before{animation-play-state:paused}
 :root[data-skin="briefly"] .phone::before{display:none}
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .phone::before{display:none}
@@ -435,7 +439,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  align-items:center;justify-content:center;background:var(--accent);
  color:var(--on-accent);border:1px solid var(--icon-edge);
  cursor:pointer;touch-action:none;
- transition:background-color .3s cubic-bezier(.32,1.35,.5,1),color .2s ease}
+ /* 颜色不会「冲过头再回来」，过冲曲线套在这儿只是让它变慢 */
+ transition:background-color .2s ease,color .2s ease}
 /* 两侧的槽：换内容的时候淡出淡入，不要硬切 */
 .dockside{flex:1;min-width:0;display:flex;
  transition:opacity .11s ease,transform .11s ease}
@@ -827,10 +832,12 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
  border-radius:var(--r-pill);overflow:hidden;
  background:var(--icon-bg);padding:var(--segpad);font-weight:var(--w-mid)}
 /* 滑块：带一点过冲的曲线，切过去的时候有「重量」 */
-.segpill{position:absolute;top:var(--segpad);bottom:var(--segpad);
+/* 只动 transform：原来动的是 left + width，每切一次 tab 就重排一次版。
+   width 其实从不变（同一组分段里格子一样宽），留着白留。 */
+.segpill{position:absolute;top:var(--segpad);bottom:var(--segpad);left:var(--segpad);
  border-radius:var(--r-pill);
  background:var(--accent);z-index:0;
- transition:left .34s cubic-bezier(.32,1.35,.5,1),width .34s cubic-bezier(.32,1.35,.5,1)}
+ transition:transform .34s cubic-bezier(.32,1.35,.5,1)}
 .seg>span{position:relative;z-index:1;border-radius:var(--r-pill);
  transition:color .18s ease .06s}
 :root[data-skin="briefly"] .seg{--segpad:0px;border-color:var(--ink);
@@ -1305,7 +1312,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v63";
+const BUILD = "v64";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3416,15 +3423,17 @@ const select = (f, opts, val) => '<select class="fldbox" data-f="' + f + '">' +
    滑过去，而不是这边灭那边亮。位置用百分比算，几个选项都通用。 */
 /* 滑块的宽和位置跟着内边距算，奶油纸那套 padding 是 0 也对得上。
    手写 .seg 的那几处（月/年、分类抽屉）也得插这一条，不然选中态就没底了。 */
-const segPill = (i, n) => {
+const segPill = (key, i, n) => {
   const track = "(100% - var(--segpad) * 2)";
-  return '<i class="segpill" style="width:calc(' + track + " / " + n +
-    ');left:calc(var(--segpad) + ' + track + " * " + i + " / " + n + ')"></i>';
+  /* 百分比是相对自己的宽度算的，而自己正好一格宽 —— 所以第 i 格就是 100%*i */
+  return '<i class="segpill" data-seg="' + key + '" data-i="' + i +
+    '" style="width:calc(' + track + " / " + n +
+    ');transform:translateX(calc(100% * ' + i + '))"></i>';
 };
 const seg = (key, opts, val) => {
   const i = Math.max(0, opts.findIndex((o) => o[1] === val));
   const n = opts.length;
-  return '<div class="seg">' + segPill(i, n) +
+  return '<div class="seg">' + segPill(key, i, n) +
     opts.map((o) => '<span class="' + (o[1] === val ? "on" : "") +
       '" data-a="seg:' + key + ":" + o[1] + '">' + o[0] + "</span>").join("") + "</div>";
 };
@@ -6145,6 +6154,26 @@ function render() {
   if (animating) ui.anim = false;
   if (ui.flip) playFlip();
   else if (ui.flipBack) playFlipBack();
+  playSeg();
+}
+
+/* 分段滑块那条 .34s 的过冲曲线，在这之前一次都没跑过 —— render 是整屏
+   重建 innerHTML，滑块每次都是个新元素，新元素没有「上一个位置」，
+   transition 自然无从谈起。这里补上起点：先把它按上一次那格摆好，
+   逼浏览器画一帧，再放它去新那格。 */
+function playSeg() {
+  const was = ui.segWas || (ui.segWas = {});
+  app.querySelectorAll(".segpill").forEach((el) => {
+    const key = el.dataset.seg, now = +el.dataset.i;
+    const prev = was[key];
+    was[key] = now;
+    if (prev == null || prev === now || reduced()) return;
+    el.style.transition = "none";
+    el.style.transform = "translateX(calc(100% * " + prev + "))";
+    void el.offsetHeight;
+    el.style.transition = "";
+    el.style.transform = "translateX(calc(100% * " + now + "))";
+  });
 }
 
 /* 回程。和 playFlip 是同一套，只是这次动的是列表里的那张卡：
@@ -6155,6 +6184,7 @@ function playFlipBack() {
   app.querySelectorAll(".acard").forEach((x) => {
     if (x.dataset.card === ui.jarName) card = x; });
   if (!card) return;
+  if (reduced()) return fadeIn([card]);
   /* 列表是从头渲染的，目标卡可能在屏幕外 —— 先滚到它，再量位置，顺序反了就白量 */
   const body = app.querySelector(".body");
   if (body) {
@@ -6196,7 +6226,9 @@ function playFlipBack() {
     card.style.transition = "transform .36s cubic-bezier(.22,1,.36,1)";
     card.style.transform = "translate(0,0)";
     below.forEach((c, k) => {
-      c.style.transition = "transform .3s " + SPRING + " " + (210 + k * 60) + "ms";
+      /* 延迟封顶 450：卡多的时候排在后面的不该真等那么久 */
+      const wait = Math.min(210 + k * 60, 450);
+      c.style.transition = "transform .3s " + ARRIVE + " " + wait + "ms";
       c.style.transform = "";
     });
   });
@@ -6204,7 +6236,7 @@ function playFlipBack() {
   setTimeout(() => { if (card.isConnected) {
     card.style.transition = ""; card.style.transform = ""; } }, 400);
   setTimeout(() => { below.forEach((c) => { if (c.isConnected) {
-    c.style.transition = ""; c.style.transform = ""; } }); }, 640 + below.length * 60);
+    c.style.transition = ""; c.style.transform = ""; } }); }, 800);
 }
 
 /* 卡从列表里飞到详情页顶上。FLIP：旧位置已经量好了（First），
@@ -6215,6 +6247,7 @@ function playFlip() {
   const from = ui.flip; ui.flip = null;
   const card = app.querySelector(".acard.still");
   if (!card) return;
+  if (reduced()) return fadeIn([card, app.querySelector(".acctlog")]);
   const to = card.getBoundingClientRect();
   const dx = from.left - to.left, dy = from.top - to.top;
   if (!dx && !dy) return;
@@ -6349,11 +6382,13 @@ function paintCardDrag(dy) {
   const k = Math.min(1, dy / 300);
   d.card.style.transition = "none";
   d.card.style.transform = "translateY(" + dy + "px)";
-  /* history 跟着走，但只走 55% —— 有点视差，卡才像是被拉起来的那一层 */
+  /* history 跟着走，但只走 55% —— 有点视差，卡才像是被拉起来的那一层。
+     减弱动效时两层同步走、也不淡出：跟手是必须留的（这一拉会翻页），
+     视差和淡出只是修辞。 */
   const log = app.querySelector(".acctlog");
   if (log) { log.style.transition = "none";
-    log.style.transform = "translateY(" + dy * 0.55 + "px)";
-    log.style.opacity = String(Math.max(0, 1 - k * 1.3)); }
+    log.style.transform = "translateY(" + (reduced() ? dy : dy * 0.55) + "px)";
+    if (!reduced()) log.style.opacity = String(Math.max(0, 1 - k * 1.3)); }
 }
 app.addEventListener("pointermove", (e) => {
   const d = cardDrag; if (!d) return;
@@ -6393,11 +6428,34 @@ app.addEventListener("pointercancel", endCardDrag);
 /* 卡堆往下拉：越靠下的卡走得越远，卡堆就被拉开了（Wallet 那个手感）。
    位移不是线性跟手的 —— 走 rubber() 这条指数饱和曲线，越拉越沉、
    拉到底也就到 RUB_MAX，松手再依次弹回去，像一根橡皮筋。 */
+/* CSS 里那两条 @media (prefers-reduced-motion) 管不到下面这些动画 ——
+   它们的 transition 是 JS 写在 inline style 上的，媒体查询够不着。
+   所以 JS 得自己问一次。开了减弱动效之后：
+     · 位移一律不做，但「这一屏换了」还是要交代 —— 用一次短淡入顶上
+     · 拉皮筋整个停掉：它不改变任何状态，纯装饰，正是该减掉的那类
+     · 下拉返回保留跟手：它会触发导航，是功能性反馈，减掉就没法用了 */
+const REDUCE = window.matchMedia
+  ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+const reduced = () => !!(REDUCE && REDUCE.matches);
+/* 换一屏时用的那次淡入 —— 位移的替身 */
+function fadeIn(els) {
+  els.forEach((el) => { if (!el) return;
+    el.style.transition = "none"; el.style.opacity = "0"; });
+  if (els[0]) void els[0].offsetHeight;
+  els.forEach((el) => { if (!el) return;
+    el.style.transition = "opacity .16s ease"; el.style.opacity = "1"; });
+  setTimeout(() => { els.forEach((el) => { if (el && el.isConnected) {
+    el.style.transition = ""; el.style.opacity = ""; } }); }, 200);
+}
 const RUB_MAX = 170;
 const rubber = (d) => RUB_MAX * (1 - Math.exp(-Math.max(0, d) / RUB_MAX));
+/* 过冲只留给「被拉长的东西弹回去」这一件事 —— 橡皮筋有这个物理，别处没有。
+   其余一律走确定的减速：到位就是到位，不回头。 */
 const SPRING = "cubic-bezier(.2,1.25,.35,1)";
+const ARRIVE = "cubic-bezier(.16,1,.3,1)";
 let stackDrag = null;
 app.addEventListener("pointerdown", (e) => {
+  if (reduced()) return;        /* 拉皮筋不改变任何状态，减弱动效时直接不接管 */
   const stack = e.target.closest(".cstack");
   if (!stack) return;
   const body = app.querySelector(".body");
@@ -6432,12 +6490,12 @@ const endStackDrag = () => {
   if (d.dy > 6) swallowClick = true;   /* 拉过就别再当成点卡 */
   /* 从上往下依次松手 —— 底下那张被拽得最远、最后归位，像鞭子收回来 */
   d.cards.forEach((c, i) => {
-    c.style.transition = "transform .52s " + SPRING + " " + (i * 18) + "ms";
+    c.style.transition = "transform .42s " + SPRING + " " + (i * 18) + "ms";
     c.style.transform = "";
   });
   const cards = d.cards;
   setTimeout(() => { cards.forEach((c) => {
-    if (c.isConnected) c.style.transition = ""; }); }, 560 + cards.length * 18);
+    if (c.isConnected) c.style.transition = ""; }); }, 460 + cards.length * 18);
 };
 /* 只有「按下时就在顶端 + 正在往下拉」这一手才拦，其余一概放行给原生滚动。
    必须在第一次 touchmove 就拦下 —— 让浏览器先滚起来之后再拦是拦不住的。 */
@@ -6489,6 +6547,11 @@ const onPhone = () => matchMedia("(max-width:600px)").matches ||
   matchMedia("(display-mode:standalone)").matches;
 /* 老浏览器不认 overflow:clip 的话，被滚了就滚回去 */
 app.addEventListener("scroll", () => { if (app.scrollTop) app.scrollTop = 0; });
+/* 背景那层 64 秒的循环：页面切到后台就暂停。浏览器多半也会替我们降频，
+   但它只是「多半」，而这一层是常驻的。 */
+document.addEventListener("visibilitychange", () => {
+  document.documentElement.classList.toggle("bg-still", document.hidden);
+});
 if (vv) {
   const syncKb = () => {
     const kb = Math.max(0, window.innerHeight - vv.height);
