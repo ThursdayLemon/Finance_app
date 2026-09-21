@@ -716,8 +716,12 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .tr .circ{width:30px;height:30px;background:var(--icon-bg);border-color:transparent}
 .tr .circ.out{background:var(--warn-tint);border:.5px solid var(--spend-edge)}
 .tr .circ.in{background:var(--good-tint);border:.5px solid var(--good)}
-/* emoji 当图标时：字形自带颜色，别让 .circ 的 color 去染它 */
-.tremo{font-size:16px;line-height:1;display:block}
+/* emoji 当图标时：字形自带颜色，别让 .circ 的 color 去染它。
+   底是 30，这儿给 20 —— 四周各留 5。
+   line-height 压成 1、再用 block 撑成 20 见方：emoji 的字形自带上下
+   空隙，不压的话实际占位会比 20 高，在圆里就偏下。 */
+.tremo{font-size:20px;line-height:1;display:block;
+ width:20px;height:20px;text-align:center}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -1354,7 +1358,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v80";
+const BUILD = "v81";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
