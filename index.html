@@ -522,6 +522,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* Pearl：白玻璃 + 一圈高光边 + 很软的投影。briefly：跟页面底同色、靠描边分层。 */
 .card{border:1px solid var(--edge);border-radius:var(--r);background:var(--surface);
  padding:18px;box-shadow:var(--shadow-card);backdrop-filter:blur(var(--glass))}
+/* .card 默认是 block，里头几个 .fld 会贴在一起。要成摞排的卡加 .stack，
+   间距一次说清（稿子 2328:1908 的个人卡量的是 14）。 */
+.card.stack{display:flex;flex-direction:column;gap:14px}
 .card.tap{cursor:pointer}
 .card.tap:active{background:var(--page)}
 /* 稿子的 CJK/Caption 是 12/16 —— 字号一直对，行高一直没写 */
@@ -530,6 +533,12 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 表单里的标签是另一档：稿子走 Latin/Label 14/18，而且是正文色不是灰色 ——
    它是在问你一个问题，不是旁注 */
 .fld > .lbl{font-size:14px;line-height:18px;color:var(--ink)}
+/* 「我」这一页：栏目之间 14，区块标题也走 Latin/Label 14/18 + 正文色。
+   原来它们吃的是 .lbl 的 12/muted —— 那是旁注的规格，压不住一个栏目。 */
+.setpage{display:flex;flex-direction:column;gap:14px}
+.setpage > .lbl{font-size:14px;line-height:18px;color:var(--ink)}
+/* 紧跟在标题后面的说明，往上收一点，别被 14 的栏目间距推开 */
+.setpage > .lbl + .sub{margin-top:-10px}
 /* ---- 排版 ------------------------------------------------------------------
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
    三套字各管一摊：
@@ -778,8 +787,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .row{min-height:54px;display:flex;align-items:center;gap:11px;padding:7px 0;
  border-bottom:1px solid var(--line)}
 .card .row:last-child{border-bottom:0}
-.chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:4px 11px;
- font-size:11px;background:rgba(255,255,255,.6);color:var(--ink);
+.chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:6px 13px;
+ font-size:14px;line-height:18px;background:rgba(255,255,255,.6);color:var(--ink);
  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
 :root[data-skin="briefly"] .chip{border-color:var(--ink);background:transparent;
  font-family:var(--font-mono)}
@@ -793,9 +802,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .chip .tag-x{margin:-4px -8px -4px -1px;padding:4px 8px;display:inline-flex;align-items:center;
  color:var(--ink-faint)}
 .chip .tag-x:active{color:var(--ink)}
+/* 字重跟着稿子走 Regular —— 原来写死 500，在 Onest 上明显更粗一档 */
 .mbtn{min-height:50px;border:1px solid var(--edge);background:var(--icon-bg);
  border-radius:var(--r-pill);display:flex;align-items:center;
- justify-content:center;gap:7px;font-size:15px;font-weight:500;background:var(--surface);padding:0 14px;
+ justify-content:center;gap:7px;font-size:15px;font-weight:var(--w-body);background:var(--surface);padding:0 14px;
  cursor:pointer;text-align:center;color:var(--ink);box-shadow:var(--shadow-btn)}
 .mbtn:active{transform:translateY(1px)}
 .mbtn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
@@ -1377,7 +1387,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v87";
+const BUILD = "v88";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1817,7 +1827,7 @@ zh: {
   "pf.emoji": "头像", "pf.payday": "发薪日",
   "pf.paydayPh": "几号", "pf.paydayNone": "没设",
   "pf.paydayHint": "每月几号进账。设了之后，可用余额会告诉你还要撑几天，买不买测验也会把它算进去。",
-  "pf.privacy": "只有这两样，而且都只存在这台设备上 —— 这个 app 没有账号，也没地方上传。",
+  "pf.privacy": "只存在这台设备上。",
   "mo.tillPayday": (v) => "离发薪还有 " + v.n + " 天",
   "mo.paydayToday": "今天发薪",
   "bd.paydayRow": (v) => "离发薪还有 " + v.n + " 天",
@@ -2308,7 +2318,7 @@ en: {
   "pf.emoji": "Avatar", "pf.payday": "Payday",
   "pf.paydayPh": "Date", "pf.paydayNone": "Not set",
   "pf.paydayHint": "Which day of the month you get paid. Once it's set, your balance tells you how many days it has to last, and the buy-or-not test takes it into account.",
-  "pf.privacy": "Just these two, and they stay on this device \u2014 this app has no account and nowhere to upload them.",
+  "pf.privacy": "Stays on this device only.",
   "mo.tillPayday": (v) => v.n + (v.n === 1 ? " day" : " days") + " until payday",
   "mo.paydayToday": "Payday is today",
   "bd.paydayRow": (v) => v.n + " days until payday",
@@ -3263,6 +3273,11 @@ const PF = {
   /* 字标左边那颗六点章（稿子 2282:1365，Figma 里叫 speak）。
      六个斜椭圆围一圈 —— 这儿叫 markDots，免得和语音那条路撞名字。 */
   markDots: ['0 0 17 17', '<path d="M10.2836 5.25247C11.0561 5.69844 12.0438 5.43378 12.4898 4.66134C12.9357 3.88889 12.6711 2.90117 11.8986 2.4552C11.1262 2.00923 10.1385 2.27389 9.6925 3.04634C9.24653 3.81878 9.51119 4.8065 10.2836 5.25247Z"/><path d="M5.28363 14.6271C6.05607 15.0731 7.04379 14.8084 7.48976 14.036C7.93573 13.2635 7.67107 12.2758 6.89863 11.8298C6.12619 11.3839 5.13847 11.6485 4.6925 12.421C4.24653 13.1934 4.51119 14.1811 5.28363 14.6271Z"/><path d="M5.28363 5.32315C6.05607 5.76912 7.04379 5.50446 7.48976 4.73201C7.93573 3.95957 7.67107 2.97185 6.89863 2.52588C6.12619 2.07991 5.13847 2.34457 4.6925 3.11701C4.24653 3.88946 4.51119 4.87718 5.28363 5.32315Z"/><path d="M12.8403 10.1048C13.6127 10.5507 14.6004 10.2861 15.0464 9.51363C15.4924 8.74119 15.2277 7.75347 14.4553 7.3075C13.6828 6.86153 12.6951 7.12619 12.2491 7.89863C11.8032 8.67107 12.0678 9.65879 12.8403 10.1048Z"/><path d="M2.63226 10.1048C3.40471 10.5507 4.39243 10.2861 4.83839 9.51363C5.28436 8.74119 5.01971 7.75347 4.24726 7.3075C3.47482 6.86153 2.4871 7.12619 2.04113 7.89863C1.59516 8.67107 1.85982 9.65879 2.63226 10.1048Z"/><path d="M10.2836 14.6807C11.0561 15.1267 12.0438 14.862 12.4898 14.0896C12.9357 13.3171 12.6711 12.3294 11.8986 11.8834C11.1262 11.4375 10.1385 11.7021 9.6925 12.4746C9.24653 13.247 9.51119 14.2347 10.2836 14.6807Z"/>'],
+  /* 「你的数据」那三颗的图标，从稿子 2328:1908 导出的原件。
+     写死的 white 去掉 —— 这三颗按钮是深底白字，颜色由按钮的 color 管。 */
+  export: ['0 0 20 20', '<path d="M9.1665 13.3333H10.8332V5.83329H13.3332L9.99984 1.66663L6.6665 5.83329H9.1665V13.3333Z"/><path d="M4.16667 18.3333H15.8333C16.7525 18.3333 17.5 17.5858 17.5 16.6667V9.16667C17.5 8.2475 16.7525 7.5 15.8333 7.5H12.5V9.16667H15.8333V16.6667H4.16667V9.16667H7.5V7.5H4.16667C3.2475 7.5 2.5 8.2475 2.5 9.16667V16.6667C2.5 17.5858 3.2475 18.3333 4.16667 18.3333Z"/>'],
+  revert: ['0 0 20 20', '<path d="M6.66667 2.5L2.5 6.66667L6.66667 10.8333M10 16.6667H12.5C13.1566 16.6667 13.8068 16.5373 14.4134 16.2861C15.02 16.0348 15.5712 15.6665 16.0355 15.2022C16.4998 14.7379 16.8681 14.1867 17.1194 13.5801C17.3707 12.9735 17.5 12.3233 17.5 11.6667C17.5 11.0101 17.3707 10.3599 17.1194 9.75325C16.8681 9.14662 16.4998 8.59543 16.0355 8.13113C15.5712 7.66684 15.02 7.29854 14.4134 7.04727C13.8068 6.796 13.1566 6.66667 12.5 6.66667H3.33333"/>', "stroke", 1.5],
+  wipeIcon: ['0 0 24 24', '<path d="M22.3914 12.085L15.9594 3.55005L7.06787 10.25L13.7504 18.5L15.4284 17.332L22.3914 12.085Z" stroke-linejoin="round"/><path d="M13.7502 18.5L11.8307 20.0375L6.54921 20.037L5.24921 18.312L2.03271 14.044L7.25021 10.1125" stroke-linejoin="round"/><path d="M6.60303 20.036H22.283" stroke-linecap="round"/>', "stroke", 1.5],
   mic: ['3 3 24 24', '<path d="M15 8.15391C17.3545 8.15391 19.2633 7.03218 19.2633 5.64844C19.2633 4.26471 17.3545 3.14297 15 3.14297C12.6454 3.14297 10.7367 4.26471 10.7367 5.64844C10.7367 7.03218 12.6454 8.15391 15 8.15391Z"/><path d="M15 26.857C17.3545 26.857 19.2633 25.7353 19.2633 24.3516C19.2633 22.9678 17.3545 21.8461 15 21.8461C12.6454 21.8461 10.7367 22.9678 10.7367 24.3516C10.7367 25.7353 12.6454 26.857 15 26.857Z"/><path d="M9.03385 23.3674C10.2322 22.6755 10.2493 20.4617 9.07201 18.4226C7.89474 16.3835 5.96892 15.2913 4.77057 15.9832C3.57222 16.6751 3.55514 18.8889 4.73241 20.928C5.90968 22.9671 7.8355 24.0593 9.03385 23.3674Z"/><path d="M25.2298 14.0171C26.4281 13.3252 26.4452 11.1113 25.2679 9.07223C24.0907 7.03313 22.1648 5.94099 20.9665 6.63285C19.7681 7.32472 19.7511 9.5386 20.9283 11.5777C22.1056 13.6168 24.0314 14.7089 25.2298 14.0171Z"/><path d="M25.3551 20.8363C26.5324 18.7878 26.5108 16.5664 25.307 15.8745C24.1031 15.1826 22.1729 16.2824 20.9956 18.3308C19.8183 20.3793 19.8399 22.6008 21.0437 23.2926C22.2476 23.9845 24.1778 22.8848 25.3551 20.8363Z"/><path d="M9.07054 11.5771C10.2478 9.53797 10.2307 7.32408 9.03238 6.63222C7.83404 5.94035 5.90822 7.0325 4.73094 9.07159C3.55367 11.1107 3.57076 13.3246 4.7691 14.0164C5.96745 14.7083 7.89327 13.6162 9.07054 11.5771Z"/>'],
 };
 const ic = (n, s = 20, c) => {
@@ -4560,7 +4575,9 @@ SCREENS.settings = () => {
     '<span class="tag-x" data-a="delCat:' + c + '">' + ic("close", 11) + "</span></div>";
   return { tab: null,
     nav: navBack() + '<div class="navt" style="flex:1">' + t("nav.me") + "</div>",
-    body:
+    /* 整页包一层 .setpage：栏目间距和区块标题的字号字色在那一层统一管，
+       不用给十几个 .lbl 逐个挂样式 */
+    body: '<div class="setpage">' +
       '<div class="lbl">' + t("bk.title") + "</div>" +
       '<div class="card" style="margin-top:-4px">' +
       /* 只有一本时不列表，免得给还没用上这功能的人平添一栏 */
@@ -4577,15 +4594,15 @@ SCREENS.settings = () => {
           '" style="color:var(--ink-faint);padding:0 2px">' + ic("trash", 15) +
           "</span></div>";
       }).join("") : "") +
-      '<div class="dash" data-a="newBook">' + ic("plus", 16) + " " + t("bk.new") +
-      "</div>" +
+      '<div class="dash" data-a="newBook" style="margin-top:12px">' + ic("plus", 16) +
+      " " + t("bk.new") + "</div>" +
       '<div class="sub" style="font-size:11px;margin-top:8px">' + t("bk.hint") +
       "</div></div>" +
 
       /* 稿子 2328:1908 把账本排在了个人前面 —— 账本是「你在哪一本」，
          是这一页其余设置的前提；个人那两样是附属的。
          个人那一块的标题也去掉了：卡里两个带标签的字段已经说清是什么。 */
-      '<div class="card">' +
+      '<div class="card stack">' +
       field(t("pf.name"), input("pfname", prof().name,
         'placeholder="' + esc(t("pf.namePh")) + '"')) +
       field(t("pf.payday"), '<div style="display:flex;align-items:center;gap:10px">' +
@@ -4599,8 +4616,7 @@ SCREENS.settings = () => {
               : t("mo.tillPayday", { n: daysToPayday() })) + "</div>"
           : '<div class="sub" style="white-space:nowrap">' + t("pf.paydayNone") + "</div>") +
         "</div>", t("pf.paydayHint")) +
-      '<div class="sub" style="font-size:11px;margin-top:2px">' + t("pf.privacy") +
-      "</div></div>" +
+      '<div class="sub" style="font-size:11px">' + t("pf.privacy") + "</div></div>" +
 
       '<div class="fld"><div class="lbl">' + t("set.mode") + "</div>" +
       seg("mode", [[t("set.modeSave"), "save"], [t("set.modeComfort"), "comfort"]],
@@ -4628,7 +4644,6 @@ SCREENS.settings = () => {
 
 
       '<div class="lbl" style="margin-top:6px">' + t("set.cats") + "</div>" +
-      '<div class="sub" style="margin-top:-8px">' + t("set.catsHint") + "</div>" +
       '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
       SYS_CATS.map((c) => '<div class="chip flat" style="color:var(--ink-muted)">' +
         catEmoji(c) + " " + catLabel(c) + "</div>").join("") +
@@ -4682,14 +4697,14 @@ SCREENS.settings = () => {
       '<div class="sub" style="margin-top:-8px">' + t("set.dataHint") + "</div>" +
       /* 稿子 2328:1908：这三颗从描边改成实底白字 —— 它们是这一页仅有的
          「会动到全部数据」的操作，描边样式压不住。清空那颗走橙（--bad）。 */
-      '<div class="mbtn pri" data-a="exportData">' + ic("down", 15) + " " +
+      '<div class="mbtn pri" data-a="exportData">' + ic("export", 18) + " " +
       t("set.export") + "</div>" +
-      '<div class="mbtn pri" data-a="importData">' + ic("loop", 15) + " " +
+      '<div class="mbtn pri" data-a="importData">' + ic("revert", 18) + " " +
       t("set.import") + "</div>" +
       '<input type="file" accept="application/json,.json" id="importfile" ' +
       'style="display:none">' +
       '<div class="mbtn pri" data-a="wipeData" style="background:' + RED +
-      ";border-color:" + RED + '">' + ic("trash", 15) + " " + t("set.wipe") + "</div>" +
+      ";border-color:" + RED + '">' + ic("wipeIcon", 18) + " " + t("set.wipe") + "</div>" +
       '<div class="mbtn sm" data-a="loadDemo">' + t("set.demo") + "</div>" +
 
       '<div style="display:flex;align-items:center;justify-content:center;gap:7px;' +
@@ -4704,7 +4719,7 @@ SCREENS.settings = () => {
           window.innerHeight + "/" + (screen.height || "?") +
           (window.matchMedia("(display-mode:standalone)").matches ||
             navigator.standalone ? " · standalone" : "");
-      })() + "</div>" };
+      })() + "</div>" + "</div>" };
 };
 
 /* --- 结果页的几块，测验后和清单详情共用 ------------------------------- */
