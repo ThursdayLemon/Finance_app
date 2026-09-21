@@ -58,6 +58,8 @@
   --surface:rgba(255,255,255,.8);    /* 玻璃卡。稿子从 60 提到了 80 */
   --sunken:rgba(255,255,255,.5);     /* 内嵌块、只读框 */
   --field:#ffffff;          /* 输入框 */
+  --field-bg:#ececea;       /* 输入框底（稿子 2328:1908）*/
+  --field-edge:#dbdbdb;
   --edge:rgba(255,255,255,.95);      /* 卡片那圈高光边 */
   --line:#ececea;           /* 卡片内部的分隔线 */
   --accent:#414140;
@@ -523,7 +525,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .card.tap{cursor:pointer}
 .card.tap:active{background:var(--page)}
 /* 稿子的 CJK/Caption 是 12/16 —— 字号一直对，行高一直没写 */
+/* 稿子的 CJK/Caption 是 12/16 —— 字号一直对，行高一直没写 */
 .lbl,.sub{font-size:12px;line-height:16px;color:var(--ink-muted)}
+/* 表单里的标签是另一档：稿子走 Latin/Label 14/18，而且是正文色不是灰色 ——
+   它是在问你一个问题，不是旁注 */
+.fld > .lbl{font-size:14px;line-height:18px;color:var(--ink)}
 /* ---- 排版 ------------------------------------------------------------------
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
    三套字各管一摊：
@@ -868,8 +874,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  color:var(--ink-muted);font-size:15px;cursor:pointer}
 .dash:active{background:var(--press)}
 .fld{display:flex;flex-direction:column;gap:5px}
-.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--edge);
- background:var(--icon-bg);border-radius:var(--r-md);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
+/* 稿子 2328:1908 的 fldbox：实的浅灰底 + 灰描边，不再是 40% 白 + 白边。
+   白底白边在珠光背景上几乎看不出边界，输入框得先让人看见它是个框。
+   底色正好是 --line 那个值；描边比它深一档，单开一个变量。 */
+.fldbox,input.fldbox,select.fldbox{min-height:48px;border:1px solid var(--field-edge);
+ background:var(--field-bg);border-radius:var(--r-md);display:flex;align-items:center;padding:0 12px;font-size:15px;gap:8px;
  font-family:inherit;color:inherit;width:100%}
 input.fldbox,select.fldbox{-webkit-appearance:none;appearance:none}
 input.fldbox:focus,select.fldbox:focus{outline:none;border-color:var(--ink);border-width:1.5px}
@@ -1368,7 +1377,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v86";
+const BUILD = "v87";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1437,6 +1446,7 @@ zh: {
   "cat.food": "餐饮", "cat.transport": "交通", "cat.fun": "娱乐",
   "cat.shopping": "购物", "cat.social": "人情往来", "cat.salary": "工资",
   "cat.bills": "账单", "cat.clothes": "服饰", "cat.gym": "健身", "cat.pet": "宠物",
+  "cat.coffee": "咖啡", "cat.wellness": "身心",
   "cat.other": "其他",
 
   "yr.empty": (v) => v.y + " 年还没有任何记录。",
@@ -1884,6 +1894,7 @@ en: {
   "cat.food": "Food", "cat.transport": "Transport", "cat.fun": "Fun",
   "cat.shopping": "Shopping", "cat.social": "Gifts", "cat.salary": "Salary",
   "cat.bills": "Bills", "cat.clothes": "Clothes", "cat.gym": "Gym", "cat.pet": "Pet",
+  "cat.coffee": "Coffee", "cat.wellness": "Wellness",
   "cat.other": "Other",
 
   "yr.empty": (v) => "Nothing recorded in " + v.y + " yet.",
@@ -2295,7 +2306,7 @@ en: {
   "set.profile": "You",
   "pf.name": "Name", "pf.namePh": "What should I call you",
   "pf.emoji": "Avatar", "pf.payday": "Payday",
-  "pf.paydayPh": "Day", "pf.paydayNone": "Not set",
+  "pf.paydayPh": "Date", "pf.paydayNone": "Not set",
   "pf.paydayHint": "Which day of the month you get paid. Once it's set, your balance tells you how many days it has to last, and the buy-or-not test takes it into account.",
   "pf.privacy": "Just these two, and they stay on this device \u2014 this app has no account and nowhere to upload them.",
   "mo.tillPayday": (v) => v.n + (v.n === 1 ? " day" : " days") + " until payday",
@@ -2599,10 +2610,12 @@ zh: {
      clothes 必须排在 shopping 前面，不然全落进购物。
      「狗」不单列 —— 热狗是饭不是宠物；「猫」也不单列，猫眼电影是电影。 */
   cats: [
-    ["food", ["吃", "饭", "拉面", "咖啡", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食",
+    ["food", ["吃", "饭", "拉面", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食",
       "买菜", "生鲜", "菜市场"]],
     /* 顺序跟英文那张表对齐 —— 中文没有 train 那种子串问题，
        但两张表排得一样，以后改一边才会想起来另一边 */
+    ["coffee", ["咖啡", "拿铁", "美式", "星巴克", "瑞幸", "手冲", "奶茶", "卡布"]],
+    ["wellness", ["按摩", "spa", "推拿", "针灸", "理疗", "冥想", "汗蒸", "心理咨询"]],
     ["gym", ["健身", "健身房", "私教", "瑜伽", "普拉提", "游泳", "跑步机", "羽毛球",
       "球馆", "训练课"]],
     ["clothes", ["衣服", "裤子", "鞋", "外套", "裙子", "T恤", "袜子", "内衣",
@@ -2699,13 +2712,17 @@ en: {
      顺序即优先级：clothes 要在 shopping 前（shoes/clothes 两边都有），
      bills 放最后（"rent" 会咬到 parent/current，让前面的表先挑完）。 */
   cats: [
-    ["food", ["lunch", "dinner", "breakfast", "brunch", "coffee", "cafe", "café",
+    ["food", ["lunch", "dinner", "breakfast", "brunch",
       "restaurant", "takeaway", "takeout", "pizza", "snack", "ate", "eating out"]],
     /* 这三个排在 transport 前面都是因为一个词：train。
        "trainers"（鞋）和 "personal trainer"（私教）都含它，排后面全成了交通。
        gym 又得排在 clothes 前 —— "personal trainer" 里也含 "trainer"。
        反向不会出事："train ticket" 不含这两张表里的任何一个词。
        "membership" 不单列：Prime membership 不是健身房。 */
+    ["coffee", ["coffee", "cafe", "caf\u00e9", "latte", "espresso", "flat white",
+      "cappuccino", "starbucks", "costa", "pret"]],
+    ["wellness", ["massage", "spa", "facial", "therapy", "counselling",
+      "meditation", "acupuncture", "sauna"]],
     ["gym", ["gym", "fitness", "workout", "pilates", "yoga", "personal trainer",
       "peloton", "climbing", "swimming"]],
     ["clothes", ["clothes", "clothing", "shoes", "trainers", "jacket", "coat",
@@ -3288,8 +3305,10 @@ const ADVICE = (v, dup) => v === "red" ? t(dup ? "advice.redDup" : "advice.red")
    等于把一种语言焊死进数据里。用户自己加的分类保持原样：那是内容，不翻译。 */
 /* 展示顺序按「一个月里占多大」排，不是解析顺序 —— 解析那张表在 RULES 里，
    它得按「谁容易被谁抢走」排，两张表的顺序本来就不该一样 */
+/* coffee / wellness 是稿子 2328:1908 新加的，排在 other 后面 —— 照稿子的次序。
+   （other 通常压阵，这儿它在中间；要挪回最后说一声。） */
 const SYS_CATS = ["food", "transport", "bills", "clothes", "gym", "pet",
-  "fun", "shopping", "social", "salary", "other"];
+  "fun", "shopping", "social", "salary", "other", "coffee", "wellness"];
 const catLabel = (c) => { const k = t("cat." + c); return k === "cat." + c ? c : k; };
 const allCats = () => SYS_CATS.concat(S.customCats || []);
 /* 选分类的时候也看得见图标，跟账本行上是同一个 */
@@ -4215,7 +4234,7 @@ const CAT_WORDS = [
    而这一列是一眼扫过去的东西，不能有的彩有的不彩。 */
 const CAT_EMOJI = { food: "🍜", transport: "🚕", bills: "🧾", clothes: "👕",
   gym: "💪", pet: "🐾", fun: "🎬", shopping: "🛒", social: "🎁",
-  salary: "💰", other: "📌" };
+  salary: "💰", other: "👀", coffee: "☕️", wellness: "🧘🏻" };
 /* 自定义分类走和描述同一张词表（DESC_EMOJI，在下面）——
    原来这儿另有一张十二条的小表，跟那张四十多条的重复了一大半，
    结果「香水」这种分类名在描述里认得出、当分类名就认不出。一张表就够。
@@ -4542,24 +4561,6 @@ SCREENS.settings = () => {
   return { tab: null,
     nav: navBack() + '<div class="navt" style="flex:1">' + t("nav.me") + "</div>",
     body:
-      '<div class="lbl">' + t("set.profile") + "</div>" +
-      '<div class="card" style="margin-top:-4px">' +
-      field(t("pf.name"), input("pfname", prof().name,
-        'placeholder="' + esc(t("pf.namePh")) + '"')) +
-      field(t("pf.payday"), '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div style="flex:1">' +
-        input("pfpayday", prof().payday == null ? "" : prof().payday,
-          'type="text" inputmode="numeric" placeholder="' + esc(t("pf.paydayPh")) + '"') +
-        "</div>" +
-        (daysToPayday() != null
-          ? '<div class="sub" style="white-space:nowrap">' +
-            (daysToPayday() === 0 ? t("mo.paydayToday")
-              : t("mo.tillPayday", { n: daysToPayday() })) + "</div>"
-          : '<div class="sub" style="white-space:nowrap">' + t("pf.paydayNone") + "</div>") +
-        "</div>", t("pf.paydayHint")) +
-      '<div class="sub" style="font-size:11px;margin-top:2px">' + t("pf.privacy") +
-      "</div></div>" +
-
       '<div class="lbl">' + t("bk.title") + "</div>" +
       '<div class="card" style="margin-top:-4px">' +
       /* 只有一本时不列表，免得给还没用上这功能的人平添一栏 */
@@ -4579,6 +4580,26 @@ SCREENS.settings = () => {
       '<div class="dash" data-a="newBook">' + ic("plus", 16) + " " + t("bk.new") +
       "</div>" +
       '<div class="sub" style="font-size:11px;margin-top:8px">' + t("bk.hint") +
+      "</div></div>" +
+
+      /* 稿子 2328:1908 把账本排在了个人前面 —— 账本是「你在哪一本」，
+         是这一页其余设置的前提；个人那两样是附属的。
+         个人那一块的标题也去掉了：卡里两个带标签的字段已经说清是什么。 */
+      '<div class="card">' +
+      field(t("pf.name"), input("pfname", prof().name,
+        'placeholder="' + esc(t("pf.namePh")) + '"')) +
+      field(t("pf.payday"), '<div style="display:flex;align-items:center;gap:10px">' +
+        '<div style="flex:1">' +
+        input("pfpayday", prof().payday == null ? "" : prof().payday,
+          'type="text" inputmode="numeric" placeholder="' + esc(t("pf.paydayPh")) + '"') +
+        "</div>" +
+        (daysToPayday() != null
+          ? '<div class="sub" style="white-space:nowrap">' +
+            (daysToPayday() === 0 ? t("mo.paydayToday")
+              : t("mo.tillPayday", { n: daysToPayday() })) + "</div>"
+          : '<div class="sub" style="white-space:nowrap">' + t("pf.paydayNone") + "</div>") +
+        "</div>", t("pf.paydayHint")) +
+      '<div class="sub" style="font-size:11px;margin-top:2px">' + t("pf.privacy") +
       "</div></div>" +
 
       '<div class="fld"><div class="lbl">' + t("set.mode") + "</div>" +
@@ -4659,17 +4680,17 @@ SCREENS.settings = () => {
 
       '<div class="lbl" style="margin-top:6px">' + t("set.data") + "</div>" +
       '<div class="sub" style="margin-top:-8px">' + t("set.dataHint") + "</div>" +
-      '<div style="display:flex;gap:9px">' +
-      '<div class="mbtn sm" data-a="exportData" style="flex:1">' + ic("down", 15) + " " +
+      /* 稿子 2328:1908：这三颗从描边改成实底白字 —— 它们是这一页仅有的
+         「会动到全部数据」的操作，描边样式压不住。清空那颗走橙（--bad）。 */
+      '<div class="mbtn pri" data-a="exportData">' + ic("down", 15) + " " +
       t("set.export") + "</div>" +
-      '<div class="mbtn sm" data-a="importData" style="flex:1">' + t("set.import") +
-      "</div></div>" +
+      '<div class="mbtn pri" data-a="importData">' + ic("loop", 15) + " " +
+      t("set.import") + "</div>" +
       '<input type="file" accept="application/json,.json" id="importfile" ' +
       'style="display:none">' +
-      '<div style="display:flex;gap:9px">' +
-      '<div class="mbtn sm" data-a="loadDemo" style="flex:1">' + t("set.demo") + "</div>" +
-      '<div class="mbtn sm" data-a="wipeData" style="flex:1;color:' + RED +
-      ";border-color:" + RED + '">' + t("set.wipe") + "</div></div>" +
+      '<div class="mbtn pri" data-a="wipeData" style="background:' + RED +
+      ";border-color:" + RED + '">' + ic("trash", 15) + " " + t("set.wipe") + "</div>" +
+      '<div class="mbtn sm" data-a="loadDemo">' + t("set.demo") + "</div>" +
 
       '<div style="display:flex;align-items:center;justify-content:center;gap:7px;' +
       'padding:14px 0 2px;color:var(--ink-muted);font-size:12px">' + ic("check", 14) +
