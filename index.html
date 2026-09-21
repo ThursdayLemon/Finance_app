@@ -799,6 +799,13 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .tdot::after{content:"";position:absolute;left:50%;top:50%;
  transform:translate(-50%,-50%);width:44px;height:44px}
 .tdot.on{outline:2px solid var(--ink);outline-offset:3px}
+/* emoji 头像沿用色点那一套的排布和热区，只是画的是字不是底色 */
+.adot{width:34px;height:34px;border-radius:50%;cursor:pointer;position:relative;
+ display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;
+ background:var(--btn-bg);border:1px solid var(--icon-edge)}
+.adot::after{content:"";position:absolute;left:50%;top:50%;
+ transform:translate(-50%,-50%);width:44px;height:44px}
+.adot.on{outline:2px solid var(--ink);outline-offset:3px}
 .totblk{text-align:center;padding:12px 0 20px}
 .totblk .big{margin:2px 0 4px}
 .cstack{display:flex;flex-direction:column}
@@ -1052,6 +1059,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 :root[data-skin="briefly"] .avatar{width:38px;height:38px;background:var(--mark);
  color:var(--on-tint);border:0}
 .avatar:active{background:var(--press)}
+/* emoji 头像：字形本身就带色，别让 .avatar 的 color 影响它 */
+.avem{font-size:19px;line-height:1;display:block}
 /* ---- 结果页（稿子 34:454）-------------------------------------------
    一张实底卡（不是玻璃），从上往下：点阵表盘、名字+价格（居中）、
    判定文字。判定那块在稿子里底色和描边都关掉了 —— 它不是一张子卡，
@@ -1338,7 +1347,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v71";
+const BUILD = "v72";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1760,6 +1769,16 @@ zh: {
   "advice.amber": "不是非要不可，或者占掉太多闲钱。放 48 小时再说。",
   "advice.red": "已被拦截：它占你可用预算的比重太大，必要度又不够高。",
   "advice.redDup": "已被拦截：你在储蓄模式下，而且已经有类似的东西了。",
+  "set.profile": "个人",
+  "pf.name": "称呼", "pf.namePh": "怎么称呼你",
+  "pf.emoji": "头像", "pf.payday": "发薪日",
+  "pf.paydayPh": "几号", "pf.paydayNone": "没设",
+  "pf.paydayHint": "每月几号进账。设了之后，可用余额会告诉你还要撑几天，买不买测验也会把它算进去。",
+  "pf.privacy": "只有这三样，而且都只存在这台设备上 —— 这个 app 没有账号，也没地方上传。",
+  "mo.tillPayday": (v) => "离发薪还有 " + v.n + " 天",
+  "mo.paydayToday": "今天发薪",
+  "bd.paydayRow": (v) => "离发薪还有 " + v.n + " 天",
+  "re.payday": "离发薪还远",
   "set.mode": "财务模式", "set.modeSave": "储蓄模式", "set.modeComfort": "舒适模式",
   "set.modeHint": "对价格更苛刻，红灯更容易亮。",
   "set.fixedIn": "固定收入",
@@ -2228,6 +2247,16 @@ en: {
   "advice.red": "Blocked: it takes too big a bite out of your budget and you don't " +
     "need it enough.",
   "advice.redDup": "Blocked: you're saving hard, and you already own something like it.",
+  "set.profile": "You",
+  "pf.name": "Name", "pf.namePh": "What should I call you",
+  "pf.emoji": "Avatar", "pf.payday": "Payday",
+  "pf.paydayPh": "Day", "pf.paydayNone": "Not set",
+  "pf.paydayHint": "Which day of the month you get paid. Once it's set, your balance tells you how many days it has to last, and the buy-or-not test takes it into account.",
+  "pf.privacy": "Just these three, and they stay on this device \u2014 this app has no account and nowhere to upload them.",
+  "mo.tillPayday": (v) => v.n + (v.n === 1 ? " day" : " days") + " until payday",
+  "mo.paydayToday": "Payday is today",
+  "bd.paydayRow": (v) => v.n + " days until payday",
+  "re.payday": "payday being a way off",
   "set.mode": "How strict should I be?", "set.modeSave": "Saving hard",
   "set.modeComfort": "Comfortable",
   "set.modeHint": "Harder on price — the red light comes up sooner.",
@@ -2287,22 +2316,55 @@ en: {
 },
 };
 
+/* 个人这一块只有三样，而且都得对这个 app 有用：
+   称呼（文案能叫人）、头像（emoji，不是上传照片 —— 不要权限也不占 localStorage）、
+   发薪日（唯一能长出功能的那个：余额还要撑几天、买不买测验的松紧）。
+   邮箱电话职业一个都没有：这个 app 没有服务器也没有账号，存了也没人读。
+   老档案没有 profile 这个字段，这儿兜一次底，不用写迁移。 */
+const prof = () => S.profile || (S.profile = { name: "", emoji: "", payday: null });
+const AVATARS = ["🙂", "😌", "🧑", "👩", "👨", "🧔", "🐱", "🐶", "🦊", "🐼", "🌿", "⭐️"];
+
+/* 离下次发薪还有几天。没设发薪日就返回 null —— 后面每一处都靠这个 null
+   来决定「装作没这回事」，不能让没填的人凭空多出一条规则。
+   31 号发薪遇到 2 月怎么办：按当月最后一天算。 */
+function daysToPayday() {
+  const d = prof().payday;
+  if (!d) return null;
+  const iso = today();
+  const y = +iso.slice(0, 4), mo = +iso.slice(5, 7), day = +iso.slice(8, 10);
+  const dim = new Date(y, mo, 0).getDate();
+  const pay = Math.min(d, dim);
+  if (day <= pay) return pay - day;
+  const nextDim = new Date(y, mo + 1, 0).getDate();
+  return (dim - day) + Math.min(d, nextDim);
+}
+
 const FLOOR_RATIO = 0.05;
 const floorBudget = (income) => Math.max(0, Math.round(income * FLOOR_RATIO));
 
-function evaluatePurchase(price, budget, necessity, saveMode, dup) {
+/* days = 离发薪还有几天，没设发薪日时传 null。
+   同样一笔钱，月初花和月底花不是一回事 —— 离发薪越远，剩下的要撑越久。
+   封顶 12 分是有意的：它该在绿和黄的临界处起作用，不该自己把一个
+   本来很合理的购买按成红灯。没设发薪日的人这一项恒为 0，
+   分数和以前一模一样。 */
+const paydayPenalty = (days, saveMode) =>
+  days == null ? 0 : Math.min(12, (days / 30) * (saveMode ? 12 : 6));
+
+function evaluatePurchase(price, budget, necessity, saveMode, dup, days) {
   const base = necessity * 10;
   const ratio = budget > 0 ? (price / budget) * 100 : 100;
   const incomePenalty = ratio * (saveMode ? 4 : 1.5);
   const modePenalty = saveMode ? 10 : 0;
   const dupPenalty = dup ? (saveMode ? 40 : 15) * Math.min(1, ratio / 1) : 0;
+  const payPenalty = paydayPenalty(days == null ? null : days, saveMode);
   const score = Math.max(0, Math.min(100,
-    base - incomePenalty - dupPenalty - modePenalty));
+    base - incomePenalty - dupPenalty - modePenalty - payPenalty));
   const r1 = (n) => Math.round(n * 10) / 10;
   return {
     score: r1(score), base: r1(base), ratio: Math.round(ratio * 100) / 100,
     incomePenalty: r1(incomePenalty), dupPenalty: r1(dupPenalty),
-    modePenalty: r1(modePenalty), saveMode, dup,
+    modePenalty: r1(modePenalty), payPenalty: r1(payPenalty), payDays: days,
+    saveMode, dup,
     verdict: score >= 75 ? "green" : score >= 45 ? "amber" : "red",
   };
 }
@@ -3252,7 +3314,7 @@ function emptySeed() {
   const lang0 = sys.startsWith("zh") ? "zh" : "en";
   const cur0 = sys.startsWith("zh") ? "CNY" : sys.endsWith("-gb") ? "GBP" : "USD";
   return { saveMode: true, cooldownHours: 48, currency: cur0, lang: lang0, theme: "auto",
-    customCats: [], lifeGoal: null,
+    customCats: [], lifeGoal: null, profile: { name: "", emoji: "", payday: null },
     fixedIn: [], fixedOut: [], accounts: [], tx: [], goals: [], debts: [],
     onboarded: true,
     wishlist: [], plans: [], archive: [], onboarded: false };
@@ -3897,7 +3959,8 @@ function monthView() {
   return { tab: "dashboard", fab: "both", navSplit: true,
     /* 顶栏按样机：头像 · 字标 · 月/年。月份的前后翻挪到下面那颗药丸里了。 */
     nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
-      ic("man", 16) + "</div>" +
+      (prof().emoji ? '<span class="avem">' + prof().emoji + "</span>" : ic("man", 16)) +
+      "</div>" +
       '<div class="wordmark" style="flex:1">' + ic("markDots", 17) +
       "<span>" + t("app.wordmark") + "</span></div>" +
       navRight(),
@@ -3914,7 +3977,14 @@ function monthView() {
         : '<span class="big">' + withDec(avail < 0 ? neg(-avail) : yuan(avail)) +
           "</span>") +
       '<span class="eye" data-a="hideBal">' + ic(ui.hideBal ? "eyeOff" : "eye", 17) +
-      "</span></div></div>" +
+      "</span></div>" +
+      /* 光有一个数字不算判断依据，「还要撑几天」才是。没设发薪日就不出现。 */
+      (cur && daysToPayday() != null
+        ? '<div class="sub" style="margin-top:2px">' +
+          (daysToPayday() === 0 ? t("mo.paydayToday")
+            : t("mo.tillPayday", { n: daysToPayday() })) + "</div>"
+        : "") +
+      "</div>" +
 
       /* 左：本月收入 + 近六个月走势，点进去是分析页。右：四项固定承诺。 */
       '<div class="duo">' +
@@ -4265,6 +4335,27 @@ SCREENS.settings = () => {
   return { tab: null,
     nav: navBack() + '<div class="navt" style="flex:1">' + t("nav.me") + "</div>",
     body:
+      '<div class="lbl">' + t("set.profile") + "</div>" +
+      '<div class="card" style="margin-top:-4px">' +
+      field(t("pf.name"), input("pfname", prof().name,
+        'placeholder="' + esc(t("pf.namePh")) + '"')) +
+      field(t("pf.emoji"), '<div class="tints avatars">' +
+        AVATARS.map((e) => '<div class="adot' + (prof().emoji === e ? " on" : "") +
+          '" data-a="pickAvatar:' + e + '">' + e + "</div>").join("") + "</div>") +
+      field(t("pf.payday"), '<div style="display:flex;align-items:center;gap:10px">' +
+        '<div style="flex:1">' +
+        input("pfpayday", prof().payday == null ? "" : prof().payday,
+          'type="text" inputmode="numeric" placeholder="' + esc(t("pf.paydayPh")) + '"') +
+        "</div>" +
+        (daysToPayday() != null
+          ? '<div class="sub" style="white-space:nowrap">' +
+            (daysToPayday() === 0 ? t("mo.paydayToday")
+              : t("mo.tillPayday", { n: daysToPayday() })) + "</div>"
+          : '<div class="sub" style="white-space:nowrap">' + t("pf.paydayNone") + "</div>") +
+        "</div>", t("pf.paydayHint")) +
+      '<div class="sub" style="font-size:11px;margin-top:2px">' + t("pf.privacy") +
+      "</div></div>" +
+
       '<div class="fld"><div class="lbl">' + t("set.mode") + "</div>" +
       seg("mode", [[t("set.modeSave"), "save"], [t("set.modeComfort"), "comfort"]],
         S.saveMode ? "save" : "comfort") +
@@ -4373,7 +4464,8 @@ SCREENS.settings = () => {
 /* --- 结果页的几块，测验后和清单详情共用 ------------------------------- */
 function liveVerdict(it) {
   const b = budgetFor(S);
-  return { r: evaluatePurchase(Math.max(1, it.price), b, it.necessity, S.saveMode, !!it.dup), b };
+  return { r: evaluatePurchase(Math.max(1, it.price), b, it.necessity, S.saveMode,
+    !!it.dup, daysToPayday()), b };
 }
 const makeSnap = (it) => { const { r, b } = liveVerdict(it);
   return { score: r.score, verdict: r.verdict, budget: b, saveMode: S.saveMode,
@@ -4439,6 +4531,9 @@ function calcRows(it, r) {
       "−" + r.incomePenalty.toFixed(1)],
     [t("bd.dupRow", { dup: it.dup }), "−" + r.dupPenalty.toFixed(1)],
     [t("bd.modeRow", { save: S.saveMode }), "−" + r.modePenalty.toFixed(1)]];
+  /* 没设发薪日的人根本不该看见这一行 */
+  if (r.payPenalty > 0) rows.push([t("bd.paydayRow", { n: r.payDays }),
+    "−" + r.payPenalty.toFixed(1)]);
   return '<div class="calcbox">' +
     rows.map((x) => '<div class="calcrow"><span class="sub">' + x[0] +
       '</span><span class="money">' + x[1] + "</span></div>").join("") +
@@ -4473,10 +4568,11 @@ function mainReason(it, r) {
     ["price", r.incomePenalty, t("re.price", { pct: r.ratio.toFixed(1) })],
     ["dup", r.dupPenalty, t("re.dup")],
     ["mode", r.modePenalty, t("re.mode", { save: S.saveMode })],
+    ["payday", r.payPenalty || 0, t("re.payday")],
   ].sort((a, b2) => b2[1] - a[1]);
   const top = parts[0];
   /* 相对基础分看，绝对值没意义：预算两千多的时候，任何价格都会扣掉一点 */
-  const total = r.incomePenalty + r.dupPenalty + r.modePenalty;
+  const total = r.incomePenalty + r.dupPenalty + r.modePenalty + (r.payPenalty || 0);
   if (total < r.base * 0.05) return t("re.almostNone", { n: it.necessity });
   /* 扣分超过基础分时，报一个比基础分还大的数会让人算不明白，直接说「扣穿了」 */
   if (top[1] > r.base) return t("re.blownOut", { what: top[2] });
@@ -4964,7 +5060,8 @@ function parsePreview(p) {
     btn(t("as.commitDebt"), "commit", "pri") + btn(t("as.cancel"), "close", "sm");
   /* decision：只读 */
   const b = budgetFor(S);
-  const r = evaluatePurchase(p.item.price || 1, b, p.item.necessity, S.saveMode, p.item.dup);
+  const r = evaluatePurchase(p.item.price || 1, b, p.item.necessity, S.saveMode,
+    p.item.dup, daysToPayday());
   const [tone, bg, label] = TONE(r.verdict);
   return grab + head(t("as.decision"), chip) +
     '<div class="fldbox" style="background:var(--sunken)">' + esc(p.item.name) +
@@ -5783,6 +5880,8 @@ const ACT = {
       TINTS.length][0] };
     return ui.sheet ? pushSheet("addJar", init) : sheet("addJar", init); },
   pickTint: (k) => { ui.f.tint = k; render(); },
+  /* 选中的再点一次 = 取消，退回那颗默认人形 */
+  pickAvatar: (e) => { prof().emoji = prof().emoji === e ? "" : e; render(); },
   submitJar: () => {
     const n = (ui.f.name || "").trim();
     if (!n) { ui.f.err = t("e.nameEmpty"); return render(); }
@@ -6911,6 +7010,13 @@ app.addEventListener("input", (e) => {
   if (!f) return;
   const v = e.target.value;
   if (f === "txq") { ui.txq = v; paintTxList(); return; }
+  if (f === "pfname") { prof().name = v; save(); return; }
+  if (f === "pfpayday") {
+    /* 空着就是没设；1–31 之外的一律当没设，别让 0 或 45 号混进去 */
+    const n = parseInt(v, 10);
+    prof().payday = (n >= 1 && n <= 31) ? n : null;
+    save(); return;
+  }
   if (f === "qname") ui.quiz.name = v;
   else if (f === "qprice") ui.quiz.price = num(v);
   else if (f === "qnec") { ui.quiz.necessity = +v; liveLabel(e.target, v + " / 10"); }
