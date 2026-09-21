@@ -708,9 +708,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    颜色是稿子里点的具体值，不是 good/warn 算出来的浅版。 */
 .tr .circ{width:30px;height:30px}
 /* 稿子 26:895：图标本身也跟着方向上色，不只是底和描边 */
-.tr .circ.out{background:var(--spend-bg);border-color:var(--spend-edge);color:var(--warn)}
-.tr .circ.in{background:var(--income-bg);border-color:var(--income-edge);
- color:var(--green-01)}
+/* 只留底色，不描边 */
+.tr .circ.out{background:var(--spend-bg);border-color:transparent;color:var(--warn)}
+.tr .circ.in{background:var(--income-bg);border-color:transparent;color:var(--green-01)}
+/* emoji 当图标时：字形自带颜色，别让 .circ 的 color 去染它 */
+.tremo{font-size:16px;line-height:1;display:block}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -1347,7 +1349,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v73";
+const BUILD = "v74";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2420,7 +2422,7 @@ const availableIn = (m) => incomeIn(S, m) - outgoIn(S, m) - savedIn(m);
 /* 一个账户里有多少钱已经被目标预留 */
 const lifePct = () => S.lifeGoal && S.lifeGoal.target > 0
   ? Math.min(100, (netAssets(S) / S.lifeGoal.target) * 100) : 0;
-const earmarkOn = (name) => S.goals.filter((g) => g.account === name)
+const earmarkOn = (name) => allGoals().filter((g) => g.account === name)
   .reduce((a, g) => a + g.saved, 0);
 /* 这个月这个目标存了没：自动的按日子算，手动的看用户答过没 */
 /* marks[月份] = {k:"done"|"skip"|"auto", amt} —— amt 记下当时加了多少，
@@ -3062,8 +3064,13 @@ function parseUtterance(text) {
       for (const part of parts) {
         const isIncome = isIncomeText(part.text);
         const cat = classify(part.text, isIncome);
-        drafts.push({ type: isIncome ? "in" : "out", amount: part.v,
-          category: cat, description: cleanDesc(part.text, cat, isIncome), date: today() });
+        const emo = grabEmoji(part.text);
+        const desc = cleanDesc(part.text, cat, isIncome);
+        drafts.push({ type: isIncome ? "in" : "out", amount: part.v, emoji: emo,
+          category: cat, date: today(),
+          /* emoji 已经当图标了，描述里就别再留一个；
+             整条描述只有一个 emoji 的话（「🍜 25」），删完是空的，那就留着 */
+          description: emo ? (stripEmoji(desc) || desc) : desc });
       }
     }
     if (drafts.length > 1) return { intent: "multi_ledger", raw, drafts };
@@ -3353,7 +3360,7 @@ const needsSetup = (s2) => !s2.onboarded;
    升不动的时候宁可不加载，也绝不悄悄丢一半。
    ========================================================================== */
 const SAVE_KEY = "savingcoach.v1";
-const SCHEMA = 2;
+const SCHEMA = 3;
 /* 以后每改一次数据结构：SCHEMA 加一，并在这里补一个把 n 变成 n+1 的函数。
    例：MIGRATIONS[1] = (d) => { d.accounts.forEach(a => a.currency = d.currency); }; */
 /* ---- 账本 ---------------------------------------------------------------
@@ -3365,14 +3372,15 @@ const SCHEMA = 2;
    实现上没给每条记录加 bookId 去过滤（那要改九十多处读取，漏一处就是
    静默错账）—— 而是把这三个数组整个挪进 books[i]，再让 S.tx 这些
    顶层名字指过去。切账本 = 重新指一次，其余代码一个字都不用动。 */
-const BOOK_KEYS = ["tx", "fixedIn", "fixedOut"];
+const BOOK_KEYS = ["tx", "fixedIn", "fixedOut", "goals"];
 const BOOK_EMOJI = ["📒", "✈️", "🏠", "🎓", "🚗", "🍽", "🎁", "💼", "🌱", "🎨"];
 
 /* 不管数据打哪儿来（新档、演示数据、导入的老备份），都在这儿收口成账本结构 */
 function ensureBooks(d) {
   if (!d.books || !d.books.length) {
     d.books = [{ id: "b1", name: "", emoji: BOOK_EMOJI[0],
-      tx: d.tx || [], fixedIn: d.fixedIn || [], fixedOut: d.fixedOut || [] }];
+      tx: d.tx || [], fixedIn: d.fixedIn || [], fixedOut: d.fixedOut || [],
+      goals: d.goals || [] }];
     d.bookId = "b1";
   }
   if (!d.books.some((b) => b.id === d.bookId)) d.bookId = d.books[0].id;
@@ -3390,9 +3398,25 @@ function bindBook() {
   BOOK_KEYS.forEach((k) => { S[k] = b[k] || (b[k] = []); });
 }
 const curBook = () => S.books.find((x) => x.id === S.bookId) || S.books[0];
+/* 所有账本的储蓄计划合在一起。储蓄计划现在是跟账本走的（新账本是干净的），
+   但金库那边不行：一个账户被预留了多少，是所有账本加起来的数 ——
+   钱只有一份，不能只算当前这本。 */
+const allGoals = () => S.books.reduce((a, b) => a.concat(b.goals || []), []);
 const bookName = (b) => (b && b.name) || t("bk.default");
 
-const MIGRATIONS = { 1: ensureBooks };
+const MIGRATIONS = {
+  1: ensureBooks,
+  /* v2 的时候储蓄计划还是共享的、搁在顶层。现在它跟账本走：
+     原来那些归主账本，别的账本从空的开始。
+     从 v1 上来的走不到这儿 —— ensureBooks 已经把 goals 收进 books[0] 了，
+     所以这里先确认顶层真有 goals 才动手。 */
+  2: (d) => {
+    if (!Array.isArray(d.goals)) return;
+    (d.books || []).forEach((b, i) => {
+      b.goals = i === 0 ? d.goals : (b.goals || []); });
+    delete d.goals;
+  },
+};
 
 let saveTimer = null, saveBroken = false;
 function save() {
@@ -4206,7 +4230,9 @@ function txRow(x, future) {
   const amtHtml = withDec(amt);
   return '<div class="tr" data-a="' + (x.tap || "editTx:" + x.id) + '" style="cursor:pointer' +
     (future ? ";opacity:.62" : "") + '">' +
-    '<div class="circ ' + dir + '">' + ic(txGlyph(x), 19) + "</div>" +
+    '<div class="circ ' + dir + '">' +
+    (x.emoji ? '<span class="tremo">' + x.emoji + "</span>" : ic(txGlyph(x), 19)) +
+    "</div>" +
     '<div class="tn"><b>' + esc(name) + "</b><span>" + esc(sub) + "</span></div>" +
     '<div class="ta"><b>' + amtHtml + "</b>" +
     '<span class="' + dir + '">' +
@@ -4953,6 +4979,14 @@ const vaultNotice = () => '<div class="banner" style="margin-top:18px;' +
   'border-color:var(--ink-faint);background:var(--sunken)">' +
   '<span style="margin-top:1px;color:var(--ink-muted)">' + ic("warn", 15) + "</span>" +
   "<div>" + t("va.notice") + "</div></div>";
+
+/* 输入里自己打了 emoji，就拿它当这一笔的图标 —— 用户挑的比分类猜的准。
+   抓出来之后从描述里删掉：它已经显示成图标了，文字里再留一个是重复的。
+   \p{Extended_Pictographic} 覆盖绝大多数 emoji；旗帜、肤色这类组合字符
+   只会抓到头一个码位，做图标够用。 */
+const EMOJI_RE = /\p{Extended_Pictographic}/u;
+const grabEmoji = (s2) => { const m = String(s2 || "").match(EMOJI_RE); return m ? m[0] : ""; };
+const stripEmoji = (s2) => String(s2 || "").replace(EMOJI_RE, "").replace(/\s+/g, " ").trim();
 
 const jarSubline = (a) => earmarkOn(a.name) > 0
   ? t("va.reservedOn", { amt: yuan(earmarkOn(a.name)) }) +
@@ -5939,8 +5973,10 @@ const ACT = {
     const amt = num(ui.f.amount);
     if (!(amt > 0)) { ui.f.err = t("e.amountPos"); return render(); }
     if (!(ui.f.description || "").trim()) { ui.f.err = t("e.descEmpty"); return render(); }
-    S.tx.push({ id: id(), type: ui.f.type || "out", amount: amt,
-      category: ui.f.category || "food", description: ui.f.description.trim(),
+    const desc = ui.f.description.trim(), emo = grabEmoji(desc);
+    S.tx.push({ id: id(), type: ui.f.type || "out", amount: amt, emoji: emo,
+      category: ui.f.category || "food",
+      description: emo ? (stripEmoji(desc) || desc) : desc,
       date: ui.f.date || today() });
     close(); toast(t("k.logged")); },
   editTx: (tid) => { const row = S.tx.find((x) => x.id === tid);
@@ -6024,7 +6060,10 @@ const ACT = {
       return x; });
     const b = { id: id(), name: n, emoji: ui.f.emoji || BOOK_EMOJI[0], tx: [],
       fixedIn: carry ? copy(S.fixedIn) : [],
-      fixedOut: carry ? copy(S.fixedOut) : [] };
+      fixedOut: carry ? copy(S.fixedOut) : [],
+      /* 带过去的储蓄计划只带「声明」，进度归零 —— 不然同一笔已存的钱
+         会在金库里被 earmarkOn 算两遍 */
+      goals: carry ? copy(S.goals).map((g) => { g.saved = 0; return g; }) : [] };
     S.books.push(b);
     S.bookId = b.id; bindBook();
     ui.month = null; ui.stack = ["dashboard"];
@@ -6355,7 +6394,7 @@ function settleAutoGoals() {
     if (+today().slice(8) < d.day) return;
     d.marks[m] = { k: "auto", amt: d.monthly };
   });
-  S.goals.forEach((g) => {
+  allGoals().forEach((g) => {
     if (!g.auto || g.marks[m]) return;
     if (+today().slice(8) < g.day) return;
     const per = Math.min(goalMonthly(g), g.target - g.saved);
