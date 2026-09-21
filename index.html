@@ -1349,7 +1349,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v75";
+const BUILD = "v76";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4178,6 +4178,33 @@ const CAT_WORDS = [
   [/购物|包|shop/i, "shopping"],
   [/玩|娱乐|旅游|露营|outing|fun|leisure/i, "outing"],
 ];
+/* 账本行上的图标一律走 emoji。挑的都是单码位的字符 —— 带变体选择符的
+   那些（🏋️ 🛍️ 这类尾巴上挂 FE0F 的）在不同系统上会掉成黑白线框，
+   而这一列是一眼扫过去的东西，不能有的彩有的不彩。 */
+const CAT_EMOJI = { food: "🍜", transport: "🚕", bills: "🧾", clothes: "👕",
+  gym: "💪", pet: "🐾", fun: "🎬", shopping: "🛒", social: "🎁",
+  salary: "💰", other: "📌" };
+/* 自定义分类：名字里猜一个，猜不到给 📌 */
+const CAT_WORD_EMOJI = [
+  [/健身|瑜伽|私教|普拉提|游泳|gym|fitness|yoga|workout/i, "💪"],
+  [/宠物|狗|猫|遛|铲屎|pet|dog|puppy|kitten|vets/i, "🐾"],
+  [/衣|裤|鞋|裙|外套|袜|cloth|shirt|shoe|jacket|jeans/i, "👕"],
+  [/水电|电费|水费|燃气|话费|宽带|物业|房租|账单|bill|rent|utilit/i, "🧾"],
+  [/超市|杂货|买菜|生鲜|grocer|market/i, "🛒"],
+  [/游戏|手游|steam|game/i, "🎮"],
+  [/机票|航班|飞|出差|旅行|flight|travel/i, "✈️"],
+  [/电影|演出|门票|票|演唱|ticket|movie|show/i, "🎬"],
+  [/打车|地铁|公交|加油|停车|车|taxi|transport|fuel|park/i, "🚕"],
+  [/吃|饭|餐|外卖|咖啡|奶茶|food|lunch|dinner|coffee/i, "🍜"],
+  [/购物|包|shop/i, "🛒"],
+  [/玩|娱乐|旅游|露营|outing|fun|leisure/i, "🎬"],
+];
+const catEmoji = (c) => CAT_EMOJI[c] ||
+  (CAT_WORD_EMOJI.find(([re]) => re.test(c || "")) || [, "📌"])[1];
+/* 这一笔该显示什么：用户自己打的 emoji 最优先，其次按它是什么类型的一笔。 */
+const txEmoji = (x) => x.emoji || (x.xfer ? "🏦" : x.fixed === "in" ? "💰"
+  : x.fixed === "out" ? "🧾" : catEmoji(x.category));
+
 const catGlyph = (c) => TX_GLYPH[c] ||
   (CAT_WORDS.find(([re]) => re.test(c || "")) || [, "tag"])[1];
 const txGlyph = (x) => x.xfer ? "navVault" : x.fixed === "in" ? "arrowUp"
@@ -4232,9 +4259,8 @@ function txRow(x, future) {
   const amtHtml = withDec(amt);
   return '<div class="tr" data-a="' + (x.tap || "editTx:" + x.id) + '" style="cursor:pointer' +
     (future ? ";opacity:.62" : "") + '">' +
-    '<div class="circ ' + dir + '">' +
-    (x.emoji ? '<span class="tremo">' + x.emoji + "</span>" : ic(txGlyph(x), 19)) +
-    "</div>" +
+    '<div class="circ ' + dir + '"><span class="tremo">' + txEmoji(x) +
+    "</span></div>" +
     '<div class="tn"><b>' + esc(name) + "</b><span>" + esc(sub) + "</span></div>" +
     '<div class="ta"><b>' + amtHtml + "</b>" +
     '<span class="' + dir + '">' +
