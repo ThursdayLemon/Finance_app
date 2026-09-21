@@ -566,6 +566,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .hlbl{margin:16px 0 12px;font-size:14px;font-weight:var(--w-body);line-height:20px;
  color:var(--ink-muted)}
 .dhead{font-size:12.5px;line-height:16px;color:var(--ink-muted);margin:6px 0 2px}
+/* 日期后面跟星期，中间 2 */
+.dhead .wk{margin-left:2px}
 /* 奶油纸不用衬线 —— 它的性格在 Bricolage + 荧光笔上，衬线一律退回正文字体 */
 :root[data-skin="briefly"] .serif,:root[data-skin="briefly"] .rowname,
 :root[data-skin="briefly"] .cardtitle,:root[data-skin="briefly"] .wordmark,
@@ -1366,7 +1368,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v85";
+const BUILD = "v86";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2466,7 +2468,19 @@ const budgetFor = (s) => budgetInfo(s).amount;
 const inMonth = (iso, ref) => iso.slice(0, 7) === ref.slice(0, 7);
 const monthLabel = (iso) => { const [y, m] = (iso || today()).split("-");
   return t("date.month", { y, m }); };
-const dayLabel = (iso) => { const [, m, d] = iso.split("-"); return t("date.day", { m, d }); };
+const WK_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WK_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+/* 走 UTC 算星期。new Date("2026-09-14") 是按 UTC 解析的，再用本地时区的
+   getDay() 去读，东八区没事、西边时区会退回前一天 —— 两头都用 UTC 才对得上。 */
+const weekdayOf = (iso) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return (lang() === "en" ? WK_EN : WK_ZH)[wd];
+};
+/* wk 是可选的：账本里的日期分组要星期，「上次保存」那种行内文字不要 */
+const dayLabel = (iso, wk) => { const [, m, d] = iso.split("-");
+  return t("date.day", { m, d }) +
+    (wk ? '<span class="wk">' + weekdayOf(iso) + "</span>" : ""); };
 const monthOf = (iso) => iso.slice(0, 7);
 const thisMonth = () => monthOf(today());
 /* 正在看的月份（可以翻） */
@@ -4307,7 +4321,7 @@ function txRows(m) {
   let day = null, html = "";
   shown.forEach((x) => {
     if (x.date !== day) { day = x.date;
-      html += '<div class="dhead">' + dayLabel(day) + "</div>"; }
+      html += '<div class="dhead">' + dayLabel(day, true) + "</div>"; }
     html += (x.fixed || x.xfer) ? txRow(x, isFuture(x))
       : swipe(txRow(x, false), "delTx:" + x.id);
   });
