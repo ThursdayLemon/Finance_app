@@ -723,7 +723,12 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    底是 30，这样四周还剩 5 出头。上一版写 20 就是这儿算漏了 ——
    20 的字号画出来接近 23，在 30 的圆里只剩 3.5，顶着圆边看着像被啃掉一块。
    不设 width/height：给一个比字形还窄的盒子只会让它左右溢出，挡不住什么。 */
-.tremo{font-size:16px;line-height:1;display:block}
+/* 居中靠的是这一层自己也撑成 flex、把 emoji 当 flex item 居中 ——
+   而不是交给外面那层去对基线。emoji 是贴基线排的，基线底下还留着
+   descender 的位置，按基线对就会整体偏下一点。
+   撑满 100% 而不是写死 16：.circ 有 1px 边框，内容区是 28 不是 30。 */
+.tremo{font-size:16px;line-height:1;display:flex;
+ align-items:center;justify-content:center;width:100%;height:100%}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -1361,7 +1366,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v84";
+const BUILD = "v85";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
