@@ -1387,7 +1387,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v88";
+const BUILD = "v89";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2620,8 +2620,8 @@ zh: {
      clothes 必须排在 shopping 前面，不然全落进购物。
      「狗」不单列 —— 热狗是饭不是宠物；「猫」也不单列，猫眼电影是电影。 */
   cats: [
-    ["food", ["吃", "饭", "拉面", "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食",
-      "买菜", "生鲜", "菜市场"]],
+    ["food", ["吃", "饭", "拉面", "米线", "面条", "粉", "馄饨", "饺子", "寿司", "汉堡",
+      "餐饮", "早饭", "午饭", "晚饭", "外卖", "美食", "买菜", "生鲜", "菜市场"]],
     /* 顺序跟英文那张表对齐 —— 中文没有 train 那种子串问题，
        但两张表排得一样，以后改一边才会想起来另一边 */
     ["coffee", ["咖啡", "拿铁", "美式", "星巴克", "瑞幸", "手冲", "奶茶", "卡布"]],
@@ -2634,7 +2634,8 @@ zh: {
     ["pet", ["宠物", "狗粮", "猫粮", "猫砂", "遛狗", "铲屎", "狗狗", "猫咪",
       "驱虫", "疫苗", "宠物医院", "洗澡美容"]],
     ["fun", ["玩", "电影", "游戏", "娱乐", "网吧", "剧本杀"]],
-    ["shopping", ["买", "网购", "淘宝", "拼多多", "京东", "美团", "超市"]],
+    ["shopping", ["买", "网购", "淘宝", "拼多多", "京东", "美团", "超市",
+      "植物", "绿植", "多肉", "盆栽", "香薰", "摆件"]],
     ["social", ["礼物", "红包", "人情", "随礼", "送礼"]],
     /* 账单排在最后：「房租」这类词容易被前面的表蹭到，让它们先挑完 */
     ["bills", ["账单", "水电", "电费", "水费", "燃气", "煤气", "取暖", "物业",
@@ -2722,7 +2723,8 @@ en: {
      顺序即优先级：clothes 要在 shopping 前（shoes/clothes 两边都有），
      bills 放最后（"rent" 会咬到 parent/current，让前面的表先挑完）。 */
   cats: [
-    ["food", ["lunch", "dinner", "breakfast", "brunch",
+    ["food", ["lunch", "dinner", "breakfast", "brunch", "noodle", "noodles", "ramen",
+      "rice", "pasta", "sushi", "burger", "sandwich", "salad", "soup", "curry",
       "restaurant", "takeaway", "takeout", "pizza", "snack", "ate", "eating out"]],
     /* 这三个排在 transport 前面都是因为一个词：train。
        "trainers"（鞋）和 "personal trainer"（私教）都含它，排后面全成了交通。
@@ -2745,7 +2747,8 @@ en: {
       "grooming", "kennel", "flea", "microchip"]],
     ["fun", ["cinema", "movie", "film", "game", "concert", "gig", "pub", "bar",
       "drinks", "netflix", "spotify", "museum", "bowling"]],
-    ["shopping", ["bought", "amazon", "ebay", "argos", "shop",
+    ["shopping", ["bought", "amazon", "ebay", "argos", "shop", "plant", "succulent",
+      "candle", "vase", "poster", "cushion",
       "shopping", "supermarket", "tesco", "sainsbury", "groceries", "ikea"]],
     ["social", ["gift", "present", "birthday", "wedding", "charity", "donation"]],
     ["bills", ["bill", "rent", "council tax", "electric", "water rates", "broadband",
@@ -5292,8 +5295,11 @@ function parsePreview(p) {
       /* 解析器一定会错 —— 预览这一步存在的意义就是让人改，所以每行可编辑 */
       p.drafts.map((d, i) => '<div data-a="editDraft:' + i + '" style="display:flex;gap:10px;' +
         'align-items:center;min-height:44px;cursor:pointer;' +
+        /* emoji 走 txEmoji 而不是 catEmoji —— 预览里看到的那个，必须就是
+           记下之后行上的那个。原来这儿只看分类：「rice noodle」归进
+           其他，预览就给 👀，记完却是 🍜，同一笔两个脸。 */
         'border-bottom:1px solid var(--line)"><div class="chip flat" style="padding:2px 9px">' +
-        catEmoji(d.category) + " " + esc(catLabel(d.category)) +
+        txEmoji(d) + " " + esc(catLabel(d.category)) +
         '</div><div style="flex:1;font-size:15px">' +
         esc(d.description) +
         '</div><div class="money" style="font-size:15px">' +
