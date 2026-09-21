@@ -704,12 +704,18 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .circ{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;
  align-items:center;justify-content:center;background:var(--icon-bg);
  border:1px solid var(--icon-edge);color:var(--ink)}
-/* 账本里的行图标：30px，40% 白底、不描边。
-   底色原来按方向分（出账暖橘、进账绿），图标换成 emoji 之后就不合适了 ——
-   emoji 自己带色，底下再压一层橙绿是两种颜色打架。进出看右边的金额和
-   颜色就够了，不用图标再说一遍。 */
-.tr .circ,.tr .circ.out,.tr .circ.in{width:30px;height:30px;
- background:var(--icon-bg);border-color:transparent}
+/* 账本里的行图标：30px。转存那类留白底，进出按稿子 2323:2311 上色 ——
+   比上一版的橙绿浅得多，压不住 emoji 的颜色，再配一圈细描边定住形状。
+
+   四个值全是现成 token，一个都不用写死：
+     底 --warn-tint / --good-tint  是 warn、good 各混 12% 白，
+       算出来正好是稿子那两个 #faefe8 / #e7f7e7；
+       而且暗色皮肤里它们被换成了 16% 混透明，不会在深底上糊一块亮斑
+     边 --spend-edge 本来就等于稿子那个 #eb9d6b；绿边稿子用的是满饱和的 --good
+   描边 0.5 是稿子给的：手机都是 2x/3x，落到物理像素上正好一根。 */
+.tr .circ{width:30px;height:30px;background:var(--icon-bg);border-color:transparent}
+.tr .circ.out{background:var(--warn-tint);border:.5px solid var(--spend-edge)}
+.tr .circ.in{background:var(--good-tint);border:.5px solid var(--good)}
 /* emoji 当图标时：字形自带颜色，别让 .circ 的 color 去染它 */
 .tremo{font-size:16px;line-height:1;display:block}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
@@ -1348,7 +1354,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v78";
+const BUILD = "v79";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
