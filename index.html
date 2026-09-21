@@ -1347,7 +1347,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v72";
+const BUILD = "v73";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1769,6 +1769,18 @@ zh: {
   "advice.amber": "不是非要不可，或者占掉太多闲钱。放 48 小时再说。",
   "advice.red": "已被拦截：它占你可用预算的比重太大，必要度又不够高。",
   "advice.redDup": "已被拦截：你在储蓄模式下，而且已经有类似的东西了。",
+  "bk.title": "账本", "bk.default": "主账本",
+  "bk.new": "新建账本", "bk.namePh": "如：旅行、装修",
+  "bk.carry": "带上固定收支", "bk.scratch": "从零开始",
+  "bk.carryHint": "工资、房租这些每月固定的。旅行、装修这类临时账本通常不用带；「明年」这种通常要带。",
+  "bk.create": "建好并切过去",
+  "bk.switched": (v) => "已切到「" + v.name + "」",
+  "bk.created": (v) => "「" + v.name + "」建好了",
+  "bk.hint": "账本只分开流水和固定收支。金库、储蓄计划、买不买清单和所有设置都是共用的 —— 钱只有一份，不该在每本里各算一遍。",
+  "bk.del": "删除这个账本", "bk.delLast": "至少得留一个账本",
+  "bk.delConfirm": (v) => "删掉「" + v.name + "」和它里面的 " + v.n + " 笔账？金库不受影响。",
+  "bk.deleted": "账本已删除",
+  "bk.txN": (v) => v.n + " 笔",
   "set.profile": "个人",
   "pf.name": "称呼", "pf.namePh": "怎么称呼你",
   "pf.emoji": "头像", "pf.payday": "发薪日",
@@ -2247,6 +2259,18 @@ en: {
   "advice.red": "Blocked: it takes too big a bite out of your budget and you don't " +
     "need it enough.",
   "advice.redDup": "Blocked: you're saving hard, and you already own something like it.",
+  "bk.title": "Books", "bk.default": "Main",
+  "bk.new": "New book", "bk.namePh": "e.g. Travel, Renovation",
+  "bk.carry": "Copy fixed income & bills", "bk.scratch": "Start empty",
+  "bk.carryHint": "Salary, rent \u2014 the monthly ones. A trip or a renovation usually doesn't need them; \u201cNext year\u201d usually does.",
+  "bk.create": "Create and switch to it",
+  "bk.switched": (v) => "Switched to " + v.name,
+  "bk.created": (v) => v.name + " is ready",
+  "bk.hint": "A book only separates entries and fixed income/bills. The vault, savings plans, the wishlist and every setting stay shared \u2014 there's only one pot of money, it shouldn't be counted once per book.",
+  "bk.del": "Delete this book", "bk.delLast": "You need at least one book",
+  "bk.delConfirm": (v) => "Delete " + v.name + " and the " + v.n + " entries in it? The vault is untouched.",
+  "bk.deleted": "Book deleted",
+  "bk.txN": (v) => v.n + (v.n === 1 ? " entry" : " entries"),
   "set.profile": "You",
   "pf.name": "Name", "pf.namePh": "What should I call you",
   "pf.emoji": "Avatar", "pf.payday": "Payday",
@@ -3329,10 +3353,46 @@ const needsSetup = (s2) => !s2.onboarded;
    升不动的时候宁可不加载，也绝不悄悄丢一半。
    ========================================================================== */
 const SAVE_KEY = "savingcoach.v1";
-const SCHEMA = 1;
+const SCHEMA = 2;
 /* 以后每改一次数据结构：SCHEMA 加一，并在这里补一个把 n 变成 n+1 的函数。
    例：MIGRATIONS[1] = (d) => { d.accounts.forEach(a => a.currency = d.currency); }; */
-const MIGRATIONS = {};
+/* ---- 账本 ---------------------------------------------------------------
+   跟着账本走的只有这三样：流水、固定收入、固定支出。
+   剩下的全共享，尤其是金库和储蓄计划 —— earmarkOn() 是拿 goals 算
+   某个账户预留了多少钱的，储蓄计划要是分了账本，同一张卡在不同账本里
+   能动的钱就不一样了。钱只有一份。
+
+   实现上没给每条记录加 bookId 去过滤（那要改九十多处读取，漏一处就是
+   静默错账）—— 而是把这三个数组整个挪进 books[i]，再让 S.tx 这些
+   顶层名字指过去。切账本 = 重新指一次，其余代码一个字都不用动。 */
+const BOOK_KEYS = ["tx", "fixedIn", "fixedOut"];
+const BOOK_EMOJI = ["📒", "✈️", "🏠", "🎓", "🚗", "🍽", "🎁", "💼", "🌱", "🎨"];
+
+/* 不管数据打哪儿来（新档、演示数据、导入的老备份），都在这儿收口成账本结构 */
+function ensureBooks(d) {
+  if (!d.books || !d.books.length) {
+    d.books = [{ id: "b1", name: "", emoji: BOOK_EMOJI[0],
+      tx: d.tx || [], fixedIn: d.fixedIn || [], fixedOut: d.fixedOut || [] }];
+    d.bookId = "b1";
+  }
+  if (!d.books.some((b) => b.id === d.bookId)) d.bookId = d.books[0].id;
+  d.books.forEach((b) => BOOK_KEYS.forEach((k) => { if (!b[k]) b[k] = []; }));
+  /* 顶层那三个名字是运行时的引用，不该留在存档里 */
+  BOOK_KEYS.forEach((k) => delete d[k]);
+  return d;
+}
+/* 把 S.tx / S.fixedIn / S.fixedOut 指向当前账本。数组是引用，
+   所以之后所有的 push/splice 都会直接落到 books 里，不用回写。 */
+function bindBook() {
+  const b = S.books.find((x) => x.id === S.bookId) || S.books[0];
+  if (!b) return;
+  S.bookId = b.id;
+  BOOK_KEYS.forEach((k) => { S[k] = b[k] || (b[k] = []); });
+}
+const curBook = () => S.books.find((x) => x.id === S.bookId) || S.books[0];
+const bookName = (b) => (b && b.name) || t("bk.default");
+
+const MIGRATIONS = { 1: ensureBooks };
 
 let saveTimer = null, saveBroken = false;
 function save() {
@@ -3340,8 +3400,10 @@ function save() {
   saveTimer = setTimeout(() => {
     saveTimer = null;
     try {
+      const out = Object.assign({}, S);
+      BOOK_KEYS.forEach((k) => delete out[k]);
       localStorage.setItem(SAVE_KEY,
-        JSON.stringify({ v: SCHEMA, savedAt: Date.now(), data: S }));
+        JSON.stringify({ v: SCHEMA, savedAt: Date.now(), data: out }));
       saveBroken = false;
     } catch (err) {
       /* 无痕模式、存储写满、被系统清了 —— 记账这个动作不能因此崩掉，
@@ -3388,6 +3450,10 @@ function exportName() {
 }
 
 let S = load() || seed();
+/* 换掉整个 S 的地方都得过这一道：收口成账本结构 + 重新绑引用。
+   漏一处的下场是「导入完还在读上一份数据」，而且不报错。 */
+function adopt(d) { S = ensureBooks(d); bindBook(); return S; }
+adopt(S);
 syncUid(S);
 if (!S.skin) S.skin = "pearl";
 /* auto 就不打标记，交给 prefers-color-scheme */
@@ -4354,6 +4420,27 @@ SCREENS.settings = () => {
           : '<div class="sub" style="white-space:nowrap">' + t("pf.paydayNone") + "</div>") +
         "</div>", t("pf.paydayHint")) +
       '<div class="sub" style="font-size:11px;margin-top:2px">' + t("pf.privacy") +
+      "</div></div>" +
+
+      '<div class="lbl">' + t("bk.title") + "</div>" +
+      '<div class="card" style="margin-top:-4px">' +
+      /* 只有一本时不列表，免得给还没用上这功能的人平添一栏 */
+      (S.books.length > 1 ? S.books.map((b) => {
+        const on = b.id === S.bookId;
+        return '<div class="row" data-a="useBook:' + b.id + '" style="cursor:pointer">' +
+          '<div style="font-size:20px;line-height:1">' + b.emoji + "</div>" +
+          '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:15px;line-height:20px">' + esc(bookName(b)) + "</div>" +
+          '<div class="sub" style="font-size:11px;line-height:13px;margin-top:2px">' +
+          t("bk.txN", { n: b.tx.length }) + "</div></div>" +
+          (on ? '<span style="color:' + GREEN + '">' + ic("check", 16) + "</span>" : "") +
+          '<span class="tapout" data-a="delBook:' + b.id +
+          '" style="color:var(--ink-faint);padding:0 2px">' + ic("trash", 15) +
+          "</span></div>";
+      }).join("") : "") +
+      '<div class="dash" data-a="newBook">' + ic("plus", 16) + " " + t("bk.new") +
+      "</div>" +
+      '<div class="sub" style="font-size:11px;margin-top:8px">' + t("bk.hint") +
       "</div></div>" +
 
       '<div class="fld"><div class="lbl">' + t("set.mode") + "</div>" +
@@ -5500,6 +5587,32 @@ SHEETS.logSale = () => {
 };
 
 /* 清空和恢复演示都会盖掉真实数据 —— 一定要有一步确认，并且顺手给个导出的出口 */
+SHEETS.newBook = () => grab + head(t("bk.new")) +
+  field(t("f.name"), input("name", ui.f.name,
+    'placeholder="' + esc(t("bk.namePh")) + '"')) +
+  field(t("pf.emoji"), '<div class="tints">' +
+    BOOK_EMOJI.map((e) => '<div class="adot' + (ui.f.emoji === e ? " on" : "") +
+      '" data-a="pickBookEmoji:' + e + '">' + e + "</div>").join("") + "</div>") +
+  field(t("bk.carry"),
+    '<div class="seg" style="border-width:1px">' +
+    segPill("carry", ui.f.carry ? 1 : 0, 2) +
+    [[t("bk.scratch"), "0"], [t("bk.carry"), "1"]].map(([l, v]) =>
+      '<span class="' + ((ui.f.carry ? "1" : "0") === v ? "on" : "") +
+      '" data-a="setCarry:' + v + '">' + l + "</span>").join("") + "</div>",
+    t("bk.carryHint")) +
+  errline() + btn(t("bk.create"), "submitBook", "pri");
+
+SHEETS.delBook = () => {
+  const b = S.books.find((x) => x.id === ui.f.bid);
+  if (!b) return grab + head(t("bk.del"));
+  return grab + head(t("bk.del")) +
+    '<div class="sub" style="margin-top:-4px">' +
+    t("bk.delConfirm", { name: bookName(b), n: b.tx.length }) + "</div>" +
+    '<div class="mbtn pri" data-a="doDelBook" style="background:' + RED +
+    ";border-color:" + RED + '">' + t("f.delete") + "</div>" +
+    btn(t("as.cancel"), "close", "sm");
+};
+
 SHEETS.wipe = () => grab + head(t("wipe.title")) +
   '<div class="sub" style="margin-top:-4px">' + t("wipe.body") + "</div>" +
   '<div class="mbtn sm" data-a="exportData">' + ic("down", 15) + " " +
@@ -5786,8 +5899,12 @@ const ACT = {
     ui.f = {}; ui.stack = ["dashboard"]; render(); },
   dismissSetup: () => { ui.setupDismissed = true; render(); },
   exportData: () => {
-    const blob = new Blob([JSON.stringify({ v: SCHEMA, savedAt: Date.now(), data: S }, null, 2)],
-      { type: "application/json" });
+    /* 和 save() 一样去掉顶层那三个引用 —— 它们是 books 里的同一批数组，
+       直接 stringify 会把每一笔账写两遍 */
+    const out = Object.assign({}, S);
+    BOOK_KEYS.forEach((k) => delete out[k]);
+    const blob = new Blob([JSON.stringify({ v: SCHEMA, savedAt: Date.now(), data: out },
+      null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = exportName();
@@ -5799,7 +5916,10 @@ const ACT = {
     let box;
     try { box = JSON.parse(text); } catch (err) { ui.f.err = t("e.badBackup"); return render(); }
     const d = box && box.data, v = box && box.v;
-    if (!d || typeof v !== "number" || !Array.isArray(d.tx)) {
+    /* 老备份（v1）流水在顶层 d.tx，新备份（v2）在 d.books 里 —— 两种都得认。
+       原来只认 d.tx，结果导出的新备份自己导不回来。 */
+    if (!d || typeof v !== "number" ||
+        !(Array.isArray(d.tx) || Array.isArray(d.books))) {
       toast(t("e.badBackup")); return; }
     let cur = v;
     while (cur < SCHEMA) {
@@ -5807,13 +5927,13 @@ const ACT = {
       if (!step) { toast(t("e.badBackup")); return; }
       step(d); cur++;
     }
-    S = d; ui.stack = ["dashboard"]; ui.sheet = null; ui.f = {};
+    adopt(d); ui.stack = ["dashboard"]; ui.sheet = null; ui.f = {};
     render(); toast(t("k.imported")); },
   wipeData: () => sheet("wipe", {}),
-  doWipe: () => { S = emptySeed(); ui.stack = ["dashboard"]; ui.sheet = null; ui.f = {};
+  doWipe: () => { adopt(emptySeed()); ui.stack = ["dashboard"]; ui.sheet = null; ui.f = {};
     ui.wizard = 0; ui.wizAdding = true; render(); toast(t("k.wiped")); },
   loadDemo: () => sheet("demo", {}),
-  doDemo: () => { S = seed(); ui.stack = ["dashboard"]; ui.sheet = null; ui.f = {};
+  doDemo: () => { adopt(seed()); ui.stack = ["dashboard"]; ui.sheet = null; ui.f = {};
     ui.wizard = null; ui.wizAdding = undefined; render(); toast(t("k.demoBack")); },
   submitTx: () => {
     const amt = num(ui.f.amount);
@@ -5882,6 +6002,44 @@ const ACT = {
   pickTint: (k) => { ui.f.tint = k; render(); },
   /* 选中的再点一次 = 取消，退回那颗默认人形 */
   pickAvatar: (e) => { prof().emoji = prof().emoji === e ? "" : e; render(); },
+
+  useBook: (bid) => {
+    if (bid === S.bookId) return;
+    S.bookId = bid; bindBook();
+    /* 换了一摊账，月份停在原处没意义，回到本月 */
+    ui.month = null; ui.stack = ["dashboard"]; ui.sheet = null; ui.f = {};
+    save(); render(); toast(t("bk.switched", { name: bookName(curBook()) })); },
+  newBook: () => sheet("newBook", { emoji: BOOK_EMOJI[S.books.length % BOOK_EMOJI.length],
+    carry: false }),
+  pickBookEmoji: (e) => { ui.f.emoji = e; render(); },
+  setCarry: (v) => { ui.f.carry = v === "1"; render(); },
+  submitBook: () => {
+    const n = (ui.f.name || "").trim();
+    const carry = !!ui.f.carry;
+    /* 带过去的是「声明」不是「进度」，而且 id 必须换新 ——
+       两本里出现同一个 id，删一条会连带删掉另一本那条 */
+    const copy = (arr) => JSON.parse(JSON.stringify(arr)).map((x) => {
+      x.id = id();
+      if (x.marks) x.marks = {};
+      return x; });
+    const b = { id: id(), name: n, emoji: ui.f.emoji || BOOK_EMOJI[0], tx: [],
+      fixedIn: carry ? copy(S.fixedIn) : [],
+      fixedOut: carry ? copy(S.fixedOut) : [] };
+    S.books.push(b);
+    S.bookId = b.id; bindBook();
+    ui.month = null; ui.stack = ["dashboard"];
+    close(); toast(t("bk.created", { name: bookName(b) })); },
+  delBook: (bid) => {
+    if (S.books.length < 2) return toast(t("bk.delLast"));
+    if (!S.books.some((x) => x.id === bid)) return;
+    sheet("delBook", { bid }); },
+  doDelBook: () => {
+    const bid = ui.f.bid;
+    if (S.books.length < 2) { close(); return toast(t("bk.delLast")); }
+    S.books = S.books.filter((x) => x.id !== bid);
+    if (S.bookId === bid) { S.bookId = S.books[0].id; ui.month = null;
+      ui.stack = ["dashboard"]; }
+    bindBook(); close(); toast(t("bk.deleted")); },
   submitJar: () => {
     const n = (ui.f.name || "").trim();
     if (!n) { ui.f.err = t("e.nameEmpty"); return render(); }
@@ -7069,13 +7227,13 @@ document.querySelector(".side").addEventListener("click", (e) => {
   if (!b) return;
   if (b.dataset.side === "fwd") { clockOffset += +b.dataset.h * 3600e3; updateClock(); render(); }
   if (b.dataset.side === "fresh") {
-    S = emptySeed(); clockOffset = 0;
+    adopt(emptySeed()); clockOffset = 0;
     ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {},
       wizard: 0, quiz: { name: "", price: 0, necessity: 5, dup: false } };
     updateClock(); render();
   }
   if (b.dataset.side === "reset") {
-    S = seed(); clockOffset = 0;
+    adopt(seed()); clockOffset = 0;
     ui = { stack: ["dashboard"], sheet: null, f: {}, fStack: [], toast: null, seg: {},
       quiz: { name: "", price: 0, necessity: 5, dup: false } };
     updateClock(); render();
