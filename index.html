@@ -1155,7 +1155,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .setup .ss{font-size:11px;line-height:13px;color:var(--warn);margin-top:2px;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 即将发生：暖色底的圆角条，和真实流水区分开 */
-.txcard .upcoming svg{color:var(--on-accent)}
 .upcoming{display:flex;align-items:center;gap:11px;min-height:44px;padding:10px 14px;
  border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer;
  border:1px solid var(--edge);box-shadow:var(--shadow-card);
@@ -1360,7 +1359,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v82";
+const BUILD = "v83";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4146,7 +4145,7 @@ function txCard(m, out) {
 
     (future.length
       ? '<div class="upcoming" data-a="toggleFuture">' +
-        '<span style="color:var(--ink-muted)">' + ic("clock", 16) + "</span>" +
+        "<span>" + ic("clock", 16) + "</span>" +
         '<div class="badge ol">' +
         t("mo.upcoming", { n: future.length }) + "</div>" +
         /* 笔数挪进徽章之后，剩下这几段自己 join —— 原来每段前面挂一个
