@@ -1348,7 +1348,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v77";
+const BUILD = "v78";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4200,8 +4200,73 @@ const CAT_WORD_EMOJI = [
 ];
 const catEmoji = (c) => CAT_EMOJI[c] ||
   (CAT_WORD_EMOJI.find(([re]) => re.test(c || "")) || [, "📌"])[1];
-/* 这一笔该显示什么：用户自己打的 emoji 最优先，其次按它是什么类型的一笔。 */
-const txEmoji = (x) => x.emoji || (x.xfer ? "🏦" : x.fixed === "in" ? "💰"
+/* 光看分类太粗：「selling plant」是笔收入，按分类就成了 💰，可它明明该是
+   🪴。所以先拿描述本身猜一遍，猜不中才退回分类。
+
+   顺序有讲究：先具体物品，后交易性质。「selling plant」两条都沾，
+   物品那条排前面才不会被「卖」抢走。 */
+const DESC_EMOJI = [
+  /* --- 具体的东西 --- */
+  [/转租|租出去|房东|二房东|sublet|lodger|tenant|spare room/i, "🛏️"],
+  [/植物|绿植|多肉|盆栽|花盆|plant|succulent|cactus|seedling/i, "🪴"],
+  [/鲜花|花束|bouquet|flowers/i, "💐"],
+  [/香水|香氛|perfume|cologne|fragrance|scent/i, "🧴"],
+  [/口红|化妆|护肤|面膜|美妆|makeup|lipstick|skincare|mascara/i, "💄"],
+  [/理发|剪头|烫发|haircut|barber|hair salon/i, "💇"],
+  [/咖啡|拿铁|美式|coffee|latte|espresso|flat white|starbucks|costa/i, "☕"],
+  [/奶茶|珍珠|boba|bubble tea/i, "🧋"],
+  [/啤酒|红酒|酒吧|清酒|beer|wine|pub|cocktail|whisky/i, "🍺"],
+  [/披萨|pizza/i, "🍕"],
+  [/蛋糕|甜点|面包|烘焙|cake|dessert|bakery|pastry|croissant/i, "🍰"],
+  [/火锅|烧烤|bbq|hotpot|barbecue/i, "🍲"],
+  [/拉面|面条|米线|盒饭|外卖|食堂|午饭|晚饭|早饭|noodle|ramen|takeaway|lunch|dinner/i, "🍜"],
+  [/打车|滴滴|出租车|网约车|taxi|uber|cab|bolt/i, "🚕"],
+  [/书|杂志|book|kindle|magazine/i, "📚"],
+  [/手机|电脑|耳机|相机|充电|phone|laptop|macbook|headphone|camera|charger/i, "💻"],
+  [/药|感冒|看病|医院|门诊|pharmacy|medicine|doctor|hospital|gp |prescription/i, "💊"],
+  [/牙医|洗牙|dentist|dental/i, "🦷"],
+  [/眼镜|配镜|glasses|optician|contact lens/i, "👓"],
+  [/机票|航班|flight|airline|ryanair|easyjet/i, "✈️"],
+  [/火车|高铁|动车|train|rail|trainline/i, "🚆"],
+  [/地铁|公交|metro|subway|tube|oyster|bus fare/i, "🚇"],
+  [/加油|油费|petrol|fuel|diesel/i, "⛽"],
+  [/停车|parking|car park/i, "🅿️"],
+  [/水电|电费|水费|燃气|煤气|electric|water bill|gas bill|energy/i, "💡"],
+  [/话费|宽带|网费|流量|broadband|wifi|mobile bill|phone bill|sim/i, "📶"],
+  [/保险|insurance/i, "🛡️"],
+  [/学费|课程|培训|网课|tuition|course|class|lesson/i, "🎓"],
+  [/房租|租金|monthly rent|rent for/i, "🏠"],
+  [/健身|私教|瑜伽|gym|fitness|yoga|pilates/i, "💪"],
+  [/游戏|手游|steam|switch|playstation|xbox|game/i, "🎮"],
+  [/电影|影院|cinema|movie|film/i, "🎬"],
+  [/演唱会|音乐节|concert|gig|festival/i, "🎵"],
+  [/超市|买菜|生鲜|grocer|supermarket|tesco|sainsbury|aldi|lidl/i, "🛒"],
+  [/快递|运费|邮费|postage|shipping|delivery|royal mail/i, "📦"],
+  [/礼物|送礼|红包|gift|present|birthday/i, "🎁"],
+  [/猫|狗|宠物|猫粮|狗粮|cat|dog|pet|vet|kitten|puppy/i, "🐾"],
+  [/衣服|外套|裤子|鞋|clothes|jacket|shoes|trainers|dress|jeans/i, "👕"],
+  /* --- 猜不到东西，再看这笔是什么性质 --- */
+  [/工资|薪水|发薪|salary|payday|wages|paycheck/i, "💰"],
+  [/卖了|卖掉|闲鱼|二手|sold|selling|vinted|ebay|depop/i, "🏷️"],
+  [/退款|退钱|报销|refund|reimburse|cashback|rebate/i, "↩️"],
+  [/利息|分红|股息|interest|dividend/i, "📈"],
+];
+const descEmoji = (s2) => {
+  const txt = String(s2 || "");
+  if (!txt) return "";
+  const hit = DESC_EMOJI.find(([re]) => re.test(txt));
+  return hit ? hit[1] : "";
+};
+/* 这一笔该显示什么：
+     1 用户自己在输入里打的 emoji
+     2 描述里认得出的东西
+     3 这笔是什么类型（转存/固定进出）
+     4 分类
+   「🛏️ ✈️ 🅿️ 🏷️ ↩️ 🛡️」这几个尾巴上有 FE0F，是**要**带着的 ——
+   它们的默认样子是黑白文字，加了 FE0F 才强制成彩色 emoji。
+   （v76 的注释把这件事说反了。） */
+const txEmoji = (x) => x.emoji || descEmoji(x.description || x.name) ||
+  (x.xfer ? "🏦" : x.fixed === "in" ? "💰"
   : x.fixed === "out" ? "🧾" : catEmoji(x.category));
 
 const catGlyph = (c) => TX_GLYPH[c] ||
