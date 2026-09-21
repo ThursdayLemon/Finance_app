@@ -714,14 +714,16 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
      边 --spend-edge 本来就等于稿子那个 #eb9d6b；绿边稿子用的是满饱和的 --good
    描边 0.5 是稿子给的：手机都是 2x/3x，落到物理像素上正好一根。 */
 .tr .circ{width:30px;height:30px;background:var(--icon-bg);border-color:transparent}
-.tr .circ.out{background:var(--warn-tint);border:.5px solid var(--spend-edge)}
-.tr .circ.in{background:var(--good-tint);border:.5px solid var(--good)}
+/* 描边去掉，底色留着。border-color 设透明而不是 border:0 ——
+   那 1px 的位置留着，圆的直径才不会缩成 28。 */
+.tr .circ.out{background:var(--warn-tint);border-color:transparent}
+.tr .circ.in{background:var(--good-tint);border-color:transparent}
 /* emoji 当图标时：字形自带颜色，别让 .circ 的 color 去染它。
-   底是 30，这儿给 20 —— 四周各留 5。
-   line-height 压成 1、再用 block 撑成 20 见方：emoji 的字形自带上下
-   空隙，不压的话实际占位会比 20 高，在圆里就偏下。 */
-.tremo{font-size:20px;line-height:1;display:block;
- width:20px;height:20px;text-align:center}
+   16 的画布：emoji 的字形实际会画到约 1.16 个字号那么大（≈18.5），
+   底是 30，这样四周还剩 5 出头。上一版写 20 就是这儿算漏了 ——
+   20 的字号画出来接近 23，在 30 的圆里只剩 3.5，顶着圆边看着像被啃掉一块。
+   不设 width/height：给一个比字形还窄的盒子只会让它左右溢出，挡不住什么。 */
+.tremo{font-size:16px;line-height:1;display:block}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
  padding:6px 10px}
 /* 日期、笔数这类元数据用等宽 —— 系统里 mono 就是「工具信息」的标记 */
@@ -1359,7 +1361,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v83";
+const BUILD = "v84";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
