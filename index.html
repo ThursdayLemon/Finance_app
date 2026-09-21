@@ -55,7 +55,7 @@
      --page —— 珠光那层压上去之后顶部量出来是 #e0e0dc，差 18/255，真机上就是
      顶上一块比背景浅的色块，下边缘一条直线。--ground 就是「真机看到的底色」。 */
   --ground:#e0e0dc;
-  --surface:rgba(255,255,255,.6);    /* 玻璃卡 */
+  --surface:rgba(255,255,255,.8);    /* 玻璃卡。稿子从 60 提到了 80 */
   --sunken:rgba(255,255,255,.5);     /* 内嵌块、只读框 */
   --field:#ffffff;          /* 输入框 */
   --edge:rgba(255,255,255,.95);      /* 卡片那圈高光边 */
@@ -399,8 +399,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    只给真的有底栏的那些页加（见 render 里的 dockfade）。
    底栏坐在 bottom:30、高 66，所以 96 是它的上沿 —— 从上沿再往上 14 开始淡。 */
 .body.dockfade{
- -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 110px),transparent calc(100% - 30px));
- mask-image:linear-gradient(to bottom,#000 calc(100% - 110px),transparent calc(100% - 30px))}
+ -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 145px),transparent calc(100% - 26px));
+ mask-image:linear-gradient(to bottom,#000 calc(100% - 145px),transparent calc(100% - 26px))}
 /* flex 列里子项默认会被压扁去适配容器（.sw 带 overflow:hidden 会直接塌成一条缝）—— 
    一律不许收缩，超出就滚动 */
 .body > *{flex-shrink:0}
@@ -1155,18 +1155,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .setup .ss{font-size:11px;line-height:13px;color:var(--warn);margin-top:2px;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 即将发生：暖色底的圆角条，和真实流水区分开 */
+.txcard .upcoming svg{color:var(--on-accent)}
 .upcoming{display:flex;align-items:center;gap:11px;min-height:44px;padding:10px 14px;
  border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer;
  border:1px solid var(--edge);box-shadow:var(--shadow-card);
  backdrop-filter:blur(var(--glass))}
-/* 稿子 26:895 改版：60% 白 + 1px 白描边、圆角 12，字号统一抬到 14。
-   里面那颗徽章的描边也是白的 —— 在白底上基本看不见，等于只剩文字，
-   这是有意的（不是漏画）。 */
-.txcard .upcoming{background:var(--surface);border:1px solid var(--icon-edge);
+/* 稿子 26:895 又改了：这条从 80% 白翻成了墨底白字（#414140 = --accent）。
+   描边跟着去掉 —— 原来那圈白边是配浅底的，压在深底上会变成一道亮框。
+   翻深之后它在一排浅色卡片里第一眼就跳出来，而它说的正是「还没发生、
+   但已经排上了」这件事，值得这个重量。 */
+.txcard .upcoming{background:var(--accent);color:var(--on-accent);border:0;
  box-shadow:none;backdrop-filter:none;
  border-radius:var(--r-sm);padding:8px 12px;gap:8px;margin-bottom:2px}
 .txcard .upcoming .amts{flex:1;min-width:0;font-size:14px;line-height:18px;
- font-weight:var(--w-light);color:var(--ink);
+ font-weight:var(--w-light);color:var(--on-accent);
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 徽章：透明底 + 白描边，左右不留内边距（稿子就是贴着字的） */
 /* 不带描边：稿子里那圈是纯白的，压在 60% 白的条上本该看不见 —— 
@@ -1174,10 +1176,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
    左右也不留内边距，它就是一段文字。 */
 .txcard .upcoming .badge.ol{background:transparent;border:0;
  padding:3px 0;font-size:14px;line-height:18px;font-weight:var(--w-light);
- color:var(--ink)}
-/* 右边的展开/收起：同字号但用 Medium 压住 */
+ color:var(--on-accent)}
+/* 右边的展开/收起：同字号，Medium + 下划线（稿子里它是唯一可点的那个词） */
 .txcard .upcoming > .sub:last-child{font-size:14px;line-height:18px;
- font-weight:var(--w-mid);color:var(--ink)}
+ font-weight:var(--w-mid);color:var(--on-accent);text-decoration:underline}
 /* briefly 那边它是薄荷蓝便利贴 */
 :root[data-skin="briefly"] .upcoming{background:var(--accent2);color:var(--on-tint);
  border:0;box-shadow:none;padding:8px 12px}
@@ -1358,7 +1360,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v81";
+const BUILD = "v82";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
