@@ -1387,7 +1387,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v89";
+const BUILD = "v90";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3486,12 +3486,22 @@ const MIGRATIONS = {
   },
 };
 
+/* 存之前把顶层那四个数组写回当前账本。
+   正常情况下它们本来就是同一个数组（bindBook 绑的引用），这一步是空操作；
+   但只要有谁不小心写了 S.tx = ...，引用就断了，界面和存档从此各说各话。
+   与其指望每个人都记得用 splice，不如在出口处兜一道。 */
+function syncBook() {
+  const b = curBook();
+  if (b) BOOK_KEYS.forEach((k) => { if (Array.isArray(S[k])) b[k] = S[k]; });
+}
+
 let saveTimer = null, saveBroken = false;
 function save() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
     try {
+      syncBook();
       const out = Object.assign({}, S);
       BOOK_KEYS.forEach((k) => delete out[k]);
       localStorage.setItem(SAVE_KEY,
@@ -6091,6 +6101,7 @@ const ACT = {
   exportData: () => {
     /* 和 save() 一样去掉顶层那三个引用 —— 它们是 books 里的同一批数组，
        直接 stringify 会把每一笔账写两遍 */
+    syncBook();
     const out = Object.assign({}, S);
     BOOK_KEYS.forEach((k) => delete out[k]);
     const blob = new Blob([JSON.stringify({ v: SCHEMA, savedAt: Date.now(), data: out },
@@ -6147,7 +6158,12 @@ const ACT = {
       category: ui.f.category || row.category, description: ui.f.description.trim(),
       date: ui.f.date || row.date });
     close(); toast(t("k.saved")); },
-  delTx: (tid) => { S.tx = S.tx.filter((t) => t.id !== tid);
+  /* 必须原地删（splice），不能 S.tx = S.tx.filter(...) ——
+     S.tx 是 books[当前账本].tx 的引用，重新赋值会把这根线扯断：
+     界面用新数组，存档还写着旧的，之后记的每一笔都存不进去。
+     下面 delFixed / delGoal 同理。 */
+  delTx: (tid) => { const i = S.tx.findIndex((t) => t.id === tid);
+    if (i >= 0) S.tx.splice(i, 1);
     ui.sheet = null; ui.f = {}; toast(t("k.deletedTx")); },
 
   /* 金库 */
@@ -6286,8 +6302,9 @@ const ACT = {
       { name: v.name, amount: v.amount, day: v.day });
     close(); toast(t("k.saved")); },
   delFixed: (arg) => { const [kind, fid] = arg.split(":");
-    if (kind === "in") S.fixedIn = S.fixedIn.filter((x) => x.id !== fid);
-    else S.fixedOut = S.fixedOut.filter((x) => x.id !== fid);
+    const arr = kind === "in" ? S.fixedIn : S.fixedOut;
+    const i = arr.findIndex((x) => x.id === fid);
+    if (i >= 0) arr.splice(i, 1);
     ui.sheet = null; ui.f = {}; toast(t("k.deleted")); render(); },
   addGoal: () => sheet("addGoal", { months: 12, auto: false,
     account: (S.accounts.find((a) => !a.earmark) || {}).name }),
@@ -6345,7 +6362,8 @@ addDebt: () => sheet("addDebt", {}),
     toast(t("k.debtUnbound")); render(); },
   delGoal: (gid) => { const g = S.goals.find((x) => x.id === gid);
     /* 钱一直在账户里，删目标只是取消那块预留 —— 不需要「退回」 */
-    S.goals = S.goals.filter((x) => x.id !== gid);
+    const gi = S.goals.findIndex((x) => x.id === gid);
+    if (gi >= 0) S.goals.splice(gi, 1);
     ui.sheet = null; ui.f = {};
     toast(g && g.saved > 0
       ? t("k.goalDeletedFreed", { account: g.account, amt: yuan(g.saved) })
