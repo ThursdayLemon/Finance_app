@@ -718,15 +718,15 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    那 1px 的位置留着，圆的直径才不会缩成 28。 */
 .tr .circ.out{background:var(--warn-tint);border-color:transparent}
 .tr .circ.in{background:var(--good-tint);border-color:transparent}
-/* emoji 当图标时：字形自带颜色，别让 .circ 的 color 去染它。
-   16 的画布：emoji 的字形实际会画到约 1.16 个字号那么大（≈18.5），
-   底是 30，这样四周还剩 5 出头。上一版写 20 就是这儿算漏了 ——
-   20 的字号画出来接近 23，在 30 的圆里只剩 3.5，顶着圆边看着像被啃掉一块。
-   不设 width/height：给一个比字形还窄的盒子只会让它左右溢出，挡不住什么。 */
-/* 居中靠的是这一层自己也撑成 flex、把 emoji 当 flex item 居中 ——
-   而不是交给外面那层去对基线。emoji 是贴基线排的，基线底下还留着
-   descender 的位置，按基线对就会整体偏下一点。
-   撑满 100% 而不是写死 16：.circ 有 1px 边框，内容区是 28 不是 30。 */
+/* emoji 当图标：字形自带颜色，别让 .circ 的 color 去染它。
+
+   字号 16 —— emoji 的字形实际会画到约 1.16 个字号那么大（≈18.6），
+   在 30 的圆里四周剩 5.7。写 20 的话画出来接近 23，只剩 3.4，
+   顶着圆边看就像被啃掉一块。
+
+   自己撑成 flex 把 emoji 当 item 居中，而不是交给外面那层对基线：
+   emoji 是贴基线排的，基线底下还留着 descender 的位置，按基线对会偏下。
+   高度用 100% 不写死 —— .circ 有 1px 边框，内容区是 28 不是 30。 */
 .tremo{font-size:16px;line-height:1;display:flex;
  align-items:center;justify-content:center;width:100%;height:100%}
 :root[data-skin="briefly"] .block{background:var(--good-tint);border-radius:var(--r-sm);
