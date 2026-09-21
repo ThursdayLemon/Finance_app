@@ -1349,7 +1349,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v74";
+const BUILD = "v75";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1788,7 +1788,7 @@ zh: {
   "pf.emoji": "头像", "pf.payday": "发薪日",
   "pf.paydayPh": "几号", "pf.paydayNone": "没设",
   "pf.paydayHint": "每月几号进账。设了之后，可用余额会告诉你还要撑几天，买不买测验也会把它算进去。",
-  "pf.privacy": "只有这三样，而且都只存在这台设备上 —— 这个 app 没有账号，也没地方上传。",
+  "pf.privacy": "只有这两样，而且都只存在这台设备上 —— 这个 app 没有账号，也没地方上传。",
   "mo.tillPayday": (v) => "离发薪还有 " + v.n + " 天",
   "mo.paydayToday": "今天发薪",
   "bd.paydayRow": (v) => "离发薪还有 " + v.n + " 天",
@@ -2278,7 +2278,7 @@ en: {
   "pf.emoji": "Avatar", "pf.payday": "Payday",
   "pf.paydayPh": "Day", "pf.paydayNone": "Not set",
   "pf.paydayHint": "Which day of the month you get paid. Once it's set, your balance tells you how many days it has to last, and the buy-or-not test takes it into account.",
-  "pf.privacy": "Just these three, and they stay on this device \u2014 this app has no account and nowhere to upload them.",
+  "pf.privacy": "Just these two, and they stay on this device \u2014 this app has no account and nowhere to upload them.",
   "mo.tillPayday": (v) => v.n + (v.n === 1 ? " day" : " days") + " until payday",
   "mo.paydayToday": "Payday is today",
   "bd.paydayRow": (v) => v.n + " days until payday",
@@ -2347,8 +2347,7 @@ en: {
    发薪日（唯一能长出功能的那个：余额还要撑几天、买不买测验的松紧）。
    邮箱电话职业一个都没有：这个 app 没有服务器也没有账号，存了也没人读。
    老档案没有 profile 这个字段，这儿兜一次底，不用写迁移。 */
-const prof = () => S.profile || (S.profile = { name: "", emoji: "", payday: null });
-const AVATARS = ["🙂", "😌", "🧑", "👩", "👨", "🧔", "🐱", "🐶", "🦊", "🐼", "🌿", "⭐️"];
+const prof = () => S.profile || (S.profile = { name: "", payday: null });
 
 /* 离下次发薪还有几天。没设发薪日就返回 null —— 后面每一处都靠这个 null
    来决定「装作没这回事」，不能让没填的人凭空多出一条规则。
@@ -4048,8 +4047,11 @@ function monthView() {
      降部的空隙，箭头就比中间那行字高出一两像素。 */
   return { tab: "dashboard", fab: "both", navSplit: true,
     /* 顶栏按样机：头像 · 字标 · 月/年。月份的前后翻挪到下面那颗药丸里了。 */
-    nav: '<div class="avatar" data-a="settings" title="' + esc(t("nav.me")) + '">' +
-      (prof().emoji ? '<span class="avem">' + prof().emoji + "</span>" : ic("man", 16)) +
+    /* 左上角显示的是「你现在在哪一本」——  账本才是这一屏的上下文。
+       个人头像对一个单机记账 app 没有用处，那一格给账本更值。 */
+    nav: '<div class="avatar" data-a="settings" title="' +
+      esc(bookName(curBook())) + '">' +
+      '<span class="avem">' + ((curBook() || {}).emoji || BOOK_EMOJI[0]) + "</span>" +
       "</div>" +
       '<div class="wordmark" style="flex:1">' + ic("markDots", 17) +
       "<span>" + t("app.wordmark") + "</span></div>" +
@@ -4431,9 +4433,6 @@ SCREENS.settings = () => {
       '<div class="card" style="margin-top:-4px">' +
       field(t("pf.name"), input("pfname", prof().name,
         'placeholder="' + esc(t("pf.namePh")) + '"')) +
-      field(t("pf.emoji"), '<div class="tints avatars">' +
-        AVATARS.map((e) => '<div class="adot' + (prof().emoji === e ? " on" : "") +
-          '" data-a="pickAvatar:' + e + '">' + e + "</div>").join("") + "</div>") +
       field(t("pf.payday"), '<div style="display:flex;align-items:center;gap:10px">' +
         '<div style="flex:1">' +
         input("pfpayday", prof().payday == null ? "" : prof().payday,
@@ -6037,7 +6036,6 @@ const ACT = {
     return ui.sheet ? pushSheet("addJar", init) : sheet("addJar", init); },
   pickTint: (k) => { ui.f.tint = k; render(); },
   /* 选中的再点一次 = 取消，退回那颗默认人形 */
-  pickAvatar: (e) => { prof().emoji = prof().emoji === e ? "" : e; render(); },
 
   useBook: (bid) => {
     if (bid === S.bookId) return;
