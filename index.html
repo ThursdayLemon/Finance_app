@@ -1354,7 +1354,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v79";
+const BUILD = "v80";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3266,7 +3266,8 @@ const SYS_CATS = ["food", "transport", "bills", "clothes", "gym", "pet",
   "fun", "shopping", "social", "salary", "other"];
 const catLabel = (c) => { const k = t("cat." + c); return k === "cat." + c ? c : k; };
 const allCats = () => SYS_CATS.concat(S.customCats || []);
-const catOpts = () => allCats().map((c) => [c, catLabel(c)]);
+/* 选分类的时候也看得见图标，跟账本行上是同一个 */
+const catOpts = () => allCats().map((c) => [c, catEmoji(c) + " " + catLabel(c)]);
 let uid = 0;
 /* 存盘里已经有 x1…x15 了，uid 却从 0 重新数 —— 新建的东西会拿到别人的 id，
    于是点新加的那条打开的是老的那条。加载之后必须把 uid 顶到最大值之后。 */
@@ -4189,23 +4190,11 @@ const CAT_WORDS = [
 const CAT_EMOJI = { food: "🍜", transport: "🚕", bills: "🧾", clothes: "👕",
   gym: "💪", pet: "🐾", fun: "🎬", shopping: "🛒", social: "🎁",
   salary: "💰", other: "📌" };
-/* 自定义分类：名字里猜一个，猜不到给 📌 */
-const CAT_WORD_EMOJI = [
-  [/健身|瑜伽|私教|普拉提|游泳|gym|fitness|yoga|workout/i, "💪"],
-  [/宠物|狗|猫|遛|铲屎|pet|dog|puppy|kitten|vets/i, "🐾"],
-  [/衣|裤|鞋|裙|外套|袜|cloth|shirt|shoe|jacket|jeans/i, "👕"],
-  [/水电|电费|水费|燃气|话费|宽带|物业|房租|账单|bill|rent|utilit/i, "🧾"],
-  [/超市|杂货|买菜|生鲜|grocer|market/i, "🛒"],
-  [/游戏|手游|steam|game/i, "🎮"],
-  [/机票|航班|飞|出差|旅行|flight|travel/i, "✈️"],
-  [/电影|演出|门票|票|演唱|ticket|movie|show/i, "🎬"],
-  [/打车|地铁|公交|加油|停车|车|taxi|transport|fuel|park/i, "🚕"],
-  [/吃|饭|餐|外卖|咖啡|奶茶|food|lunch|dinner|coffee/i, "🍜"],
-  [/购物|包|shop/i, "🛒"],
-  [/玩|娱乐|旅游|露营|outing|fun|leisure/i, "🎬"],
-];
-const catEmoji = (c) => CAT_EMOJI[c] ||
-  (CAT_WORD_EMOJI.find(([re]) => re.test(c || "")) || [, "📌"])[1];
+/* 自定义分类走和描述同一张词表（DESC_EMOJI，在下面）——
+   原来这儿另有一张十二条的小表，跟那张四十多条的重复了一大半，
+   结果「香水」这种分类名在描述里认得出、当分类名就认不出。一张表就够。
+   descEmoji 定义在后面，但这儿是运行时才调，不存在 TDZ。 */
+const catEmoji = (c) => CAT_EMOJI[c] || descEmoji(c) || "📌";
 /* 光看分类太粗：「selling plant」是笔收入，按分类就成了 💰，可它明明该是
    🪴。所以先拿描述本身猜一遍，猜不中才退回分类。
 
@@ -4246,7 +4235,9 @@ const DESC_EMOJI = [
   [/游戏|手游|steam|switch|playstation|xbox|game/i, "🎮"],
   [/电影|影院|cinema|movie|film/i, "🎬"],
   [/演唱会|音乐节|concert|gig|festival/i, "🎵"],
-  [/超市|买菜|生鲜|grocer|supermarket|tesco|sainsbury|aldi|lidl/i, "🛒"],
+  [/超市|买菜|生鲜|购物|杂货|grocer|supermarket|tesco|sainsbury|aldi|lidl|shopping/i, "🛒"],
+  [/娱乐|玩乐|露营|outing|leisure/i, "🎡"],
+  [/出差|旅行|travel|trip|holiday/i, "✈️"],
   [/快递|运费|邮费|postage|shipping|delivery|royal mail/i, "📦"],
   [/礼物|送礼|红包|gift|present|birthday/i, "🎁"],
   [/猫|狗|宠物|猫粮|狗粮|cat|dog|pet|vet|kitten|puppy/i, "🐾"],
@@ -4592,8 +4583,8 @@ SCREENS.settings = () => {
       '<div class="lbl" style="margin-top:6px">' + t("set.cats") + "</div>" +
       '<div class="sub" style="margin-top:-8px">' + t("set.catsHint") + "</div>" +
       '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
-      SYS_CATS.map((c) => '<div class="chip flat" style="color:var(--ink-muted)">' + catLabel(c) +
-        "</div>").join("") +
+      SYS_CATS.map((c) => '<div class="chip flat" style="color:var(--ink-muted)">' +
+        catEmoji(c) + " " + catLabel(c) + "</div>").join("") +
       S.customCats.map(catTag).join("") +
       '<div class="chip newcat" data-a="newCat">' + ic("plus", 13) + " " +
       t("set.newCat") + "</div></div>" +
@@ -5240,7 +5231,8 @@ function parsePreview(p) {
       p.drafts.map((d, i) => '<div data-a="editDraft:' + i + '" style="display:flex;gap:10px;' +
         'align-items:center;min-height:44px;cursor:pointer;' +
         'border-bottom:1px solid var(--line)"><div class="chip flat" style="padding:2px 9px">' +
-        esc(catLabel(d.category)) + '</div><div style="flex:1;font-size:15px">' +
+        catEmoji(d.category) + " " + esc(catLabel(d.category)) +
+        '</div><div style="flex:1;font-size:15px">' +
         esc(d.description) +
         '</div><div class="money" style="font-size:15px">' +
         (d.type === "in" ? plus(d.amount) : yuan(d.amount)) + "</div>" +
@@ -5385,7 +5377,8 @@ function breakdownOver(months, kind) {
   });
   const want = kind;                    // t.type 现在就是 "in" / "out"
   S.tx.filter((t) => t.type === want && months.includes(monthOf(t.date)))
-    .forEach((t) => add(catLabel(t.category), t.amount));
+    /* 这个 label 只拿去显示（分析页的明细行），所以前面挂个 emoji 没问题 */
+    .forEach((t) => add(catEmoji(t.category) + " " + catLabel(t.category), t.amount));
   return [...map.entries()].sort((a, b) => b[1] - a[1]);
 }
 const breakdownOf = (m, kind) => breakdownOver([m], kind);
