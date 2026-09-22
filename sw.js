@@ -5,7 +5,7 @@
    GitHub Pages 发的是 cache-control: max-age=600 —— 于是「先拿网络」
    拿回来的其实是十分钟内的旧副本，整个策略被架空。发了新版看不到，
    就是这么来的。加 cache:"no-store" 让它真的去服务器要。 */
-const CACHE = "margin-v75";
+const CACHE = "margin-v91";
 const FILES = ["./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
