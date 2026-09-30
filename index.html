@@ -609,6 +609,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  height:30px;padding:0 12px;border-radius:var(--r-pill);flex:none;cursor:pointer;
  background:var(--accent);color:var(--on-accent);border:1px solid var(--soft-edge)}
 .gopro>span{font-size:12px;line-height:14px;font-weight:var(--w-body)}
+/* 结果页右上角的「Wishlist N」——稿子 2294:7559 */
+.wishpill{display:inline-flex;align-items:center;height:36px;padding:0 12px;flex:none;
+ border-radius:var(--r-pill);background:var(--icon-bg);border:1px solid var(--icon-edge);
+ font-size:12px;line-height:18px;color:var(--ink);cursor:pointer}
 /* 稿子 26:895：191×34、内边距 7/14、里面间隔 8、3px 浅灰描边。
    所有页面（首页月份、分析页月份和年份）共用这一条，不许各写各的。 */
 .mochip{display:inline-flex;align-items:center;gap:8px;background:var(--icon-bg);
@@ -805,13 +809,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 字重跟着稿子走 Regular —— 原来写死 500，在 Onest 上明显更粗一档 */
 .mbtn{min-height:50px;border:1px solid var(--edge);background:var(--icon-bg);
  border-radius:var(--r-pill);display:flex;align-items:center;
- justify-content:center;gap:7px;font-size:15px;font-weight:var(--w-body);background:var(--surface);padding:0 14px;
+ justify-content:center;gap:7px;font-size:15px;font-weight:var(--w-body);background:var(--sunken);padding:0 20px;
  cursor:pointer;text-align:center;color:var(--ink);box-shadow:var(--shadow-btn)}
 .mbtn:active{transform:translateY(1px)}
 .mbtn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
- font-weight:var(--w-bold);box-shadow:var(--shadow-btn)}
+ box-shadow:var(--shadow-btn)}
 .mbtn.off{color:var(--ink-faint);border-color:var(--ink-faint);background:transparent;cursor:not-allowed}
-.mbtn.sm{min-height:44px;font-size:13px}
+/* 稿子里按钮只有 Size=Large 一档，.sm 只表示「次要」，尺寸和字号一律不变 */
+.mbtn.sm{}
 .barh{height:8px;background:var(--track);border-radius:var(--r-pill);overflow:hidden}
 .barh>i{display:block;height:100%;background:var(--accent);transition:width .35s ease}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -1104,25 +1109,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
    一张实底卡（不是玻璃），从上往下：点阵表盘、名字+价格（居中）、
    判定文字。判定那块在稿子里底色和描边都关掉了 —— 它不是一张子卡，
    是卡里的一段话，所以这里也不给它底也不给它框。 */
-.vcard{display:flex;flex-direction:column;
- /* 稿子那张卡左上角压着一层 20% 的暖色图；这里用一团渐变代替，
-    位置和衰减是照着导出图量的。 */
- background:radial-gradient(86% 64% at -10% 34%,
-   rgba(211,118,65,.22) 0%, rgba(211,118,65,.07) 40%, rgba(211,118,65,0) 64%), #f3f3ef;
- border:1px solid var(--edge);gap:12px;padding:20px 16px}
+.vcard{display:flex;flex-direction:column;background:var(--surface);
+ border:1px solid var(--edge);border-radius:18px;gap:28px;padding:20px 14px}
 /* ---- 点阵表盘（稿子 2259:9724 的 rounds 1）---------------------------
    5 圈 × 20 颗 = 100 颗，整片点就是百分比本身，没有「不算数」的装饰点。
    从里往外填：分数多少就亮多少颗，颜色跟判定灯走（绿/琥珀/红）。
    中间留出来的空洞直径 72，和稿子的 68 差不多，数字还是稿子的 22/28。 */
 /* 点阵是横着的一片，不再是同心圆，所以数字也从「压在中间」挪到上面一行。
    圆角比参考图收了一档（那张接近半圆，这儿 18）。 */
-.dotbox{align-self:stretch;background:var(--sunken);border-radius:18px;
- padding:14px 14px 13px;display:flex;flex-direction:column;gap:10px}
-.dotbox .dial{display:block;width:100%;height:auto}
+.vmeter{display:flex;flex-direction:column;gap:10px}
+.vmeter .dial{display:block;width:100%;height:auto}
 /* 数字靠右，和下面那条的右端对齐 —— 参考图那张就是这么摆的 */
-.dotnum{display:block;height:40px;width:auto;align-self:flex-end;margin-right:2px;
+.dotnum{display:block;height:45px;width:auto;align-self:flex-end;margin-right:2px;
  fill:var(--ink)}
-.dotlbl{display:flex;justify-content:space-between;align-items:baseline;
+/* 这一条左边是判定灯、右边是百分号 —— 稿子 2378:9399 */
+.dotlbl{display:flex;justify-content:space-between;align-items:baseline;gap:9px;
  font-size:12px;line-height:16px;color:var(--ink-muted)}
 .dial .doff{fill:var(--ink);opacity:.18}    /* 没亮的那些：同样大小，只是淡 */
 .dnum{font-family:var(--font-num);font-size:22px;line-height:28px;letter-spacing:-.03em;
@@ -1137,18 +1138,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  dialBreath 3.2s ease-in-out 1.45s infinite}
 .dial:not(.anim) .dlit{animation:dialBreath 3.2s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.dial .dlit{animation:none!important}}
-.vhead{display:flex;align-items:baseline;justify-content:center;gap:8px}
-.vname{font-family:var(--font-display);font-size:22px;line-height:28px;color:var(--ink);
+.vhead{display:flex;align-items:baseline;justify-content:flex-start;gap:8px}
+.vname{font-family:var(--font-display);font-size:22px;line-height:26px;color:var(--ink);
  letter-spacing:-.03em}
-.vprice{font-family:var(--font-num);font-size:22px;line-height:28px;color:var(--ink);
- letter-spacing:-.03em}
-/* 判定段：没有底色也没有描边，只靠左右各 12 的内缩和判定色说话 */
-.vtone{display:flex;flex-direction:column;gap:6px;padding:0 12px}
-.vrow{display:flex;align-items:center;gap:9px}
-.vlabel{flex:1;font-family:var(--font-display);font-size:17px;line-height:22px;
- letter-spacing:-.02em}
-.vtext{font-size:12px;line-height:16px;color:var(--ink)}
-.vactions{display:flex;justify-content:flex-end;margin-top:6px}
+.vprice{font-size:14px;line-height:18px;color:var(--ink)}
+/* 判定灯和标签坐进百分比那一条的左端，不再单独占一段 */
+.vrow{display:flex;align-items:center;gap:9px;min-width:0}
+.vrow .dot{width:9px;height:9px}
+.vlabel{font-size:14px;line-height:18px;white-space:nowrap}
+/* 建议和扣分理由合成一段灰字，换行交给 \n —— 稿子 2384:10515 就是三行 */
+.vtext{font-size:12px;line-height:16px;color:var(--ink-muted);white-space:pre-line}
+.vactions{display:flex;justify-content:flex-end}
 .vactions .chip{background:var(--surface);border:1px solid var(--edge);
  border-radius:var(--r-pill);padding:5px 13px;font-size:12px;cursor:pointer;
  display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
@@ -1394,7 +1394,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v96";
+const BUILD = "v97";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1797,7 +1797,7 @@ zh: {
   "re.mode": (v) => v.save ? "储蓄模式的额外扣分" : "模式附加",
   "re.almostNone": (v) => "几乎没扣分 —— 必要度 " + v.n + " 分撑住了，价格也不占分量。",
   "re.blownOut": (v) => "主要扣在" + v.what + " —— 光这一项就扣穿了。",
-  "re.mainly": (v) => "主要扣在" + v.what + "，扣 " + v.n + " 分。",
+  "re.mainly": (v) => "主要扣在" + v.what + "，−" + v.n + " 分。",
   "bd.base": (v) => "必要度基础分　" + v.n + " × 10",
   "bd.priceRow": (v) => "价格占预算　" + v.pct + "% × " + v.mult,
   "bd.dupRow": (v) => "重复拥有" + (v.dup ? "" : "（无）"),
@@ -1811,10 +1811,10 @@ zh: {
     "先去调计划比在这儿纠结一杯咖啡有用。",
   "bg.billsTooBig": (v) => "固定支出已经超过固定收入（" + v.bills + " vs " + v.income +
     "）。这里只能按收入的 " + v.pct + "% 兜底估算 —— 先看看" + v.bills2 + "那一页。",
-  "verdict.green": "绿灯 · 可以直接买", "verdict.amber": "黄灯 · 建议冷静",
+  "verdict.green": "绿灯 · 可以直接买", "verdict.amber": "黄灯 · 冷静一下",
   "verdict.red": "红灯 · 强烈阻止",
   "advice.green": "完全在预算范围内，必要性也够高。放心买。",
-  "advice.amber": "不是非要不可，或者占掉太多闲钱。放 48 小时再说。",
+  "advice.amber": "不是非要不可，或者占掉太多闲钱。等 48 小时。",
   "advice.red": "已被拦截：它占你可用预算的比重太大，必要度又不够高。",
   "advice.redDup": "已被拦截：你在储蓄模式下，而且已经有类似的东西了。",
   "bk.title": "账本", "bk.default": "主账本",
@@ -1822,6 +1822,7 @@ zh: {
   "bk.carry": "带上固定收支", "bk.scratch": "从零开始",
   "bk.carryHint": "工资、房租这些每月固定的。旅行、装修这类临时账本通常不用带；「明年」这种通常要带。",
   "bk.create": "建好并切过去",
+  "bk.edit": "编辑账本", "bk.use": "切换到这一本", "bk.renamed": "改好了",
   "bk.switched": (v) => "已切到「" + v.name + "」",
   "bk.created": (v) => "「" + v.name + "」建好了",
   "bk.hint": "账本只分开流水和固定收支。金库、储蓄计划、买不买清单和所有设置都是共用的 —— 钱只有一份，不该在每本里各算一遍。",
@@ -2259,7 +2260,7 @@ en: {
   "wi.dropPlan": "Drop the plan", "wi.buyStill": "Buy it anyway",
   "wi.buyTooSoon": "Buy it anyway (still cooling off)",
   "wi.startPlan": "Sell things to fund it", "wi.drop": "Let it go",
-  "de.retest": "Test it again", "de.wishlistN": (v) => "Wishlist " + v.n,
+  "de.retest": "Retake Quiz", "de.wishlistN": (v) => "Wishlist " + v.n,
   "de.editIntro": (v) => "Change what you like and score it again — this updates " +
     v.name + " rather than adding another one.",
   "de.intro": "Score it first, decide after.",
@@ -2269,8 +2270,8 @@ en: {
   "de.dupQ": "I already own something that does this",
   "de.update": "Score it again", "de.go": "Should I buy it?",
   "vd.title": "Should I buy it?",
-  "vd.buyNow": "Bought it — log it", "vd.startPlan": "Sell things to fund it",
-  "vd.park": "Put it on the wishlist",
+  "vd.buyNow": "Bought it — log it", "vd.startPlan": "Create Savings Plan",
+  "vd.park": "Add to Wish List",
   "vd.already": (v) => v.name + " is already on your list — this updates that entry " +
     "instead of adding a second one.",
   "sc.points": "pts", "sc.pointsN": (v) => v.n + " pts", "sc.label": "Recommended",
@@ -2279,19 +2280,19 @@ en: {
   "sn.budgetChanged": (v) => "your budget " + (v.down ? "fell from " : "rose from ") +
     v.from + " to " + v.to,
   "sn.sep": "; ",
-  "re.price": (v) => "the price — " + v.pct + "% of your budget",
+  "re.price": (v) => "price: " + v.pct + "% of budget",
   "re.dup": "owning one already",
   "re.mode": (v) => v.save ? "the saving-hard penalty" : "your mode",
   "re.almostNone": (v) => "Barely anything came off — needing it " + v.n +
     "/10 carries it, and the price hardly registers.",
-  "re.blownOut": (v) => "Mostly " + v.what + " — that one alone wipes out the score.",
-  "re.mainly": (v) => "Mostly " + v.what + ", costing " + v.n + " points.",
+  "re.blownOut": (v) => "Main deduction on " + v.what + " — that one alone wipes out the score.",
+  "re.mainly": (v) => "Main deduction on " + v.what + ", \u2212" + v.n + " pts.",
   "bd.base": (v) => "How much you need it　" + v.n + " × 10",
   "bd.priceRow": (v) => "Share of budget　" + v.pct + "% × " + v.mult,
   "bd.dupRow": (v) => v.dup ? "Already own one" : "Already own one (no)",
   "bd.modeRow": (v) => v.save ? "Saving-hard penalty" : "Mode",
   "bd.meta": (v) => "Need it " + v.n + "/10 · " + v.mode + " · budget " + v.budget,
-  "bd.how": "Show the maths", "bd.total": "Total",
+  "bd.how": "How it\u2019s calculated", "bd.total": "Total",
   "bg.ok": "Spare money", "bg.okHow": "regular income − fixed costs (loans included) − " +
     "what you set aside",
   "bg.noSave": " (savings not counted)",
@@ -2301,10 +2302,10 @@ en: {
   "bg.billsTooBig": (v) => "Your fixed costs already exceed your income (" + v.bills +
     " vs " + v.income + "). All I can do is fall back to " + v.pct +
     "% of income — start with " + v.bills2 + ".",
-  "verdict.green": "Green · go ahead", "verdict.amber": "Amber · sleep on it",
-  "verdict.red": "Red · don't",
+  "verdict.green": "Green · Go Ahead", "verdict.amber": "Amber · Cool Down",
+  "verdict.red": "Red · Hold Off",
   "advice.green": "Comfortably inside your budget, and you need it enough. Buy it.",
-  "advice.amber": "Not essential, or it eats too much of your spare money. Give it 48 hours.",
+  "advice.amber": "Not essential, or it takes up too much spare cash. Wait 48 hours.",
   "advice.red": "Blocked: it takes too big a bite out of your budget and you don't " +
     "need it enough.",
   "advice.redDup": "Blocked: you're saving hard, and you already own something like it.",
@@ -2313,6 +2314,7 @@ en: {
   "bk.carry": "Copy fixed income & bills", "bk.scratch": "Start empty",
   "bk.carryHint": "Salary, rent \u2014 the monthly ones. A trip or a renovation usually doesn't need them; \u201cNext year\u201d usually does.",
   "bk.create": "Create and switch to it",
+  "bk.edit": "Edit book", "bk.use": "Switch to this book", "bk.renamed": "Saved",
   "bk.switched": (v) => "Switched to " + v.name,
   "bk.created": (v) => v.name + " is ready",
   "bk.hint": "A book only separates entries and fixed income/bills. The vault, savings plans, the wishlist and every setting stay shared \u2014 there's only one pot of money, it shouldn't be counted once per book.",
@@ -3832,6 +3834,8 @@ const atHome = () => { const k = screen(); return k === "dashboard" || !SCREENS[
    分析页不调这个函数，它自己那边放的是 月/年。 */
 const navRight = () => proPill();
 /* 稿子 2188：首页右上从「月/年」换成了 Get Pro。年度口径挪进分析页。 */
+const wishPill = () => '<div class="wishpill tapout" data-a="wishlist">' +
+  t("de.wishlistN", { n: S.wishlist.length }) + "</div>";
 const proPill = () => '<div class="gopro tapout" data-a="getPro">' + ic("dots", 13) +
   "<span>" + t("pro.cta") + "</span></div>";
 /* 返回挪到左边，和页名并排 —— 不带白底，就是一个箭头。
@@ -4603,7 +4607,7 @@ SCREENS.settings = () => {
       /* 只有一本时不列表，免得给还没用上这功能的人平添一栏 */
       (S.books.length > 1 ? S.books.map((b) => {
         const on = b.id === S.bookId;
-        return '<div class="row" data-a="useBook:' + b.id + '" style="cursor:pointer">' +
+        return '<div class="row" data-a="editBook:' + b.id + '" style="cursor:pointer">' +
           '<div style="font-size:20px;line-height:1">' + b.emoji + "</div>" +
           '<div style="flex:1;min-width:0">' +
           '<div style="font-size:15px;line-height:20px">' + esc(bookName(b)) + "</div>" +
@@ -4820,7 +4824,7 @@ function dotNumber(str) {
    于是每个字符从 5×7 变成 10×14，整片跟着从 9 行长到 18 行 ——
    高度正好翻倍，密度一点没变，看着就是一块 LED 屏。 */
 const DOT_COLS = 60, DOT_ROWS = 18, DIAL_N = DOT_COLS * DOT_ROWS;
-function scoreDial(pct, tone, animate, verdict) {
+function scoreDial(pct, tone, animate, verdict, label) {
   /* SP 是字间空几格（同样按 SCALE 放大）。没放大那会儿 1 格就会让
      WAIT 的四个字母粘在一起。 */
   const GAP = 5, R = 1.7, PAD = 6, GW = 5, GH = 7, SP = 2, SCALE = 2;
@@ -4860,33 +4864,33 @@ function scoreDial(pct, tone, animate, verdict) {
         "/></g>";
     }
   }
-  return '<div class="dotbox">' +
+  return '<div class="vmeter">' +
     dotNumber(Math.round(pct)) +
-    '<div class="dotlbl"><span>' + t("sc.label") + "</span><span>%</span></div>" +
+    '<div class="dotlbl"><div class="vrow">' +
+    '<span class="dot" style="background:' + tone + '"></span>' +
+    '<span class="vlabel" style="color:' + tone + '">' + (label || t("sc.label")) +
+    "</span></div><span>%</span></div>" +
     '<svg class="dial' + (animate ? " anim" : "") +
     '" viewBox="0 0 ' + w + " " + h + '" aria-hidden="true">' + g + "</svg></div>";
 }
 
-function verdictCard(it, r, b, corner) {
+function verdictCard(it, r, b, corner, acts) {
   const [tone, bg, label] = TONE(r.verdict);
   /* 同一件东西、同一个分数只点一次灯 */
   const key = it.name + "|" + r.score;
   const fresh = ui.dialKey !== key;
   ui.dialKey = key;
   return '<div class="card vcard">' +
-    scoreDial(r.score, tone, fresh, r.verdict) +
     '<div class="vhead"><span class="vname">' + esc(it.name) + "</span>" +
     '<span class="vprice">' + yuan(it.price) + "</span></div>" +
-    '<div class="vtone">' +
-    '<div class="vrow"><span class="dot" style="background:' + tone + '"></span>' +
-    '<div class="vlabel" style="color:' + tone + '">' + label + "</div></div>" +
-    '<div class="vtext">' + ADVICE(r.verdict, r.dup) + "</div>" +
-    '<div class="vtext">' + mainReason(it, r) + "</div>" +
+    scoreDial(r.score, tone, fresh, r.verdict, label) +
+    '<div class="vtext">' + ADVICE(r.verdict, r.dup) + "\n" + mainReason(it, r) + "</div>" +
     '<div class="vactions"><div class="chip" data-a="toggleCalc">' +
     (ui.showCalc ? t("word.collapse") : t("bd.how")) + ic("chev", 12) + "</div></div>" +
     (ui.showCalc ? calcRows(it, r) : "") +
     (corner ? '<div class="vcorner">' + corner + "</div>" : "") +
-    "</div></div>";
+    (acts ? actionStack(acts) : "") +
+    "</div>";
 }
 
 /* 算式明细：展开「怎么算的」才出现 */
@@ -4945,8 +4949,8 @@ function mainReason(it, r) {
 }
 
 
-const actionStack = (btns) => '<div style="display:flex;flex-direction:column;gap:9px;' +
-  'margin-top:4px">' + btns.map(([l, a, cls], i) =>
+const actionStack = (btns) => '<div style="display:flex;flex-direction:column;gap:9px">' +
+  btns.map(([l, a, cls], i) =>
     '<div class="mbtn ' + (cls || (i === 0 ? "pri" : "sm")) + '" data-a="' + a + '">' + l +
     "</div>").join("") + "</div>";
 
@@ -5020,13 +5024,13 @@ SCREENS.verdict = () => {
     : r.verdict === "amber" ? [A.park, A.plan, A.retest]
       : [A.plan, A.park, A.retest];
   return { tab: "decisions",
-    nav: navBack() + '<div class="navt" style="flex:1">' + t("vd.title") + "</div>",
-    body: verdictCard(it, Object.assign({}, r, { dup: it.dup }), b) +
+    nav: navBack() + '<div class="navt" style="flex:1">' + t("vd.title") + "</div>" +
+      wishPill(),
+    body: verdictCard(it, Object.assign({}, r, { dup: it.dup }), b, null, acts) +
       (exists ? '<div class="banner tap" data-a="wishItem:' + exists.id +
         '" style="border-color:var(--ink-faint);background:var(--sunken)"><div style="flex:1">' +
         t("vd.already", { name: esc(it.name) }) + "</div>" +
-        '<span style="color:var(--ink-muted)">' + ic("chev", 14) + "</span></div>" : "") +
-      actionStack(acts) };
+        '<span style="color:var(--ink-muted)">' + ic("chev", 14) + "</span></div>" : "") + "" };
 };
 
 /* --- 账户详情：这个账户的余额是怎么走到今天的 ---------------------------
@@ -5204,8 +5208,8 @@ SCREENS.wishItem = () => {
          [t("wi.buyTooSoon"), "tooSoon", "sm off"],
          [t("de.retest"), "retest"], [t("wi.drop"), "dropWish:" + w.id]];
   return { tab: "decisions", nav,
-    body: verdictCard(w, Object.assign({}, r, { dup: w.dup }), b, cooldownNote) +
-      snapNote(w.snap, r, b) + state + actionStack(acts) };
+    body: verdictCard(w, Object.assign({}, r, { dup: w.dup }), b, cooldownNote, acts) +
+      snapNote(w.snap, r, b) + state };
 };
 
 /* ==========================================================================
@@ -5893,6 +5897,19 @@ SHEETS.newBook = () => grab + head(t("bk.new")) +
     t("bk.carryHint")) +
   errline() + btn(t("bk.create"), "submitBook", "pri");
 
+SHEETS.editBook = () => {
+  const b = S.books.find((x) => x.id === ui.f.bid);
+  if (!b) return grab + head(t("bk.edit"));
+  return grab + head(t("bk.edit")) +
+    field(t("f.name"), input("name", ui.f.name,
+      'placeholder="' + esc(t("bk.namePh")) + '"')) +
+    field(t("pf.emoji"), '<div class="tints">' +
+      BOOK_EMOJI.map((e) => '<div class="adot' + (ui.f.emoji === e ? " on" : "") +
+        '" data-a="pickBookEmoji:' + e + '">' + e + "</div>").join("") + "</div>") +
+    errline() + btn(t("f.save"), "submitEditBook", "pri") +
+    (b.id === S.bookId ? "" : btn(t("bk.use"), "useBook:" + b.id, "sm"));
+};
+
 SHEETS.delBook = () => {
   const b = S.books.find((x) => x.id === ui.f.bid);
   if (!b) return grab + head(t("bk.del"));
@@ -6309,6 +6326,16 @@ const ACT = {
     save(); render(); toast(t("bk.switched", { name: bookName(curBook()) })); },
   newBook: () => sheet("newBook", { emoji: BOOK_EMOJI[S.books.length % BOOK_EMOJI.length],
     carry: false }),
+  editBook: (bid) => {
+    const b = S.books.find((x) => x.id === bid);
+    if (!b) return;
+    sheet("editBook", { bid, name: b.name || "", emoji: b.emoji || BOOK_EMOJI[0] }); },
+  submitEditBook: () => {
+    const b = S.books.find((x) => x.id === ui.f.bid);
+    if (!b) return close();
+    b.name = (ui.f.name || "").trim();
+    b.emoji = ui.f.emoji || BOOK_EMOJI[0];
+    close(); toast(t("bk.renamed")); },
   pickBookEmoji: (e) => { ui.f.emoji = e; render(); },
   setCarry: (v) => { ui.f.carry = v === "1"; render(); },
   submitBook: () => {
