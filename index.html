@@ -1072,6 +1072,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .sclear{position:absolute;right:6px;width:32px;height:32px;border-radius:50%;
  display:flex;align-items:center;justify-content:center;cursor:pointer;
  color:var(--ink-muted);background:transparent}
+/* 圆点自己 32，比最小热区小一圈，右边又紧挨着输入框的边 ——
+   撑到 44 才点得稳（和 .rnd/.eye 那几颗用的是同一招） */
+.sclear::after{content:"";position:absolute;left:50%;top:50%;
+ transform:translate(-50%,-50%);width:44px;height:44px}
 .sclear:active{background:var(--icon-bg)}
 .sclear.hide{display:none}
 .tr{display:flex;align-items:center;gap:12px;padding:11px 0;min-height:62px}
@@ -1408,7 +1412,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v103";
+const BUILD = "v104";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -7104,13 +7108,6 @@ function buzz(kind) {
 /* 落定感更重的那几个动作，其余一律轻点 */
 const SOLID = /^(commit|submit|delTx|delFixed|delGoal|delDebt|delAcct|delWish|wipeData|parse|confirm|goalDone|debtDone)/;
 
-/* 按在清空键上不让焦点先跑掉：否则 pointerdown 会 blur 一次（键盘落下去），
-   click 里再 focus 一次（键盘又弹回来），中间闪一下。拦住之后，
-   键盘本来开着的就一直开着，本来收着的由 txClear 里那次 focus 直接唤起。 */
-["pointerdown", "mousedown"].forEach((ev) =>
-  app.addEventListener(ev, (e) => {
-    if (e.target.closest && e.target.closest(".sclear")) e.preventDefault();
-  }, true));
 app.addEventListener("click", (e) => {
   if (swallowClick) {
     swallowClick = false;
