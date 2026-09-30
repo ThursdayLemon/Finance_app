@@ -1408,7 +1408,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v100";
+const BUILD = "v101";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4240,7 +4240,9 @@ function txCard(m, out) {
       : "") +
 
     '<div class="sbar' + (ui.txSearch ? " on" : "") + '"><div class="sbox">' +
-    '<input data-f="txq" value="' + esc(ui.txq || "") + '" placeholder="' +
+    '<input class="txqin" data-f="txq" value="' + esc(ui.txq || "") +
+    '" enterkeyhint="search" autocomplete="off" autocorrect="off" ' +
+    'autocapitalize="off" spellcheck="false" placeholder="' +
     esc(t("tx.search")) + '"/>' +
     '<span class="sclear' + (ui.txq ? "" : " hide") + '" data-a="txClear" title="' +
     esc(t("word.clear")) + '">' + ic("close", 16) + "</span></div></div>" +
@@ -6081,7 +6083,7 @@ const ACT = {
   txClear: () => {
     ui.txq = "";
     const i = app.querySelector(".sbar input");
-    if (i) { i.value = ""; i.focus(); }
+    if (i) i.value = "";
     const x = app.querySelector(".sclear");
     if (x) x.classList.add("hide");
     paintTxList(); },
@@ -7100,6 +7102,12 @@ function buzz(kind) {
 /* 落定感更重的那几个动作，其余一律轻点 */
 const SOLID = /^(commit|submit|delTx|delFixed|delGoal|delDebt|delAcct|delWish|wipeData|parse|confirm|goalDone|debtDone)/;
 
+/* 按在清空键上不改变焦点：键盘该开的开着、该收的收着，
+   由「点不点输入框」说了算，不由这颗按钮说了算。 */
+["pointerdown", "mousedown"].forEach((ev) =>
+  app.addEventListener(ev, (e) => {
+    if (e.target.closest && e.target.closest(".sclear")) e.preventDefault();
+  }, true));
 app.addEventListener("click", (e) => {
   if (swallowClick) {
     swallowClick = false;
@@ -7114,6 +7122,12 @@ app.addEventListener("click", (e) => {
   if (ui.txSearch && !e.target.closest(".sbar") &&
       !e.target.closest('[data-a="txSearch"]')) {
     ui.txSearch = false; ui.txq = ""; render();
+  }
+  /* 筛选菜单同理：点到菜单和漏斗以外的地方，就当这次点击没发生过 —— 
+     菜单收起、筛选回 all，漏斗那颗也跟着灭掉。 */
+  if (ui.txFilter && !e.target.closest(".fmenu") &&
+      !e.target.closest('[data-a="txFilter"]')) {
+    ui.txFilter = false; ui.txF = "all"; render();
   }
   const el = e.target.closest("[data-a]");
   if (!el || el.classList.contains("off")) {
@@ -7569,6 +7583,14 @@ app.addEventListener("input", (e) => {
 app.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || e.shiftKey) return;
   if (e.isComposing || e.keyCode === 229) return;
+  /* 搜索框里的回车是「搜完了」：有词就把键盘收掉、结果留在屏幕上；
+     一个字都没打就等于没想搜，整条退回未激活。 */
+  if (e.target.classList && e.target.classList.contains("txqin")) {
+    e.preventDefault();
+    if ((ui.txq || "").trim()) e.target.blur();
+    else { ui.txSearch = false; ui.txq = ""; render(); }
+    return;
+  }
   if (!e.target.classList || !e.target.classList.contains("jotin")) return;
   e.preventDefault();
   ui.f.text = e.target.value;
