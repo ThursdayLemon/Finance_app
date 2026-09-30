@@ -1394,7 +1394,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v95";
+const BUILD = "v96";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4816,27 +4816,37 @@ function dotNumber(str) {
    重要的是 R : GAP 这个比。 */
 /* 下面这一片不再是「填百分比」—— 百分比上面那排点阵数字已经说了。
    这里用亮点在灰底网点上拼出结论那个词：OK / WAIT / NO。
-   60 × 9 照参考图的密度和行数；字模 7 行，上下正好各留一行灰。 */
-const DOT_COLS = 60, DOT_ROWS = 9, DIAL_N = DOT_COLS * DOT_ROWS;
+   点的大小和疏密不动，字模放大一倍来占地方：字模的一个点摊成 2×2 格，
+   于是每个字符从 5×7 变成 10×14，整片跟着从 9 行长到 18 行 ——
+   高度正好翻倍，密度一点没变，看着就是一块 LED 屏。 */
+const DOT_COLS = 60, DOT_ROWS = 18, DIAL_N = DOT_COLS * DOT_ROWS;
 function scoreDial(pct, tone, animate, verdict) {
-  /* SP 是字间空几格。1 格的时候 WAIT 的四个字母会粘在一起，2 格才分得开 */
-  const GAP = 5, R = 1.7, PAD = 6, GW = 5, GH = 7, SP = 2;
+  /* SP 是字间空几格（同样按 SCALE 放大）。没放大那会儿 1 格就会让
+     WAIT 的四个字母粘在一起。 */
+  const GAP = 5, R = 1.7, PAD = 6, GW = 5, GH = 7, SP = 2, SCALE = 2;
   const w = PAD * 2 + (DOT_COLS - 1) * GAP, h = PAD * 2 + (DOT_ROWS - 1) * GAP;
   const chars = String(VERDICT_WORD[verdict] || "").split("").filter((c) => DOT_FONT[c]);
   /* 先把「哪些格子属于这个词」算出来，画的时候再逐格问 */
   const onSet = new Set();
   if (chars.length) {
-    const wordCols = chars.length * GW + (chars.length - 1) * SP;
+    const cw = GW * SCALE, chh = GH * SCALE, sp = SP * SCALE;
+    const wordCols = chars.length * cw + (chars.length - 1) * sp;
     let c0 = Math.round((DOT_COLS - wordCols) / 2);
-    const r0 = Math.round((DOT_ROWS - GH) / 2);
+    const r0 = Math.round((DOT_ROWS - chh) / 2);
     for (const ch of chars) {
       const rows = DOT_FONT[ch];
       for (let ry = 0; ry < GH; ry++) {
         for (let rx = 0; rx < GW; rx++) {
-          if (rows[ry][rx] === "1") onSet.add((r0 + ry) * DOT_COLS + (c0 + rx));
+          if (rows[ry][rx] !== "1") continue;
+          /* 字模的一个点摊成 SCALE × SCALE 格 */
+          for (let sy = 0; sy < SCALE; sy++) {
+            for (let sx = 0; sx < SCALE; sx++) {
+              onSet.add((r0 + ry * SCALE + sy) * DOT_COLS + (c0 + rx * SCALE + sx));
+            }
+          }
         }
       }
-      c0 += GW + SP;
+      c0 += cw + sp;
     }
   }
   let g = "";
