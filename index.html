@@ -1415,7 +1415,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v107";
+const BUILD = "v108";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6876,12 +6876,17 @@ function playNav() {
     const on = pill.querySelector(".navb.on");
     const prev = was[key];
     if (!on) { was[key] = null; sl.style.opacity = "0"; return; }
-    /* offsetLeft 只给整数，药丸居中之后按钮的真实左边是 x.5，
-       取整就永远差半格 —— 用 rect 算，clientLeft 是药丸自己那 1px 边框 */
+    /* offsetLeft 只给整数，药丸居中之后按钮的真实左边是 x.5，取整就永远
+       差半格 —— 所以用 rect 量。但 rect 是会被 transform 影响的，而
+       paintDock 是在 .dockside 还挂着 scale(.97) 的那一刻调过来的
+       （offsetLeft 不受影响，这是当初用它的原因）。
+       拿药丸「量出来的宽 ÷ 布局宽」反解出此刻的缩放再除回去：两头的好处
+       都留住，也不用等那 110ms 的过渡走完。clientLeft 是药丸自己那 1px 边框。 */
     const pr = pill.getBoundingClientRect(), orr = on.getBoundingClientRect();
-    const x = orr.left - pr.left - pill.clientLeft;
+    const sc = pill.offsetWidth ? pr.width / pill.offsetWidth : 1;
+    const x = (orr.left - pr.left) / sc - pill.clientLeft;
     was[key] = x;
-    sl.style.width = orr.width + "px";
+    sl.style.width = orr.width / sc + "px";
     if (reduced()) {
       /* 不横滑，但也不硬跳：原地淡掉、换到新位置、再淡回来。
          这就是苹果 Reduce Motion 的做法 —— 位移换成淡入淡出，不是没有动画。 */
