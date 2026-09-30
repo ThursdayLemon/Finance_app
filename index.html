@@ -55,7 +55,7 @@
      --page —— 珠光那层压上去之后顶部量出来是 #e0e0dc，差 18/255，真机上就是
      顶上一块比背景浅的色块，下边缘一条直线。--ground 就是「真机看到的底色」。 */
   --ground:#e0e0dc;
-  --surface:rgba(255,255,255,.8);    /* 玻璃卡。稿子从 60 提到了 80 */
+  --surface:rgba(255,255,255,.6);    /* 玻璃卡。稿子 26:895 量的就是 60 */
   --sunken:rgba(255,255,255,.5);     /* 内嵌块、只读框 */
   --field:#ffffff;          /* 输入框 */
   --field-bg:#ececea;       /* 输入框底（稿子 2328:1908）*/
@@ -413,6 +413,12 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 底栏 30(离底) + 66(高) = 96，悬浮按钮的上沿更高（106+45=151）——
    留白要盖过两者里高的那个，再留一口气，不然最后一行贴着投影 */
 .body.hasfab{padding-bottom:184px}
+/* 键盘起来时 .phone 会缩到可视视口那么高（见 syncKb）——
+   底栏和悬浮键就正好顶在键盘上沿，挡住的却是正在输入的那一行。
+   输入的时候它们都用不上，直接收走。 */
+.phone.kb .dock,.phone.kb .qlog{display:none}
+.phone.kb .body{padding-bottom:24px}
+.phone.kb .body.dockfade{-webkit-mask-image:none;mask-image:none}
 /* 悬浮的「马上记一笔」：42 的橙圆，压在账本列表上、底栏上方 10。
    点它直接开那张「键盘就绪」的快捷输入，不是带表单的详细记账页。 */
 .qlog{position:absolute;right:32px;bottom:106px;z-index:5;
@@ -607,7 +613,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px}
 /* 右上角的 Get Pro：86×30 深底白字 + 1px 浅灰描边（稿子 2188 实测） */
 .gopro{display:inline-flex;align-items:center;justify-content:center;gap:5px;
- height:30px;padding:0 12px;border-radius:var(--r-pill);flex:none;cursor:pointer;
+ height:35px;padding:0 13px;border-radius:var(--r-pill);flex:none;cursor:pointer;
  background:var(--accent);color:var(--on-accent);border:1px solid var(--soft-edge)}
 .gopro>span{font-size:12px;line-height:14px;font-weight:var(--w-body)}
 /* 结果页右上角的「Wishlist N」——稿子 2294:7559 */
@@ -713,9 +719,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    align-content 不能用 center —— 那样标题到图标的距离会随卡片高度变。 */
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;flex:1;
  align-content:start;margin-top:12px}
-/* 稿子给这四颗加了描边：60% 白 + 2px #e6e4dd，和账本里那些白圆不一样 */
-.quick .circ{width:36px;height:36px;background:rgba(255,255,255,.6);
- border:2px solid var(--icon-ring)}
+/* 60% 白，不描边 —— 描边在玻璃卡上会把圆切出一道硬线 */
+.quick .circ{width:36px;height:36px;background:rgba(255,255,255,.6);border:0}
 .qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
 /* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
@@ -1044,9 +1049,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .rnd{width:36px;height:36px;border-radius:50%;background:var(--icon-bg);display:flex;
  align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;cursor:pointer;
  border:1px solid var(--icon-edge)}
-/* 账本卡头那两颗跟着承诺卡走：60% 白 + 2px 环（稿子 26:895）*/
-.txcard .thead .rnd{background:rgba(255,255,255,.6);border:2px solid var(--icon-ring)}
-.rnd.on{background:var(--accent);color:var(--on-accent)}
+/* 账本卡头那几颗跟着承诺卡走：60% 白，不描边 */
+.txcard .thead .rnd{background:rgba(255,255,255,.6);border:0}
+.rnd.on,.txcard .thead .rnd.on{background:var(--accent);color:var(--on-accent);border:0}
 /* 漏斗菜单挂在按钮下面，不占默认状态的地方 */
 .fmenu{position:absolute;right:16px;top:52px;z-index:5;background:var(--field);
  border-radius:var(--r-md);padding:6px;min-width:132px;border:1px solid var(--edge);
@@ -1057,10 +1062,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 搜索条：点放大镜才滑出来 */
 .sbar{overflow:hidden;max-height:0;transition:max-height .2s ease,margin .2s ease}
 .sbar.on{max-height:56px;margin-bottom:6px}
+.sbox{position:relative;display:flex;align-items:center}
 .sbar input{width:100%;height:44px;border:1px solid var(--icon-edge);
- border-radius:var(--r-pill);background:var(--icon-bg);padding:0 16px;font:var(--w-body) 14px var(--font);
+ border-radius:var(--r-pill);background:var(--icon-bg);padding:0 44px 0 16px;
+ font:var(--w-body) 14px var(--font);
  color:var(--ink);outline:none;letter-spacing:-.01em}
 .sbar input::placeholder{color:var(--ink-faint)}
+/* 关闭键：清空搜索、收起搜索条、列表回到默认 */
+.sclear{position:absolute;right:6px;width:32px;height:32px;border-radius:50%;
+ display:flex;align-items:center;justify-content:center;cursor:pointer;
+ color:var(--ink-muted);background:transparent}
+.sclear:active{background:var(--icon-bg)}
+.sclear.hide{display:none}
 .tr{display:flex;align-items:center;gap:12px;padding:11px 0;min-height:62px}
 .tn{flex:1;min-width:0}
 .tn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1395,7 +1408,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v98";
+const BUILD = "v99";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1450,7 +1463,7 @@ zh: {
   "nav.me": "我", "nav.sections": "分区", "scope.month": "月", "scope.year": "年",
   "pro.cta": "升级 Pro", "pro.soon": "Pro 还在做，先把这套用顺手",
   "word.back": "返回", "word.addOne": "记一笔",
-  "date.month": (v) => v.y + "年" + +v.m + "月",
+  "date.month": (v) => v.y + "年" + +v.m + "月", "date.monthOnly": (v) => +v.m + "月",
   "date.monthShort": (v) => +v.m + "月",
   "date.day": (v) => +v.m + "月" + +v.d + "日",
   "date.year": (v) => v.y + " 年",
@@ -1461,6 +1474,7 @@ zh: {
   "word.fixedIn": "固定收入", "word.fixedOut": "固定支出",
   "word.debt": "还贷", "word.debtLong": "固定还贷", "word.fixedSave": "固定储蓄",
   "word.breakdown": "分类", "word.expand": "展开", "word.collapse": "收起",
+  "word.clear": "清空",
   "cat.food": "餐饮", "cat.transport": "交通", "cat.fun": "娱乐",
   "cat.shopping": "购物", "cat.social": "人情往来", "cat.salary": "工资",
   "cat.bills": "账单", "cat.clothes": "服饰", "cat.gym": "健身", "cat.pet": "宠物",
@@ -1899,6 +1913,7 @@ en: {
   "pro.cta": "Get Pro", "pro.soon": "Pro isn't ready yet — enjoy this first",
   "word.back": "Back", "word.addOne": "Add",
   "date.month": (v) => MON[+v.m - 1] + " · " + v.y,
+  "date.monthOnly": (v) => MON[+v.m - 1],
   "date.monthShort": (v) => MON3[+v.m - 1],
   "date.day": (v) => MON3[+v.m - 1] + " " + +v.d,
   "date.year": (v) => v.y,
@@ -1910,6 +1925,7 @@ en: {
   "word.debt": "loan payments", "word.debtLong": "loan payments",
   "word.fixedSave": "monthly savings",
   "word.breakdown": "Breakdown", "word.expand": "Show", "word.collapse": "Hide",
+  "word.clear": "Clear",
   "cat.food": "Food", "cat.transport": "Transport", "cat.fun": "Fun",
   "cat.shopping": "Shopping", "cat.social": "Gifts", "cat.salary": "Salary",
   "cat.bills": "Bills", "cat.clothes": "Clothes", "cat.gym": "Gym", "cat.pet": "Pet",
@@ -2526,6 +2542,8 @@ const shiftMonth = (m, n) => { const [y, mo] = m.split("-").map(Number);
   const d = new Date(Date.UTC(y, mo - 1 + n, 1));
   return d.toISOString().slice(0, 7); };
 const monthName = (m) => { const [y, mo] = m.split("-"); return t("date.month", { y, m: mo }); };
+/* 首页那颗胶囊只说月份 —— 年份在「你现在在哪个月」这件事上是噪音 */
+const monthOnly = (m) => { const [y, mo] = m.split("-"); return t("date.monthOnly", { y, m: mo }); };
 const lastDayOf = (m) => { const [y, mo] = m.split("-").map(Number);
   return new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10); };
 const sumIn = (s, m, type) => s.tx
@@ -4152,7 +4170,7 @@ function monthView() {
          「分析」页去了（点左边那张卡进去），首页开场是「你有多少」。 */
       '<div class="hero">' +
       '<div class="mochip">' + monthArrow("prev", true) +
-      '<span>' + monthName(m) + "</span>" + monthArrow("next", !cur) + "</div>" +
+      '<span>' + monthOnly(m) + "</span>" + monthArrow("next", !cur) + "</div>" +
       '<div class="hlbl">' + t("mo.available") + "</div>" +
       '<div class="heroamt">' +
       (ui.hideBal ? '<span class="big">' + ccy().sym +
@@ -4206,9 +4224,11 @@ function txCard(m, out) {
     '<div class="secttl">' + t("mo.ledger") + "</div>" +
     '<div class="rnd' + (ui.txSearch ? " on" : "") + '" data-a="txSearch" title="' +
     esc(t("tx.search")) + '">' + ic("search", 14) + "</div>" +
-    '<div class="rnd' + (ui.txFilter ? " on" : "") + '" data-a="txFilter" title="' +
+    '<div class="rnd' + (ui.txFilter || (ui.txF && ui.txF !== "all") ? " on" : "") +
+    '" data-a="txFilter" title="' +
     esc(t("tx.filter")) + '">' + ic("filter", 14) + "</div>" +
-    (out > 0 ? '<div class="rnd" data-a="cats" title="' + esc(t("word.breakdown")) +
+    (out > 0 ? '<div class="rnd' + (ui.sheet === "cats" ? " on" : "") +
+      '" data-a="cats" title="' + esc(t("word.breakdown")) +
       '">' + ic("pie", 14) + "</div>" : "") + "</div>" +
 
     (ui.txFilter
@@ -4219,9 +4239,11 @@ function txCard(m, out) {
         "</div>"
       : "") +
 
-    '<div class="sbar' + (ui.txSearch ? " on" : "") + '">' +
+    '<div class="sbar' + (ui.txSearch ? " on" : "") + '"><div class="sbox">' +
     '<input data-f="txq" value="' + esc(ui.txq || "") + '" placeholder="' +
-    esc(t("tx.search")) + '"/></div>' +
+    esc(t("tx.search")) + '"/>' +
+    '<span class="sclear' + (ui.txq ? "" : " hide") + '" data-a="txClear" title="' +
+    esc(t("word.clear")) + '">' + ic("close", 16) + "</span></div></div>" +
 
     (future.length
       ? '<div class="upcoming" data-a="toggleFuture">' +
@@ -6049,7 +6071,14 @@ const ACT = {
   /* 账本卡头的三个键。筛选菜单开着的时候再点一次就收起来。 */
   txSearch: () => { ui.txSearch = !ui.txSearch; if (!ui.txSearch) ui.txq = "";
     ui.txFilter = false; render();
-    if (ui.txSearch) { const i = app.querySelector('.sbar input'); if (i) i.focus(); } },
+    /* 聚焦之后还得把搜索条滚进视野 —— 键盘一起来可视区就剩一半，
+       光聚焦的话正在输入的那一行常常在屏幕外 */
+    if (ui.txSearch) {
+      const i = app.querySelector(".sbar input");
+      if (i) { i.focus(); setTimeout(() => {
+        if (i.isConnected) i.scrollIntoView({ block: "center", behavior: "smooth" }); }, 260); }
+    } },
+  txClear: () => { ui.txq = ""; ui.txSearch = false; render(); },
   txFilter: () => { ui.txFilter = !ui.txFilter; render(); },
   txF: (k) => { ui.txF = k; ui.txFilter = false; render(); },
   analytics: () => {
@@ -7332,6 +7361,7 @@ if (vv) {
     const kb = Math.max(0, window.innerHeight - vv.height);
     /* 一两像素的抖动别往上写，会让抽屉发颤 */
     app.style.setProperty("--kb", (kb > 24 ? kb : 0) + "px");
+    app.classList.toggle("kb", kb > 24);
     if (onPhone()) app.style.height = Math.round(vv.height) + "px";
     else app.style.removeProperty("height");
     /* iOS 还会为了露光标把窗口滚一道 —— 滚回去，不然又多一次位移 */
@@ -7498,7 +7528,11 @@ app.addEventListener("input", (e) => {
   const f = e.target.dataset.f;
   if (!f) return;
   const v = e.target.value;
-  if (f === "txq") { ui.txq = v; paintTxList(); return; }
+  if (f === "txq") {
+    ui.txq = v; paintTxList();
+    const x = app.querySelector(".sclear");
+    if (x) x.classList.toggle("hide", !v);
+    return; }
   if (f === "pfname") { prof().name = v; save(); return; }
   if (f === "pfpayday") {
     /* 空着就是没设；1–31 之外的一律当没设，别让 0 或 45 号混进去 */
