@@ -1117,8 +1117,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 点阵是横着的一片，不再是同心圆，所以数字也从「压在中间」挪到上面一行。
    圆角比参考图收了一档（那张接近半圆，这儿 18）。 */
 .dotbox{align-self:stretch;background:var(--sunken);border-radius:18px;
- padding:13px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:9px}
+ padding:14px 14px 13px;display:flex;flex-direction:column;gap:10px}
 .dotbox .dial{display:block;width:100%;height:auto}
+/* 数字靠右，和下面那条的右端对齐 —— 参考图那张就是这么摆的 */
+.dotnum{display:block;height:40px;width:auto;align-self:flex-end;margin-right:2px;
+ fill:var(--ink)}
+.dotlbl{display:flex;justify-content:space-between;align-items:baseline;
+ font-size:12px;line-height:16px;color:var(--ink-muted)}
 .dial .doff{fill:var(--ink);opacity:.18}    /* 没亮的那些：同样大小，只是淡 */
 .dnum{font-family:var(--font-num);font-size:22px;line-height:28px;letter-spacing:-.03em;
  pointer-events:none}
@@ -1389,7 +1394,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v93";
+const BUILD = "v94";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1782,7 +1787,7 @@ zh: {
   "vd.buyNow": "买了，记一笔", "vd.startPlan": "创建攒钱计划",
   "vd.park": "移入向往清单",
   "vd.already": (v) => "「" + v.name + "」已经在清单里 —— 移入会更新那一条，不会多出一件。",
-  "sc.points": "分", "sc.pointsN": (v) => v.n + " 分",
+  "sc.points": "分", "sc.pointsN": (v) => v.n + " 分", "sc.label": "推荐度",
   "sn.was": (v) => "当时 <b>" + v.before + "</b> → 现在 <b>" + v.after + "</b>",
   "sn.modeChanged": (v) => "模式从" + v.from + "换成了" + v.to,
   "sn.budgetChanged": (v) => "可用预算从 " + v.from + (v.down ? " 降到 " : " 涨到 ") + v.to,
@@ -2268,7 +2273,7 @@ en: {
   "vd.park": "Put it on the wishlist",
   "vd.already": (v) => v.name + " is already on your list — this updates that entry " +
     "instead of adding a second one.",
-  "sc.points": "pts", "sc.pointsN": (v) => v.n + " pts",
+  "sc.points": "pts", "sc.pointsN": (v) => v.n + " pts", "sc.label": "Recommended",
   "sn.was": (v) => "Was <b>" + v.before + "</b> → now <b>" + v.after + "</b>",
   "sn.modeChanged": (v) => "you switched from " + v.from + " to " + v.to,
   "sn.budgetChanged": (v) => "your budget " + (v.down ? "fell from " : "rose from ") +
@@ -4752,6 +4757,45 @@ const lampOf = (v) => TONE(v)[2].split(" · ")[0];
    里面 7 圈 × 30 颗是稿子的底纹，静止不动。
    animate=false 时只留呼吸，不重放「依次亮」：展开算式、改预算这些都会
    触发一次 render，每次都从头点一遍灯太吵。 */
+/* 数字也用点做 —— 经典的 5×7 字模，一格一个点，只画亮的那些。
+   笔画本身就是点阵，所以它和下面那条用的是同一种语言，只是点大一号。 */
+const DOT_FONT = {
+  "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+  "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+  "2": ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+  "3": ["11111", "00010", "00100", "00010", "00001", "10001", "01110"],
+  "4": ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+  "5": ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
+  "6": ["00110", "01000", "10000", "11110", "10001", "10001", "01110"],
+  "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+  "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+  "9": ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
+};
+/* 数字走正文色，不跟着红绿灯变 —— 参考图那张也是这样：读数是黑的，
+   颜色留给下面那条。灯的颜色在这张卡上已经有灯点和文字各说一遍了，
+   数字再说第三遍，整张卡就只剩一个颜色。 */
+function dotNumber(str) {
+  const G = 7, R = 2.6, PAD = 2, GLYPH_W = 5, GLYPH_H = 7, SPACE = 2;
+  const chars = String(str).split("").filter((c) => DOT_FONT[c]);
+  if (!chars.length) return "";
+  const cols = chars.length * GLYPH_W + (chars.length - 1) * SPACE;
+  const w = PAD * 2 + (cols - 1) * G, h = PAD * 2 + (GLYPH_H - 1) * G;
+  let g = "", x0 = 0;
+  for (const ch of chars) {
+    const rows = DOT_FONT[ch];
+    for (let ry = 0; ry < GLYPH_H; ry++) {
+      for (let rx = 0; rx < GLYPH_W; rx++) {
+        if (rows[ry][rx] !== "1") continue;
+        g += '<circle cx="' + (PAD + (x0 + rx) * G) + '" cy="' + (PAD + ry * G) +
+          '" r="' + R + '"/>';
+      }
+    }
+    x0 += GLYPH_W + SPACE;
+  }
+  return '<svg class="dotnum" viewBox="0 0 ' + w + " " + h +
+    '" aria-hidden="true">' + g + "</svg>";
+}
+
 /* 60 × 3 = 180 格。压成三行就没法正好 100（除不尽），与其让最后一行缺
    几个、右上角豁个口子，不如让这些格子全都参与比例 —— 网格是整齐的，
    也依然没有「不算数」的点。
@@ -4776,7 +4820,8 @@ function scoreDial(pct, tone, animate) {
       "/></g>";
   }
   return '<div class="dotbox">' +
-    '<div class="dnum" style="color:' + tone + '">' + Math.round(pct) + "%</div>" +
+    dotNumber(Math.round(pct)) +
+    '<div class="dotlbl"><span>' + t("sc.label") + "</span><span>%</span></div>" +
     '<svg class="dial' + (animate ? " anim" : "") +
     '" viewBox="0 0 ' + w + " " + h + '" aria-hidden="true">' + g + "</svg></div>";
 }
