@@ -1408,7 +1408,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v101";
+const BUILD = "v102";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1462,7 +1462,7 @@ zh: {
   "tab.money": "财况", "tab.bills": "账单", "tab.wants": "种草", "tab.vault": "金库",
   "nav.me": "我", "nav.sections": "分区", "scope.month": "月", "scope.year": "年",
   "pro.cta": "升级 Pro", "pro.soon": "Pro 还在做，先把这套用顺手",
-  "word.back": "返回", "word.addOne": "记一笔",
+  "word.back": "返回", "word.addOne": "记一笔", "word.quickAdd": "一句话记一笔",
   "date.month": (v) => v.y + "年" + +v.m + "月", "date.monthOnly": (v) => +v.m + "月",
   "date.monthShort": (v) => +v.m + "月",
   "date.day": (v) => +v.m + "月" + +v.d + "日",
@@ -1911,7 +1911,7 @@ en: {
   "tab.money": "Home", "tab.bills": "Bills", "tab.wants": "Wants", "tab.vault": "Savings",
   "nav.me": "Me", "nav.sections": "Sections", "scope.month": "Mo", "scope.year": "Yr",
   "pro.cta": "Get Pro", "pro.soon": "Pro isn't ready yet — enjoy this first",
-  "word.back": "Back", "word.addOne": "Add",
+  "word.back": "Back", "word.addOne": "Add", "word.quickAdd": "Quick add",
   "date.month": (v) => MON[+v.m - 1] + " · " + v.y,
   "date.monthOnly": (v) => MON[+v.m - 1],
   "date.monthShort": (v) => MON3[+v.m - 1],
@@ -6677,7 +6677,7 @@ function dockHtml(tab, fab) {
         "<span>" + t("as.speak") + "</span></div>" : '<div class="act ghost"></div>')
     : half(0, 2);
   const right = (acts) => acts
-    ? '<div class="act hot" data-a="jot">' + ic("plus", 17) +
+    ? '<div class="act hot" data-a="addTx">' + ic("plus", 17) +
       "<span>" + t("word.addOne") + "</span></div>"
     : half(2, 4);
   dockSlots = { left, right };
@@ -6687,7 +6687,7 @@ function dockHtml(tab, fab) {
   const quick = acts ? "" :
     /* 别挂 tapout —— .tapout{position:relative} 和 .qlog 特异度相同、写在后面，
        会把 absolute 盖掉（第一版就是这么飞到左上角的）。42 本来就够热区。 */
-    '<div class="qlog" data-a="jot" title="' + esc(t("word.addOne")) + '">' +
+    '<div class="qlog" data-a="jot" title="' + esc(t("word.quickAdd")) + '">' +
     ic("plus", 20) + "</div>";
   return quick + '<div class="dock">' +
     '<div class="dockside">' + left(acts) + "</div>" +
