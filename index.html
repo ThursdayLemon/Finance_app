@@ -393,7 +393,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 顶栏里的字标（首页）本来就是居中的，别被上面那条带跑 */
 .nav.split .navt{position:static;left:auto;right:auto}
 :root[data-skin="briefly"] .navt{font-family:var(--font);font-weight:700}
-.body{flex:1;padding:14px 16px 180px;display:flex;flex-direction:column;gap:12px;
+.body{flex:1;padding:14px 16px 220px;display:flex;flex-direction:column;gap:12px;
  overflow-y:auto;overflow-x:hidden}
 /* 底栏压住的那一段，内容淡出去，不是被硬切在底栏边缘。
    用 mask 而不是盖一层渐变色：底下那层珠光不是纯色，盖色块永远对不上；
@@ -412,7 +412,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    最后一行不会贴着底栏的投影。年视图和账单页原来就差这一口。 */
 /* 底栏 30(离底) + 66(高) = 96，悬浮按钮的上沿更高（106+45=151）——
    留白要盖过两者里高的那个，再留一口气，不然最后一行贴着投影 */
-.body.hasfab{padding-bottom:184px}
+.body.hasfab{padding-bottom:224px}
 /* 键盘起来时 .phone 会缩到可视视口那么高（见 syncKb）——
    底栏和悬浮键就正好顶在键盘上沿，挡住的却是正在输入的那一行。
    输入的时候它们都用不上，直接收走。 */
@@ -1373,7 +1373,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
   /* 跟着底栏走：底栏高 66，上面再留 10 */
   .qlog{bottom:calc(76px + max(30px, env(safe-area-inset-bottom)))}
   .toast{bottom:calc(72px + max(30px, env(safe-area-inset-bottom)))}
-  .body,.body.hasfab{padding-bottom:calc(150px + max(30px, env(safe-area-inset-bottom)))}
+  .body,.body.hasfab{padding-bottom:calc(190px + max(30px, env(safe-area-inset-bottom)))}
   .sheet{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
   .toast.high{bottom:auto}
 }
@@ -1415,7 +1415,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v106";
+const BUILD = "v107";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
