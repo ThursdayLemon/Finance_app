@@ -1412,7 +1412,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v104";
+const BUILD = "v105";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6909,7 +6909,20 @@ function playNav() {
       return;
     }
     sl.style.opacity = "1";
-    if (prev === x) return;                /* 没换格，别白动一次 */
+    if (prev === x) {
+      /* 没换格，不该白滑一次。但这条滑块可能是刚重建出来的（底栏换出
+         「说一句/记一笔」再换回来，两颗药丸整个是新节点），新节点没有
+         inline transform，会停在 translateX(0) —— 也就是药丸的左内边距上。
+         所以位置还是要落一次，只是不给它动画。 */
+      const want = "translateX(" + x + "px)";
+      if (sl.style.transform !== want) {
+        sl.style.transition = "none";
+        sl.style.transform = want;
+        void sl.offsetHeight;
+        sl.style.transition = "";
+      }
+      return;
+    }
     sl.style.transition = "none";          /* 先退回上一格，逼画一帧，再放它滑 */
     sl.style.transform = "translateX(" + prev + "px)";
     void sl.offsetHeight;
@@ -7580,6 +7593,18 @@ app.addEventListener("input", (e) => {
 /* 「记一笔」里回车就是确认 —— 稿子那张贴着键盘，submit 键就是提交键。
    Shift+回车留给换行；中文输入法选词按的也是回车，isComposing 那一下得放过，
    不然拼音还没落地就被拿去解析了。 */
+/* 搜索框空着失焦 = 没想搜，退回未激活 —— iOS 键盘那条上的「完成 / ✓」
+   按下去就是 blur，走的就是这里。点 × 会先 blur 再 focus 回来，
+   所以延一拍再判断，别把「清空接着搜」误当成放弃。 */
+app.addEventListener("focusout", (e) => {
+  if (!e.target.classList || !e.target.classList.contains("txqin")) return;
+  setTimeout(() => {
+    if (!ui.txSearch || (ui.txq || "").trim()) return;
+    const i = app.querySelector(".txqin");
+    if (i && document.activeElement === i) return;   /* 焦点又回来了，别关 */
+    ui.txSearch = false; ui.txq = ""; render();
+  }, 120);
+});
 app.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || e.shiftKey) return;
   if (e.isComposing || e.keyCode === 229) return;
