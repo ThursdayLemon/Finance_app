@@ -1117,7 +1117,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 点阵是横着的一片，不再是同心圆，所以数字也从「压在中间」挪到上面一行。
    圆角比参考图收了一档（那张接近半圆，这儿 18）。 */
 .dotbox{align-self:stretch;background:var(--sunken);border-radius:18px;
- padding:14px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:10px}
+ padding:13px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:9px}
 .dotbox .dial{display:block;width:100%;height:auto}
 .dial .doff{fill:var(--ink);opacity:.18}    /* 没亮的那些：同样大小，只是淡 */
 .dnum{font-family:var(--font-num);font-size:22px;line-height:28px;letter-spacing:-.03em;
@@ -1389,7 +1389,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v92";
+const BUILD = "v93";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4752,16 +4752,21 @@ const lampOf = (v) => TONE(v)[2].split(" · ")[0];
    里面 7 圈 × 30 颗是稿子的底纹，静止不动。
    animate=false 时只留呼吸，不重放「依次亮」：展开算式、改预算这些都会
    触发一次 render，每次都从头点一遍灯太吵。 */
-const DOT_COLS = 20, DOT_ROWS = 5, DIAL_N = DOT_COLS * DOT_ROWS;  /* = 100 */
+/* 60 × 3 = 180 格。压成三行就没法正好 100（除不尽），与其让最后一行缺
+   几个、右上角豁个口子，不如让这些格子全都参与比例 —— 网格是整齐的，
+   也依然没有「不算数」的点。
+   点收到原来的三分之一之后，间距必须跟着收：只缩点不缩距，点之间会空
+   出一大片，那种密集的网点感就没了（那正是参考图的样子）。
+   R 和 GAP 是比例关系 —— SVG 会缩到卡片宽度，所以这里的绝对值不重要，
+   重要的是 R : GAP 这个比。 */
+const DOT_COLS = 60, DOT_ROWS = 3, DIAL_N = DOT_COLS * DOT_ROWS;  /* = 180 */
 function scoreDial(pct, tone, animate) {
-  const lit = Math.max(0, Math.min(DIAL_N, Math.round(pct)));
-  const GAP = 16, R = 5, PAD = 10;
+  const lit = Math.max(0, Math.min(DIAL_N, Math.round(pct / 100 * DIAL_N)));
+  const GAP = 5, R = 1.7, PAD = 6;
   const w = PAD * 2 + (DOT_COLS - 1) * GAP, h = PAD * 2 + (DOT_ROWS - 1) * GAP;
   let g = "";
-  /* 20 列 × 5 行 = 100 颗，一颗就是一个百分点 —— 没有另一层「底纹」，
-     不存在不算数的点。从**底下那一行**往上填、每行从左到右：
-     像水位涨上来，而不是从某个角落开始铺。
-     20% 正好填满最底一行，100% 整片亮。 */
+  /* 从**底下那一行**往上填、每行从左到右：像水位涨上来，
+     而不是从某个角落开始铺。三分之一就是最底一行满，100% 整片亮。 */
   for (let n = 0; n < DIAL_N; n++) {
     const col = n % DOT_COLS, row = DOT_ROWS - 1 - Math.floor(n / DOT_COLS);
     const on = n < lit;
