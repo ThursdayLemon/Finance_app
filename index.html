@@ -470,8 +470,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
 .navpill{position:relative;flex:1;min-width:0;height:58px;border-radius:var(--r-pill);
  background:rgba(236,236,236,.2);border:1px solid var(--icon-edge);
- display:flex;align-items:center;justify-content:space-between;
- gap:0;padding:0 4px}
+ display:flex;align-items:center;justify-content:center;
+ gap:0;padding:0}
 /* 稿子 26:895：选中的那一格是一颗白色药丸（64×38，r30），
    没选中的就是透明。不再靠透明度分主次 —— 白底更直接。 */
 /* 稿子把每一格做成了「图标 + 名字」：65×50、r30、1px 白描边 + 很浅的投影。
@@ -479,7 +479,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 白底从 .navb.on 的背景里抽出来，做成一条独立的滑块 —— 原来那条
    .18s 的背景过渡一次也没跑过：render 是整屏重画，每格都是新节点，
    新节点没有「上一个状态」。抽出来之后它能在两格之间横着滑（见 playNav）。 */
-.navslide{position:absolute;top:4px;left:0;height:50px;border-radius:30px;
+.navslide{position:absolute;top:50%;margin-top:-25px;left:0;height:50px;border-radius:30px;
  background:linear-gradient(180deg,#ffffff 0%,#f4f4f4 100%);
  border:1px solid var(--icon-edge);
  box-shadow:0 2px 6px -1px rgba(65,65,64,.12),0 1px 2px rgba(65,65,64,.06);
@@ -487,9 +487,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  transition:transform .34s cubic-bezier(.22,1,.36,1),opacity .18s ease}
 .navb{position:relative;z-index:1;
  width:65px;height:50px;border-radius:30px;flex-shrink:0;display:flex;
- flex-direction:column;align-items:center;justify-content:center;gap:2px;
+ flex-direction:column;align-items:center;justify-content:center;gap:4px;
  color:var(--ink);cursor:pointer;border:1px solid transparent}
-/* 图标和名字之间 2（稿子 2219:7801） */
+/* 图标和名字之间 4 */
 .navb > span{font-size:11px;line-height:13px;font-weight:var(--w-body);
  color:var(--ink);white-space:nowrap}
 /* 选中的那格是白到浅灰的竖向渐变，不是纯白 */
@@ -1129,6 +1129,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
    是卡里的一段话，所以这里也不给它底也不给它框。 */
 .vcard{display:flex;flex-direction:column;background:var(--surface);
  border:1px solid var(--edge);border-radius:18px;gap:28px;padding:20px 14px}
+/* 绿灯多一颗按钮（能买 / 攒钱 / 收藏 / 重测），按 28 的行距最后一颗会压到
+   底栏下面去。只有这一种情况把段距收到 20，黄灯红灯还是稿子的 28。 */
+.vcard.tight{gap:20px}
 /* ---- 点阵表盘（稿子 2259:9724 的 rounds 1）---------------------------
    5 圈 × 20 颗 = 100 颗，整片点就是百分比本身，没有「不算数」的装饰点。
    从里往外填：分数多少就亮多少颗，颜色跟判定灯走（绿/琥珀/红）。
@@ -1412,7 +1415,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v105";
+const BUILD = "v106";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4909,7 +4912,7 @@ function verdictCard(it, r, b, corner, acts) {
   const key = it.name + "|" + r.score;
   const fresh = ui.dialKey !== key;
   ui.dialKey = key;
-  return '<div class="card vcard">' +
+  return '<div class="card vcard' + (acts && acts.length > 3 ? " tight" : "") + '">' +
     '<div class="vhead"><span class="vname">' + esc(it.name) + "</span>" +
     '<span class="vprice">' + yuan(it.price) + "</span></div>" +
     scoreDial(r.score, tone, fresh, r.verdict, label) +
@@ -6873,9 +6876,12 @@ function playNav() {
     const on = pill.querySelector(".navb.on");
     const prev = was[key];
     if (!on) { was[key] = null; sl.style.opacity = "0"; return; }
-    const x = on.offsetLeft;
+    /* offsetLeft 只给整数，药丸居中之后按钮的真实左边是 x.5，
+       取整就永远差半格 —— 用 rect 算，clientLeft 是药丸自己那 1px 边框 */
+    const pr = pill.getBoundingClientRect(), orr = on.getBoundingClientRect();
+    const x = orr.left - pr.left - pill.clientLeft;
     was[key] = x;
-    sl.style.width = on.offsetWidth + "px";
+    sl.style.width = orr.width + "px";
     if (reduced()) {
       /* 不横滑，但也不硬跳：原地淡掉、换到新位置、再淡回来。
          这就是苹果 Reduce Motion 的做法 —— 位移换成淡入淡出，不是没有动画。 */
