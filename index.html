@@ -1408,7 +1408,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v99";
+const BUILD = "v100";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6078,7 +6078,13 @@ const ACT = {
       if (i) { i.focus(); setTimeout(() => {
         if (i.isConnected) i.scrollIntoView({ block: "center", behavior: "smooth" }); }, 260); }
     } },
-  txClear: () => { ui.txq = ""; ui.txSearch = false; render(); },
+  txClear: () => {
+    ui.txq = "";
+    const i = app.querySelector(".sbar input");
+    if (i) { i.value = ""; i.focus(); }
+    const x = app.querySelector(".sclear");
+    if (x) x.classList.add("hide");
+    paintTxList(); },
   txFilter: () => { ui.txFilter = !ui.txFilter; render(); },
   txF: (k) => { ui.txF = k; ui.txFilter = false; render(); },
   analytics: () => {
@@ -7101,6 +7107,14 @@ app.addEventListener("click", (e) => {
   }
   /* 分区展开着的时候点别处 —— 收起来。没有蒙版可点，只能在这儿兜。 */
   if (ui.navOpen && !e.target.closest(".dock")) { ui.navOpen = false; render(); }
+  /* 搜索条同理：点它外面就收起来，关键词一起清掉，列表回默认。
+     放大镜那颗自己会 toggle，排除掉，否则一次点击被关两回。
+     这里 render 之后 e.target 就脱离文档了，但下面只读它的 data-a，
+     脱离的节点上 closest 照样能走 —— 和 navOpen 那一行是同一个前提。 */
+  if (ui.txSearch && !e.target.closest(".sbar") &&
+      !e.target.closest('[data-a="txSearch"]')) {
+    ui.txSearch = false; ui.txq = ""; render();
+  }
   const el = e.target.closest("[data-a]");
   if (!el || el.classList.contains("off")) {
     if (el && el.classList.contains("off")) return;
