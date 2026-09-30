@@ -1394,7 +1394,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v94";
+const BUILD = "v95";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4770,7 +4770,18 @@ const DOT_FONT = {
   "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
   "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
   "9": ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
+  /* 结论那三个词用得到的字母 */
+  "O": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+  "K": ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+  "N": ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+  "W": ["10001", "10001", "10001", "10101", "10101", "11011", "10001"],
+  "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+  "I": ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
+  "T": ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
 };
+/* 三种灯各自的那个词。不翻译：OK / NO / WAIT 两种语言里都读得懂，
+   而汉字拼不进 5×7 的格子。 */
+const VERDICT_WORD = { green: "OK", amber: "WAIT", red: "NO" };
 /* 数字走正文色，不跟着红绿灯变 —— 参考图那张也是这样：读数是黑的，
    颜色留给下面那条。灯的颜色在这张卡上已经有灯点和文字各说一遍了，
    数字再说第三遍，整张卡就只剩一个颜色。 */
@@ -4803,21 +4814,41 @@ function dotNumber(str) {
    出一大片，那种密集的网点感就没了（那正是参考图的样子）。
    R 和 GAP 是比例关系 —— SVG 会缩到卡片宽度，所以这里的绝对值不重要，
    重要的是 R : GAP 这个比。 */
-const DOT_COLS = 60, DOT_ROWS = 3, DIAL_N = DOT_COLS * DOT_ROWS;  /* = 180 */
-function scoreDial(pct, tone, animate) {
-  const lit = Math.max(0, Math.min(DIAL_N, Math.round(pct / 100 * DIAL_N)));
-  const GAP = 5, R = 1.7, PAD = 6;
+/* 下面这一片不再是「填百分比」—— 百分比上面那排点阵数字已经说了。
+   这里用亮点在灰底网点上拼出结论那个词：OK / WAIT / NO。
+   60 × 9 照参考图的密度和行数；字模 7 行，上下正好各留一行灰。 */
+const DOT_COLS = 60, DOT_ROWS = 9, DIAL_N = DOT_COLS * DOT_ROWS;
+function scoreDial(pct, tone, animate, verdict) {
+  /* SP 是字间空几格。1 格的时候 WAIT 的四个字母会粘在一起，2 格才分得开 */
+  const GAP = 5, R = 1.7, PAD = 6, GW = 5, GH = 7, SP = 2;
   const w = PAD * 2 + (DOT_COLS - 1) * GAP, h = PAD * 2 + (DOT_ROWS - 1) * GAP;
+  const chars = String(VERDICT_WORD[verdict] || "").split("").filter((c) => DOT_FONT[c]);
+  /* 先把「哪些格子属于这个词」算出来，画的时候再逐格问 */
+  const onSet = new Set();
+  if (chars.length) {
+    const wordCols = chars.length * GW + (chars.length - 1) * SP;
+    let c0 = Math.round((DOT_COLS - wordCols) / 2);
+    const r0 = Math.round((DOT_ROWS - GH) / 2);
+    for (const ch of chars) {
+      const rows = DOT_FONT[ch];
+      for (let ry = 0; ry < GH; ry++) {
+        for (let rx = 0; rx < GW; rx++) {
+          if (rows[ry][rx] === "1") onSet.add((r0 + ry) * DOT_COLS + (c0 + rx));
+        }
+      }
+      c0 += GW + SP;
+    }
+  }
   let g = "";
-  /* 从**底下那一行**往上填、每行从左到右：像水位涨上来，
-     而不是从某个角落开始铺。三分之一就是最底一行满，100% 整片亮。 */
-  for (let n = 0; n < DIAL_N; n++) {
-    const col = n % DOT_COLS, row = DOT_ROWS - 1 - Math.floor(n / DOT_COLS);
-    const on = n < lit;
-    g += '<g transform="translate(' + (PAD + col * GAP) + "," + (PAD + row * GAP) + ')">' +
-      '<circle class="' + (on ? "dlit" : "doff") + '" r="' + R + '"' +
-      (on ? ' style="--d:' + (n / DIAL_N * 0.9).toFixed(3) + "s;fill:" + tone + '"' : "") +
-      "/></g>";
+  for (let row = 0; row < DOT_ROWS; row++) {
+    for (let col = 0; col < DOT_COLS; col++) {
+      const on = onSet.has(row * DOT_COLS + col);
+      g += '<g transform="translate(' + (PAD + col * GAP) + "," + (PAD + row * GAP) + ')">' +
+        '<circle class="' + (on ? "dlit" : "doff") + '" r="' + R + '"' +
+        /* 亮点按列从左到右依次点着，整个词走 .9 秒 */
+        (on ? ' style="--d:' + (col / DOT_COLS * 0.9).toFixed(3) + "s;fill:" + tone + '"' : "") +
+        "/></g>";
+    }
   }
   return '<div class="dotbox">' +
     dotNumber(Math.round(pct)) +
@@ -4833,7 +4864,7 @@ function verdictCard(it, r, b, corner) {
   const fresh = ui.dialKey !== key;
   ui.dialKey = key;
   return '<div class="card vcard">' +
-    scoreDial(r.score, tone, fresh) +
+    scoreDial(r.score, tone, fresh, r.verdict) +
     '<div class="vhead"><span class="vname">' + esc(it.name) + "</span>" +
     '<span class="vprice">' + yuan(it.price) + "</span></div>" +
     '<div class="vtone">' +
