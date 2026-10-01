@@ -1419,7 +1419,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v109";
+const BUILD = "v110";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2484,7 +2484,8 @@ const netAssets = (s) => s.accounts.reduce((a, j) => a + j.balance, 0);
 /* 攒钱不是支出，是结余的去处 —— 所以只统计「这个月划走了多少」，不进支出 */
 /* 只扣「已经确认发生」的：自动的到日子自动记，手动的要你点过「这月已存」。
    没兑现的那部分只提示「还需存」，不扣 —— 扣了就是把还没走的钱当走了。 */
-const savedIn = (m) => S.goals.reduce((a, g) => a + ((g.marks[m] || {}).amt || 0), 0);
+const savedIn = (m) => S.goals.reduce((a, g) =>
+  a + ((g.marks && g.marks[m] || {}).amt || 0), 0);
 const stillToSave = (s2) => Math.max(0, goalCommit(s2) - savedIn(thisMonth()));
 /* 首页开场那个数。就是月度结余那一个数，换了个说法叫「可用余额」：
      这个月进来的 − 这个月出去的（固定 + 还贷 + 账本）− 已经存走的
@@ -2503,7 +2504,7 @@ const earmarkOn = (name) => allGoals().filter((g) => g.account === name)
 /* 这个月这个目标存了没：自动的按日子算，手动的看用户答过没 */
 /* marks[月份] = {k:"done"|"skip"|"auto", amt} —— amt 记下当时加了多少，
    撤销才退得回原值（按当下的「每月必存」倒扣会差一截） */
-const goalMark = (g) => (g.marks[thisMonth()] || {}).k || "pending";
+const goalMark = (g) => (g.marks && g.marks[thisMonth()] || {}).k || "pending";
 /* 还贷的月度状态。和储蓄用同一套 marks，但意义不同：
    储蓄是「要不要算」（没确认就不扣），还贷是「别忘了」（该付就是该付，照算）。 */
 const debtMark = (d) => (d.marks && d.marks[thisMonth()] || {}).k || "pending";
@@ -2575,7 +2576,7 @@ function transferRowsFor(m) {
   const at = (day) => m + "-" + String(Math.min(day, last)).padStart(2, "0");
   const out = [];
   S.goals.forEach((g) => {
-    const mark = g.marks[m];
+    const mark = g.marks && g.marks[m];
     if (mark && mark.amt > 0) {
       out.push({ xfer: true, name: g.name + " · " + g.account, amount: mark.amt,
         date: at(g.day), tap: "editGoal:" + g.id });
@@ -3467,7 +3468,7 @@ const needsSetup = (s2) => !s2.onboarded;
    升不动的时候宁可不加载，也绝不悄悄丢一半。
    ========================================================================== */
 const SAVE_KEY = "savingcoach.v1";
-const SCHEMA = 3;
+const SCHEMA = 4;
 /* 以后每改一次数据结构：SCHEMA 加一，并在这里补一个把 n 变成 n+1 的函数。
    例：MIGRATIONS[1] = (d) => { d.accounts.forEach(a => a.currency = d.currency); }; */
 /* ---- 账本 ---------------------------------------------------------------
@@ -3522,6 +3523,14 @@ const MIGRATIONS = {
     (d.books || []).forEach((b, i) => {
       b.goals = i === 0 ? d.goals : (b.goals || []); });
     delete d.goals;
+  },
+  /* 一句话快记建出来的目标和债务一直漏着 marks，而目标那边读 marks 没有兜底 ——
+     存档里只要有这么一条，首页就画不出来。把缺的补上，坏档自己就活了。 */
+  3: (d) => {
+    if (!Array.isArray(d.debts)) d.debts = [];
+    d.debts.forEach((x) => { if (!x.marks) x.marks = {}; });
+    (d.books || []).forEach((b) => {
+      (b.goals || []).forEach((g) => { if (!g.marks) g.marks = {}; }); });
   },
 };
 
@@ -4395,13 +4404,21 @@ function txFiltered(m) {
   const isFuture = (x) => (x.fixed || x.xfer) && m === thisMonth() && x.date > today();
   const q = (ui.txq || "").trim().toLowerCase();
   const f = ui.txF || "all";
+  /* 同一天里要按「记录的先后」倒着排，而日期字符串只到天 ——
+     拿 S.tx 里的下标当序号（越大越新）。固定收支和转存是现算出来的行，
+     没有「记录时间」可言，给 -1 让它们坐在当天的最后。 */
+  const seq = new Map();
+  S.tx.forEach((x, i) => seq.set(x, i));
   let list = S.tx.filter((x) => monthOf(x.date) === m)
     .concat(fixedRowsFor(m), transferRowsFor(m));
   if (!ui.showFuture) list = list.filter((x) => !isFuture(x));
   if (f !== "all") list = list.filter((x) => txDir(x) === f);
   if (q) list = list.filter((x) => ((x.description || x.name || "") + " " +
     catLabel(x.category || "") + " " + x.date).toLowerCase().includes(q));
-  list.sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  list.sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    return (seq.has(b) ? seq.get(b) : -1) - (seq.has(a) ? seq.get(a) : -1);
+  });
   return { list, isFuture };
 }
 /* 卡片正文：截断 + 按天分段。搜索框打字只重画这一段，整页不动。 */
@@ -6194,13 +6211,16 @@ const ACT = {
     }
     if (p.intent === "goal") {
       if (p.goal.target <= 0) { ui.f.err = t("e.targetPos"); return render(); }
+      /* marks 一定要带上：表单那条路给了（见 submitGoal），这条路原来漏了，
+         而目标的每一处 marks 读取都没有兜底 —— 漏一个字段整个 app 就白屏 */
       S.goals.push({ id: id(), name: p.goal.name, target: p.goal.target,
-        months: p.goal.months, saved: 0 });
+        months: p.goal.months, saved: 0, marks: {} });
       close(); return toast(t("k.goalCreated", { name: p.goal.name }));
     }
     if (p.intent === "debt") {
       if (p.debt.monthly <= 0) { ui.f.err = t("e.monthlyPos"); return render(); }
-      S.debts.push({ id: id(), description: p.debt.description, monthly: p.debt.monthly });
+      S.debts.push({ id: id(), description: p.debt.description,
+        monthly: p.debt.monthly, marks: {} });
       close(); return toast(t("k.debtBound"));
     }
   },
@@ -6506,13 +6526,14 @@ const ACT = {
   /* 手动目标的月度问答：已存 / 这月未存 / 改主意 */
   goalDone: (gid) => { const g = S.goals.find((x) => x.id === gid);
     const per = Math.min(goalMonthly(g), g.target - g.saved);
-    g.marks[thisMonth()] = { k: "done", amt: per };
+    g.marks = g.marks || {}; g.marks[thisMonth()] = { k: "done", amt: per };
     g.saved += per;
     toast(t("k.savedInto", { account: esc(g.account), amt: yuan(g.saved) })); render(); },
   goalSkip: (gid) => { const g = S.goals.find((x) => x.id === gid);
-    g.marks[thisMonth()] = { k: "skip", amt: 0 };
+    g.marks = g.marks || {}; g.marks[thisMonth()] = { k: "skip", amt: 0 };
     toast(t("k.goalSkipped")); render(); },
   goalUnmark: (gid) => { const g = S.goals.find((x) => x.id === gid);
+    g.marks = g.marks || {};
     const was = g.marks[thisMonth()] || {};
     g.saved = Math.max(0, g.saved - (was.amt || 0));
     delete g.marks[thisMonth()];
@@ -6730,13 +6751,13 @@ function paintDock() {
 /* 自动扣款的目标，到了日子就自己把这个月记上（幂等）。真实实现里这是后端的定时任务。 */
 function settleAutoGoals() {
   const m = thisMonth();
-  S.debts.forEach((d) => {
+  (S.debts || []).forEach((d) => {
     if (!d.auto || !d.marks || d.marks[m]) return;
     if (+today().slice(8) < d.day) return;
     d.marks[m] = { k: "auto", amt: d.monthly };
   });
   allGoals().forEach((g) => {
-    if (!g.auto || g.marks[m]) return;
+    if (!g.auto || !g.marks || g.marks[m]) return;
     if (+today().slice(8) < g.day) return;
     const per = Math.min(goalMonthly(g), g.target - g.saved);
     g.marks[m] = { k: "auto", amt: per };
@@ -6825,7 +6846,9 @@ function render() {
      那 180ms 里点底栏，go() 改了状态却画不出来 —— 看着就是「点了没反应、
      导航状态也不变」。画面正确性比动画完整重要：有新东西要画就提前收场。 */
   if (sheetOut) sheetOut = false;
-  settleAutoGoals();
+  /* 这一步只是替自动扣款补记上个月的账，纯维护性质。
+     它要是炸了，页面照画 —— 不然用户面对的是一块白屏，连记一笔都做不了。 */
+  try { settleAutoGoals(); } catch (err) { console.error("settleAutoGoals", err); }
   if (needsSetup(S)) { app.innerHTML = wizardView(); return; }
   const key = screen();
   const oldBody = app.querySelector(".body");
