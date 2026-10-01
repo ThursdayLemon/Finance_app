@@ -1431,7 +1431,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v113";
+const BUILD = "v114";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2900,36 +2900,42 @@ const isIncomeText = (txt) => has(txt, R().income) ||
 
 /* 「9.15-18 sublet 200」里的 9.15 和 18 是日期段，不是两笔钱。
    只认「范围」写法和带月/日的中文写法 —— 光一个「9.15」太像钱了
-   （9 块 1 毛 5 就长这样），那种一律还当金额，不赌。 */
+   （9 块 1 毛 5 就长这样），那种另走 grabBareDate，条件严得多。
+   带年份的写法排在前面：2025.11.15 必须先于 11.15 匹配上。 */
 const DATE_PATS = [
-  /(\d{1,2})\s*[./\-]\s*(\d{1,2})\s*[-–—~至到]\s*(?:(\d{1,2})\s*[./\-]\s*)?(\d{1,2})(?![\d.])/,
-  /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]?\s*[-–—~至到]\s*(?:(\d{1,2})\s*月\s*)?(\d{1,2})\s*[日号]?/,
-  /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/,
+  { re: /((?:19|20)\d{2})\s*[./\-年]\s*(\d{1,2})\s*[./\-月]\s*(\d{1,2})\s*[日号]?(?:\s*[-–—~至到]\s*(?:\d{1,2}\s*[./\-月]\s*)?\d{1,2}\s*[日号]?)?(?![\d.])/,
+    y: 1, m: 2, d: 3 },
+  { re: /(\d{1,2})\s*[./\-]\s*(\d{1,2})\s*[-–—~至到]\s*(?:\d{1,2}\s*[./\-]\s*)?\d{1,2}(?![\d.])/,
+    y: 0, m: 1, d: 2 },
+  { re: /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]?\s*[-–—~至到]\s*(?:\d{1,2}\s*月\s*)?\d{1,2}\s*[日号]?/,
+    y: 0, m: 1, d: 2 },
+  { re: /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/, y: 0, m: 1, d: 2 },
 ];
-/* 没写年份就挑离今天最近的那一个。原来写的是「算出来比今天晚就当去年」——
-   补过去的账时对，记未来的账单（十月里写 11.15）时正好反了。 */
-function nearYear(mo, d) {
-  const pad = (x) => String(x).padStart(2, "0");
-  const t0 = Date.parse(today() + "T00:00:00Z");
-  const y0 = +today().slice(0, 4);
-  let best = null;
-  [y0 - 1, y0, y0 + 1].forEach((y) => {
-    const iso = y + "-" + pad(mo) + "-" + pad(d);
-    const gap = Math.abs(Date.parse(iso + "T00:00:00Z") - t0);
-    if (!best || gap < best.gap) best = { iso, gap };
-  });
-  return best.iso;
-}
+/* 没写年份就是当年。跨年的那些让用户自己写出来 —— 「2025.11.15」「11.15-21 2025」
+   「2025年11月15日」都认得（见 DATE_PATS 和下面那段找四位数的）。 */
+const isoOf = (y, mo, d) => y + "-" + String(mo).padStart(2, "0") + "-" + String(d).padStart(2, "0");
 function grabDate(text) {
-  for (const re of DATE_PATS) {
-    const m = re.exec(text);
+  for (const pat of DATE_PATS) {
+    const m = pat.re.exec(text);
     if (!m) continue;
-    const mo = +m[1], d = +m[2];
+    const mo = +m[pat.m], d = +m[pat.d];
     if (mo < 1 || mo > 12 || d < 1 || d > 31) continue;
-    return { iso: nearYear(mo, d), start: m.index, end: m.index + m[0].length,
+    const y = pat.y ? +m[pat.y] : +today().slice(0, 4);
+    return { iso: isoOf(y, mo, d), mo, d, hasYear: !!pat.y,
+      start: m.index, end: m.index + m[0].length,
       label: m[0].replace(/\s+/g, "") };
   }
   return null;
+}
+/* 日期没自带年份时，看看句子里是不是另外写了个四位数的年。
+   「300」和「2025」都是数字，分不清就看：把 2025 当年份摘掉之后，
+   句子里还剩不剩别的金额 —— 不剩就说明它才是这笔钱。 */
+const YEAR_RE = /(?:^|[^\d.])((?:19|20)\d{2})(?![\d.])/;
+function grabYear(text) {
+  const m = YEAR_RE.exec(text);
+  if (!m) return null;
+  const a = m.index + m[0].indexOf(m[1]);
+  return { y: +m[1], start: a, end: a + 4 };
 }
 /* 光一个「9.15」和「9 块 1 毛 5」长得一模一样，所以它要当日期得同时满足三件事：
    坐在这句话的开头、摘掉之后句子里还剩别的金额、而且它自己没带单位或货币符号。
@@ -2941,8 +2947,8 @@ function grabBareDate(text) {
   if (!m) return null;
   const mo = +m[1], d = +m[2];
   if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
-  return { iso: nearYear(mo, d), start: 0, end: m[0].length,
-    label: m[0].replace(/\s+/g, "") };
+  return { iso: isoOf(+today().slice(0, 4), mo, d), mo, d, hasYear: false,
+    start: 0, end: m[0].length, label: m[0].replace(/\s+/g, "") };
 }
 /* 整段用空格盖掉：长度不变，后面所有按下标切句的地方才对得上 */
 const blankOut = (text, a, b) =>
@@ -3008,9 +3014,16 @@ function mergeClauses(list) {
     if (!c) continue;
     const text = carry ? carry + " " + c : c;
     const dm = grabDate(text) || grabBareDate(text);
-    if (extractSpans(dm ? blankOut(text, dm.start, dm.end) : text).length) {
-      out.push(text); carry = "";
-    } else carry = text;
+    const t2 = dm ? blankOut(text, dm.start, dm.end) : text;
+    let spans = extractSpans(t2);
+    /* 日期后面跟的那个四位数是年份、不是钱。摘掉它要是就不剩金额了，
+       说明这一截还不成其为一笔，得接着往后并 ——
+       「11月15日-21日 2027 转租收入300」被空格切成三段就是这么断的。 */
+    if (dm && !dm.hasYear && spans.length) {
+      const ym = grabYear(t2);
+      if (ym && !extractSpans(blankOut(t2, ym.start, ym.end)).length) spans = [];
+    }
+    if (spans.length) { out.push(text); carry = ""; } else carry = text;
   }
   /* 结尾还剩一截没金额的，跟在最后一笔后面当补充说明 */
   if (carry) { if (out.length) out[out.length - 1] += " " + carry; else out.push(carry); }
@@ -3280,6 +3293,18 @@ function parseUtterance(text) {
           const cc2 = blankOut(c, bare.start, bare.end);
           const left = extractSpans(cc2);
           if (left.length) { dm = bare; cc = cc2; spans = left; }
+        }
+      }
+      /* 日期自己没带年份的话，句子里另写的那个四位数就是年份 */
+      if (dm && !dm.hasYear) {
+        const ym = grabYear(cc);
+        if (ym) {
+          const cc2 = blankOut(cc, ym.start, ym.end);
+          const left = extractSpans(cc2);
+          if (left.length) {
+            dm = Object.assign({}, dm, { iso: isoOf(ym.y, dm.mo, dm.d) });
+            cc = cc2; spans = left;
+          }
         }
       }
       if (!spans.length) continue;
