@@ -1419,7 +1419,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v110";
+const BUILD = "v111";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2884,6 +2884,34 @@ const has = (t, kws) => { const s2 = lang() === "en" ? t.toLowerCase() : t;
 const isIncomeText = (txt) => has(txt, R().income) ||
   (!!R().incomeRe && R().incomeRe.test(txt));
 
+/* 「9.15-18 sublet 200」里的 9.15 和 18 是日期段，不是两笔钱。
+   只认「范围」写法和带月/日的中文写法 —— 光一个「9.15」太像钱了
+   （9 块 1 毛 5 就长这样），那种一律还当金额，不赌。 */
+const DATE_PATS = [
+  /(\d{1,2})\s*[./\-]\s*(\d{1,2})\s*[-–—~至到]\s*(?:(\d{1,2})\s*[./\-]\s*)?(\d{1,2})(?![\d.])/,
+  /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]?\s*[-–—~至到]\s*(?:(\d{1,2})\s*月\s*)?(\d{1,2})\s*[日号]?/,
+  /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/,
+];
+function grabDate(text) {
+  for (const re of DATE_PATS) {
+    const m = re.exec(text);
+    if (!m) continue;
+    const mo = +m[1], d = +m[2];
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) continue;
+    const pad = (x) => String(x).padStart(2, "0");
+    const mk = (y) => y + "-" + pad(mo) + "-" + pad(d);
+    /* 没写年份就按最近的那一个 —— 算出来比今天还晚，说的就是去年 */
+    const y0 = +today().slice(0, 4);
+    const iso = mk(y0) > today() ? mk(y0 - 1) : mk(y0);
+    return { iso, start: m.index, end: m.index + m[0].length,
+      label: m[0].replace(/\s+/g, "") };
+  }
+  return null;
+}
+/* 整段用空格盖掉：长度不变，后面所有按下标切句的地方才对得上 */
+const blankOut = (text, a, b) =>
+  text.slice(0, a) + " ".repeat(b - a) + text.slice(b);
+
 function extractSpans(text) {
   const out = [];
   const re = R().amount, mult = R().mult, tail = R().tail, counter = R().counter;
@@ -2920,13 +2948,67 @@ function splitByAmounts(text, spans) {
   });
   return out.filter((x) => x.text);
 }
+/* 整词匹配。自定义分类是用户自己起的名字，拿子串去撞会踩中
+   pet/petrol、cat/catering 那一类坑；中文没有词边界，直接子串。 */
+function hasWord(text, w) {
+  const s = String(text).toLowerCase(), k = String(w || "").toLowerCase().trim();
+  if (!k) return false;
+  if (/[^\x00-\x7f]/.test(k)) return s.indexOf(k) >= 0;
+  let i = s.indexOf(k);
+  while (i >= 0) {
+    const b = s[i - 1], a = s[i + k.length];
+    if (!(b && /[a-z0-9]/.test(b)) && !(a && /[a-z0-9]/.test(a))) return true;
+    i = s.indexOf(k, i + 1);
+  }
+  return false;
+}
+/* 一句话里没有金额的那一截不成其为一笔，它是旁边那笔的上下文。
+   「9月15日-18日 转租收入200」被空格切成两段，日期那半就是这么丢的。 */
+function mergeClauses(list) {
+  const out = [];
+  let carry = "";
+  for (const c0 of list) {
+    const c = (c0 || "").trim();
+    if (!c) continue;
+    const text = carry ? carry + " " + c : c;
+    const dm = grabDate(text);
+    if (extractSpans(dm ? blankOut(text, dm.start, dm.end) : text).length) {
+      out.push(text); carry = "";
+    } else carry = text;
+  }
+  /* 结尾还剩一截没金额的，跟在最后一笔后面当补充说明 */
+  if (carry) { if (out.length) out[out.length - 1] += " " + carry; else out.push(carry); }
+  return out;
+}
 function classify(text, isIncome) {
+  /* 自定义分类最优先：他专门建了这个名字，就是为了让这类东西归到那儿去。
+     也只有这条对收入有效 —— 内置那套规则是给支出写的。 */
+  const custom = (S.customCats || []).slice()
+    .sort((a, b) => b.length - a.length)
+    .find((c) => hasWord(text, c));
+  if (custom) return custom;
   /* 支出分类规则是给支出写的 —— 收入不能套，否则「兼职送外卖赚了300」会变成餐饮 */
   if (isIncome) return has(text, R().salary) ? "salary" : "other";
   for (const [cat, kws] of R().cats) if (has(text, kws)) return cat;
   return "other";
 }
 function canonAccount(name) { return R().canon(name); }
+const cutWord = (text, w) => {
+  const k = String(w || "").trim();
+  if (!k || !hasWord(text, k)) return text;
+  if (/[^\x00-\x7f]/.test(k)) return text.split(k).join(" ");
+  return text.replace(new RegExp("(^|[^a-z0-9])" +
+    k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "($|[^a-z0-9])", "gi"), "$1$2");
+};
+/* 分类名在行上已经由那颗图标和分类标签说了，「收入」则由正号说了 ——
+   描述里再留一遍是噪音。砍完是空的就不砍。 */
+function trimDesc(desc, cat, isIncome) {
+  let d = desc;
+  const drop = [cat === "other" ? "" : catLabel(cat), cat === "other" ? "" : cat];
+  if (isIncome) drop.push("income", "收入");
+  drop.forEach((w) => { if (w) d = cutWord(d, w); });
+  return R().tidy(d).trim();
+}
 function cleanDesc(clause, cat, isIncome) {
   /* 用空格替换而不是删掉：直接删会让「spent」和「on」粘成「spenton」，
      后面那步按词删动词就再也匹配不上 */
@@ -3147,10 +3229,13 @@ function parseUtterance(text) {
 
   if (!has(raw, R().nonLedger) && !isAssetMove(raw)) {
     const drafts = [];
-    for (const clause of raw.split(R().clause)) {
+    for (const clause of mergeClauses(raw.split(R().clause))) {
       const c = (clause || "").trim();
       if (!c) continue;
-      let spans = extractSpans(c);
+      /* 日期段先摘出来再找金额，否则 9.15 和 18 会被当成两笔钱 */
+      const dm = grabDate(c);
+      const cc = dm ? blankOut(c, dm.start, dm.end) : c;
+      let spans = extractSpans(cc);
       if (!spans.length) continue;
       /* 英文里钱几乎总带符号或单位（£10 / 10 pounds），所以一旦有带单位的，
          就只在带单位的地方切 ——「2 coffees 5 pounds」才不会被算成两笔。
@@ -3159,15 +3244,19 @@ function parseUtterance(text) {
         spans = spans.filter((x) => x.strong);
       /* 金额直接取这一段自己的，别再回头 extract 一次 —— 挡掉的那些
          （量词、没单位的）会重新混进来 */
-      const parts = spans.length > 1 ? splitByAmounts(c, spans)
-        : [{ text: c, v: spans[0].v }];
+      const parts = spans.length > 1 ? splitByAmounts(cc, spans)
+        : [{ text: cc, v: spans[0].v }];
       for (const part of parts) {
         const isIncome = isIncomeText(part.text);
         const cat = classify(part.text, isIncome);
         const emo = grabEmoji(part.text);
-        const desc = cleanDesc(part.text, cat, isIncome);
+        const desc0 = cleanDesc(part.text, cat, isIncome);
+        const trimmed = trimDesc(desc0, cat, isIncome);
+        /* 日期段是用户自己写进去的，留在描述里才看得出这笔管的是哪几天。
+           有它顶着，剩下的被砍空也无所谓；没有它才退回没砍过的原文。 */
+        let desc = dm ? (dm.label + (trimmed ? " " + trimmed : "")) : (trimmed || desc0);
         drafts.push({ type: isIncome ? "in" : "out", amount: part.v, emoji: emo,
-          category: cat, date: today(),
+          category: cat, date: dm ? dm.iso : today(),
           /* emoji 已经当图标了，描述里就别再留一个；
              整条描述只有一个 emoji 的话（「🍜 25」），删完是空的，那就留着 */
           description: emo ? (stripEmoji(desc) || desc) : desc });
