@@ -1419,7 +1419,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v111";
+const BUILD = "v112";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1528,6 +1528,7 @@ zh: {
   "mo.willArrive": "到账", "mo.willLeave": "扣款", "mo.willMove": "转存",
   "mo.emptyNow": "这个月还没有账目。按右下角说一句，或者点「记一笔」。",
   "mo.emptyPast": (v) => v.month + "没有记录。",
+  "mo.emptyFuture": (v) => v.month + "还没有安排。固定收支到了日子会自己出现在这儿。",
 
   "va.title": "金库", "va.total": "金库总资产",
   "va.accountsN": (v) => v.n + " 个账户　·　其中 " + v.reserved + " 为储蓄预留",
@@ -1984,6 +1985,8 @@ en: {
   "mo.willArrive": "in", "mo.willLeave": "out", "mo.willMove": "moved",
   "mo.emptyNow": "Nothing logged this month yet. Hold the mic and say it, or tap Add.",
   "mo.emptyPast": (v) => "Nothing recorded in " + v.month + ".",
+  "mo.emptyFuture": (v) => "Nothing lined up for " + v.month +
+    " yet. Fixed income and bills show up here when their day comes round.",
 
   "va.title": "Vault", "va.total": "Everything you have",
   "va.accountsN": (v) => plural(v.n, "account", "accounts") + "　·　" + v.reserved +
@@ -2908,6 +2911,22 @@ function grabDate(text) {
   }
   return null;
 }
+/* 光一个「9.15」和「9 块 1 毛 5」长得一模一样，所以它要当日期得同时满足三件事：
+   坐在这句话的开头、摘掉之后句子里还剩别的金额、而且它自己没带单位或货币符号。
+   「lunch 9.15」里它不在开头也没有别的金额，「£2.5 coffee 3」里它带着符号 ——
+   两个都还是钱。判断要等 extractSpans 跑过才做得出来，所以放在调用处。 */
+const DATE_BARE = /^(\d{1,2})\s*[./\-]\s*(\d{1,2})(?![\d.])/;
+function grabBareDate(text) {
+  const m = DATE_BARE.exec(text);
+  if (!m) return null;
+  const mo = +m[1], d = +m[2];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const pad = (x) => String(x).padStart(2, "0");
+  const mk = (y) => y + "-" + pad(mo) + "-" + pad(d);
+  const y0 = +today().slice(0, 4);
+  return { iso: mk(y0) > today() ? mk(y0 - 1) : mk(y0),
+    start: 0, end: m[0].length, label: m[0].replace(/\s+/g, "") };
+}
 /* 整段用空格盖掉：长度不变，后面所有按下标切句的地方才对得上 */
 const blankOut = (text, a, b) =>
   text.slice(0, a) + " ".repeat(b - a) + text.slice(b);
@@ -2971,7 +2990,7 @@ function mergeClauses(list) {
     const c = (c0 || "").trim();
     if (!c) continue;
     const text = carry ? carry + " " + c : c;
-    const dm = grabDate(text);
+    const dm = grabDate(text) || grabBareDate(text);
     if (extractSpans(dm ? blankOut(text, dm.start, dm.end) : text).length) {
       out.push(text); carry = "";
     } else carry = text;
@@ -3233,9 +3252,19 @@ function parseUtterance(text) {
       const c = (clause || "").trim();
       if (!c) continue;
       /* 日期段先摘出来再找金额，否则 9.15 和 18 会被当成两笔钱 */
-      const dm = grabDate(c);
-      const cc = dm ? blankOut(c, dm.start, dm.end) : c;
+      let dm = grabDate(c);
+      let cc = dm ? blankOut(c, dm.start, dm.end) : c;
       let spans = extractSpans(cc);
+      if (!dm) {
+        /* 范围写法没命中，再看看开头那个 M.D 够不够格当日期（见 grabBareDate） */
+        const bare = grabBareDate(c);
+        const moneyHere = bare && spans.some((sp) => sp.start === 0 && sp.strong);
+        if (bare && !moneyHere) {
+          const cc2 = blankOut(c, bare.start, bare.end);
+          const left = extractSpans(cc2);
+          if (left.length) { dm = bare; cc = cc2; spans = left; }
+        }
+      }
       if (!spans.length) continue;
       /* 英文里钱几乎总带符号或单位（£10 / 10 pounds），所以一旦有带单位的，
          就只在带单位的地方切 ——「2 coffees 5 pounds」才不会被算成两笔。
@@ -4279,7 +4308,7 @@ function monthView() {
          「分析」页去了（点左边那张卡进去），首页开场是「你有多少」。 */
       '<div class="hero">' +
       '<div class="mochip">' + monthArrow("prev", true) +
-      '<span>' + monthOnly(m) + "</span>" + monthArrow("next", !cur) + "</div>" +
+      '<span>' + monthOnly(m) + "</span>" + monthArrow("next", true) + "</div>" +
       '<div class="hlbl">' + t("mo.available") + "</div>" +
       '<div class="heroamt">' +
       (ui.hideBal ? '<span class="big">' + ccy().sym +
@@ -4490,7 +4519,7 @@ const txGlyph = (x) => x.xfer ? "navVault" : x.fixed === "in" ? "arrowUp"
 
 /* 先筛：搜索词 + 进/出 + 要不要带上还没发生的固定项。按日期倒序。 */
 function txFiltered(m) {
-  const isFuture = (x) => (x.fixed || x.xfer) && m === thisMonth() && x.date > today();
+  const isFuture = (x) => (x.fixed || x.xfer) && x.date > today();
   const q = (ui.txq || "").trim().toLowerCase();
   const f = ui.txF || "all";
   /* 同一天里要按「记录的先后」倒着排，而日期字符串只到天 ——
@@ -4500,7 +4529,7 @@ function txFiltered(m) {
   S.tx.forEach((x, i) => seq.set(x, i));
   let list = S.tx.filter((x) => monthOf(x.date) === m)
     .concat(fixedRowsFor(m), transferRowsFor(m));
-  if (!ui.showFuture) list = list.filter((x) => !isFuture(x));
+  if (!ui.showFuture && m === thisMonth()) list = list.filter((x) => !isFuture(x));
   if (f !== "all") list = list.filter((x) => txDir(x) === f);
   if (q) list = list.filter((x) => ((x.description || x.name || "") + " " +
     catLabel(x.category || "") + " " + x.date).toLowerCase().includes(q));
@@ -4516,6 +4545,7 @@ function txRows(m) {
   const q = (ui.txq || "").trim(), f = ui.txF || "all";
   if (!shown.length) return '<div class="txempty">' +
     (q || f !== "all" ? t("tx.noMatch") : isThisMonth() ? t("mo.emptyNow")
+      : m > thisMonth() ? t("mo.emptyFuture", { month: monthName(m) })
       : t("mo.emptyPast", { month: monthName(m) })) + "</div>";
   let day = null, html = "";
   shown.forEach((x) => {
