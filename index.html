@@ -696,10 +696,20 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 每根柱子现在自己一列（列里还要放那个数字标注），所以行是 stretch，
    柱子贴哪一边由列自己决定：上排贴底往上长，下排贴顶往下长。 */
 .chartrow{display:flex;gap:6px;height:78px;align-items:stretch}
-.chartcol > i{display:block;width:100%;border-radius:1px;
+.chartcol{cursor:pointer}
+.chartcol > i{display:block;width:100%;border-radius:1px;position:relative;overflow:hidden;
  background:repeating-linear-gradient(90deg,var(--ink-faint) 0 1px,transparent 1px 4px)}
-.chartcol > i.on{background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 4px)}
-.chartcol > i.bad{background:repeating-linear-gradient(90deg,var(--bad) 0 1px,transparent 1px 4px)}
+/* 选中那一根不是把灰色换掉，是一层彩色盖上来：收入绿色从底往上升，
+   支出橘色从顶往下压。用 scaleY 不用 height —— 走的是合成器，不触发重排。 */
+.chartcol > i > b{position:absolute;left:0;right:0;top:0;bottom:0;
+ background:repeating-linear-gradient(90deg,var(--good) 0 1px,transparent 1px 4px);
+ transform:scaleY(0);transform-origin:bottom}
+.chartcol > i.on > b{transform:scaleY(1);animation:barRise .42s cubic-bezier(.22,1,.3,1)}
+.chartrow.down .chartcol > i > b{transform-origin:top;
+ background:repeating-linear-gradient(90deg,var(--warn) 0 1px,transparent 1px 4px)}
+@keyframes barRise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+/* 开了「减弱动态效果」就直接到位 —— 颜色是信息，不能跟着动画一起省掉 */
+@media (prefers-reduced-motion:reduce){.chartcol > i.on > b{animation:none}}
 .chartax{display:flex;gap:6px;padding:9px 0}
 /* ---- 环形图（稿子 2168:4139）----------------------------------------
    段是 SVG，标签是浮在外面的白药丸 —— 没有引线了。
@@ -724,7 +734,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  font-size:12px;line-height:14px;color:var(--ink);white-space:nowrap}
 .pchip .pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .pchip .pname{overflow:hidden;text-overflow:ellipsis;min-width:0}
-.pchip .ppct{color:var(--ink-muted);flex-shrink:0;font-size:11px}
+/* 金额挤进来之后名字容易只剩一个省略号 —— 给个下限，宁可药丸出头一点 */
+.pchip{min-width:0}
+.pchip .pname{flex:1 1 auto}
+.pchip .ppct{color:var(--ink-muted);flex-shrink:0;font-size:11px;
+ font-variant-numeric:lining-nums tabular-nums}
 .chartax>span{flex:1;text-align:center;font-size:11.5px;color:var(--ink-faint)}
 .chartax>span.on{color:var(--ink);font-weight:var(--w-bold)}
 .callout{text-align:right;font-size:12px;font-weight:var(--w-body);line-height:16px;
@@ -1431,7 +1445,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v114";
+const BUILD = "v115";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4251,11 +4265,14 @@ function analyticsMonth() {
   const outs = months.map((k) => outgoIn(S, k) + savedIn(k));
   const top = Math.max.apply(null, ins.concat(outs, [1]));
   /* 数字标在当月那一根的正上/正下方，不再右对齐贴在整张图的边上 */
-  const bars = (vals, sel, callout, below) => '<div class="chartrow">' + vals.map((v, i) =>
-    '<div class="chartcol">' +
+  /* 每一根都可点 —— 点哪个月，整页就换成那个月 */
+  const bars = (vals, callout, below) =>
+    '<div class="chartrow' + (below ? " down" : "") + '">' + vals.map((v, i) =>
+    '<div class="chartcol" data-a="anMonth:' + months[i] + '" title="' +
+    esc(monthName(months[i])) + '">' +
     (!below && months[i] === m ? '<div class="callout">' + callout + "</div>" : "") +
     '<i style="height:' + Math.max(3, Math.round(v / top * 100)) + '%"' +
-    (months[i] === m ? ' class="' + sel + '"' : "") + "></i>" +
+    (months[i] === m ? ' class="on"' : "") + "><b></b></i>" +
     (below && months[i] === m ? '<div class="callout bot">' + callout + "</div>" : "") +
     "</div>").join("") + "</div>";
   return { tab: "dashboard", fab: "both",
@@ -4271,20 +4288,20 @@ function analyticsMonth() {
       '<div class="card anchart">' +
       '<div class="hero" style="padding:2px 0 0">' +
       '<div class="hlbl">' + t("an.income") + "</div>" +
-      '<div class="heroamt an"><span class="big">' + withDec(yuan(inc)) +
-      "</span></div></div>" +
+      '<div class="heroamt an"><span class="big" data-ck="anIn" data-count="' + inc +
+      '">' + withDec(yuan(inc)) + "</span></div></div>" +
 
       '<div class="chart">' +
-      bars(ins, "on", yuan(inc), false) +
+      bars(ins, yuan(inc), false) +
       '<div class="chartax">' + months.map((k) =>
         '<span' + (k === m ? ' class="on"' : "") + ">" +
         t("date.monthShort", { m: k.slice(5) }) + "</span>").join("") + "</div>" +
-      bars(outs, "bad", neg(out + saved), true) + "</div>" +
+      bars(outs, neg(out + saved), true) + "</div>" +
 
       '<div class="hero" style="padding:8px 0 2px">' +
       '<div class="hlbl">' + t("an.expenses") + "</div>" +
-      '<div class="heroamt an"><span class="big neg">' +
-      withDec(yuan(out + saved)) + "</span></div></div></div>" +
+      '<div class="heroamt an"><span class="big neg" data-ck="anOut" data-count="' +
+      (out + saved) + '">' + withDec(yuan(out + saved)) + "</span></div></div></div>" +
 
       /* 月度那三段减法和教练的话，从首页搬到这儿 */
       '<div class="card gapcard" style="margin-top:22px">' +
@@ -5877,7 +5894,8 @@ function labeledDonut(rows, kind) {
         '<span class="pdot" style="background:' + hue + ";opacity:" +
         alpha(L.i).toFixed(3) + '"></span>' +
         '<span class="pname">' + esc(L.name) + "</span>" +
-        '<span class="ppct">' + pctLabel(L.v, total) + "</span></div>");
+        '<span class="ppct">' + moneyShort(L.v) + " · " + pctLabel(L.v, total) +
+        "</span></div>");
     });
   });
 
@@ -6418,6 +6436,8 @@ const ACT = {
   toggleCalc: () => { ui.showCalc = !ui.showCalc; render(); },
   /* 年度清单里点某个月 —— 回首页看那个月 */
   toMonth: (mm) => { ui.month = mm; go("dashboard"); },
+  /* 分析页点柱子：只换月份，别跳回首页 */
+  anMonth: (mm) => { if (mm === viewMonth()) return; ui.month = mm; render(); },
   monthPick: () => sheet("monthPick", { y: +viewMonth().slice(0, 4) }),
   pickYear: (y) => { ui.f.y = +y; render(); },
   pickMonth: (mm) => { ui.month = mm; close(); },
@@ -7069,6 +7089,7 @@ function render() {
   else if (ui.grow) playGrow();
   playSeg();
   playNav();
+  playCount();
 }
 
 /* 底栏那颗白底：同一半边里换格子就横着滑过去（苹果那个手感），
@@ -7076,6 +7097,26 @@ function render() {
    那种情况旧的淡出、新的在目标位置淡入。
    位置是量出来的不是算出来的：两格之间是 space-between，
    间隔随药丸宽度变，写死一个数迟早对不上。 */
+/* 换月份时大数字从上一个数滚到新的那个。页面是整屏重画的，所以上一个数
+   不能指望留在 DOM 里，得自己记着（和 playNav 的 ui.navWas 一个路子）。 */
+const countWas = {};
+function playCount() {
+  app.querySelectorAll("[data-count]").forEach((el) => {
+    const to = +el.dataset.count, key = el.dataset.ck || "";
+    const from = countWas[key];
+    countWas[key] = to;
+    if (from == null || from === to || reduced()) return;
+    const t0 = performance.now(), dur = 420;
+    const tick = (now2) => {
+      if (!el.isConnected) return;
+      const p = Math.min(1, (now2 - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      el.innerHTML = withDec(yuan(Math.round(from + (to - from) * e)));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
 function playNav() {
   const was = ui.navWas || (ui.navWas = {});
   app.querySelectorAll(".navpill").forEach((pill) => {
