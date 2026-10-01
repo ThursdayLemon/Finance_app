@@ -692,7 +692,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 稿子 2150:2125：第一张卡既没有底色，也没有描边 —— 它就是一块透明的版面 */
 .anchart{gap:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none}
 /* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
-.chart{padding:18px 0 6px;position:relative}
+.chart{padding:18px 0 6px;position:relative;touch-action:pan-y}
 /* 每根柱子现在自己一列（列里还要放那个数字标注），所以行是 stretch，
    柱子贴哪一边由列自己决定：上排贴底往上长，下排贴顶往下长。 */
 .chartrow{display:flex;gap:6px;height:78px;align-items:stretch}
@@ -714,10 +714,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* ---- 环形图（稿子 2168:4139）----------------------------------------
    段是 SVG，标签是浮在外面的白药丸 —— 没有引线了。
    整块固定 268 高，切支出/收入/储蓄不会让页面跳。 */
-.pie{position:relative;height:268px;width:100%}
-.piesvg{position:absolute;left:50%;transform:translateX(-50%);
- width:132px;height:132px;overflow:visible}
-.pienum{position:absolute;left:0;right:0;transform:translateY(-50%);
+.pie{position:relative;height:300px;width:100%}
+/* 线和字都画在这张 SVG 里 —— 和扇形同一套坐标，缩放时永远对得上 */
+.piesvg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;
+ font-family:var(--font)}
+.plname{font-size:11px;fill:var(--ink)}
+.plval{font-size:10px;fill:var(--ink-muted);
+ font-variant-numeric:lining-nums tabular-nums}
+.pienum{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
  text-align:center;pointer-events:none;line-height:1.2}
 .pienum .sub{font-size:11px;line-height:15px}
 .pienum .pietot{font-family:var(--font-num);font-size:17px;line-height:22px;
@@ -727,18 +731,6 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    自定义品类都在里面），配不出图标；用同色的点反而能把药丸和段对上。 */
 /* 稿子是 padding 5/13、gap 5；这里收到 11 和 4，是为了「固定还贷 56%」
    这种长名字在抽屉里（左右还各站着一个翻月箭头）不用打点。 */
-.pchip{position:absolute;display:inline-flex;align-items:center;gap:4px;
- padding:5px 11px;border-radius:var(--r-pill);
- /* 稿子写的是 50% 白 + 1px 纯白；这里走 token，深色下才不会是浅底浅字 */
- background:var(--surface);border:1px solid var(--edge);
- font-size:12px;line-height:14px;color:var(--ink);white-space:nowrap}
-.pchip .pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.pchip .pname{overflow:hidden;text-overflow:ellipsis;min-width:0}
-/* 金额挤进来之后名字容易只剩一个省略号 —— 给个下限，宁可药丸出头一点 */
-.pchip{min-width:0}
-.pchip .pname{flex:1 1 auto}
-.pchip .ppct{color:var(--ink-muted);flex-shrink:0;font-size:11px;
- font-variant-numeric:lining-nums tabular-nums}
 .chartax>span{flex:1;text-align:center;font-size:11.5px;color:var(--ink-faint)}
 .chartax>span.on{color:var(--ink);font-weight:var(--w-bold)}
 .callout{text-align:right;font-size:12px;font-weight:var(--w-body);line-height:16px;
@@ -1445,7 +1437,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v115";
+const BUILD = "v116";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4251,11 +4243,11 @@ function analyticsMonth() {
   const inc = incomeIn(S, m), out = outgoIn(S, m), saved = savedIn(m);
   const net = inc - out - saved;
   const need = cur ? stillToSave(S) : 0;
-  /* 稿子 2208:7726 给的是 7 根柱子：当月前面 5 个、后面 1 个。
-     多画一个月是有意的 —— 固定收支已经排到下个月了，图上看得见。 */
+  /* 7 根柱子，当月居中 —— 左右都看得见，横着拖就是在这条刻度上走。 */
   const months = [];
   let [y, mo] = m.split("-").map(Number);
-  for (let i = 5; i >= -1; i--) {
+  /* 当月摆正中：前三个月、后三个月。原来是前 5 后 1，当月挤在右边第二格 */
+  for (let i = 3; i >= -3; i--) {
     let yy = y, mm = mo - i;
     while (mm <= 0) { mm += 12; yy--; }
     while (mm > 12) { mm -= 12; yy++; }
@@ -5716,18 +5708,30 @@ function anSection(months) {
     '<div class="' + (head ? "sumamt" : "money") + '">' + yuan(v) + "</div></div>";
 
   /* 明细账：固定项要乘以月数，账本里的另算 —— 和年视图那张表同一套口径 */
+  /* 每一项各占一行。原来固定收支并成一行、记账的又并成「记账支出」一行 ——
+     合计是对的，但看的人没法知道钱到底去了哪儿。
+     名字后面的「× n」只在年视图（多个月）出现。 */
+  const times = (nm) => n > 1 ? t("yr.timesN", { what: nm, n }) : nm;
+  const ledger = (want) => {
+    const map = new Map();
+    S.tx.filter((x) => x.type === want && months.includes(monthOf(x.date)))
+      .forEach((x) => { const k = catEmoji(x.category) + " " + catLabel(x.category);
+        map.set(k, (map.get(k) || 0) + x.amount); });
+    return [...map.entries()].sort((a, b) => b[1] - a[1])
+      .map(([nm, v]) => line(nm, v)).join("");
+  };
   const detail = kind === "in"
     ? line(t("word.income"), sumOver(months, (m) => incomeIn(S, m)), true) +
-      line(t("yr.timesN", { what: t("word.fixedIn"), n }), fixedIn(S) * n) +
-      line(t("yr.ledgerIn"), sumOver(months, (m) => earnedIn(S, m)))
+      S.fixedIn.map((x) => line(times(x.name), x.amount * n)).join("") +
+      ledger("in")
     : kind === "save"
       ? line(t("word.savings"), sumOver(months, savedIn), true) +
         rows.map(([nm, v]) => line(nm, v)).join("")
       : line(t("word.spending"), sumOver(months, (m) => outgoIn(S, m)), true) +
-        line(t("yr.timesN", { what: t("word.fixedOut"), n }),
-          S.fixedOut.reduce((a, x) => a + x.amount, 0) * n) +
-        line(t("yr.timesN", { what: t("word.debt"), n }), debtCommit(S) * n) +
-        line(t("yr.ledgerOut"), sumOver(months, (m) => spentIn(S, m)));
+        S.fixedOut.map((x) => line(times(x.name), x.amount * n)).join("") +
+        (S.debts || []).map((d) =>
+          line(times(d.description || t("word.debtLong")), d.monthly * n)).join("") +
+        ledger("out");
 
   return '<div style="margin-top:14px">' +
     seg("an", [[t("word.spending"), "out"], [t("word.income"), "in"],
@@ -5775,8 +5779,9 @@ function breakdownOver(months, kind) {
   months.forEach(() => {
     if (kind === "in") S.fixedIn.forEach((x) => add(x.name, x.amount));
     else {
-      add(t("word.fixedOut"), S.fixedOut.reduce((a, x) => a + x.amount, 0));
-      add(t("word.debtLong"), debtCommit(S));
+      /* 按条列，不再并成「固定支出」「负债」两坨 —— 看的人要知道是哪一笔 */
+      S.fixedOut.forEach((x) => add(x.name, x.amount));
+      (S.debts || []).forEach((d) => add(d.description || t("word.debtLong"), d.monthly));
     }
   });
   const want = kind;                    // t.type 现在就是 "in" / "out"
@@ -5806,9 +5811,9 @@ function foldSmall(rows) {
    一个色相，按大小排名往下降透明度（1 → .3），段与段之间留 4.5° 的缝。
    标签不再用引线，是浮在环外面的白药丸；左右两列分栏，天生不会重叠。
    整块固定 268 高，所以切「支出 / 收入 / 储蓄」时页面不会跳。 */
-const PIE_H = 268, PIE_R = 66, PIE_TH = 22, PIE_CY = 124;
+const PIE_W = 326;                        /* 设计宽；SVG 按百分比缩放 */
+const PIE_H = 300, PIE_R = 62, PIE_TH = 21;
 const PIE_GAP = 4.5 * Math.PI / 180;      /* 段与段之间的缝 */
-const PIE_CH = 24;                        /* 药丸高度 */
 const PIE_K = 4;                          /* 段的四个角的圆角 */
 
 /* 一段带圆角的环形扇区。先把内外半径各往里收 K、两头各收对应的角度，
@@ -5833,6 +5838,17 @@ function ringSeg(cx, cy, Ro, Ri, a0, a1, fill, op) {
     ' opacity="' + op.toFixed(3) + '"/>';
 }
 
+/* 按可用像素裁字 —— SVG 里没有 text-overflow。
+   中日韩字宽约等于字号，拉丁字母约 0.56 倍，够用了。 */
+function fitText(str, px, size) {
+  const w = (ch) => (/[\x00-\xff]/.test(ch) ? size * 0.56 : size);
+  let acc = 0, out = "";
+  for (const ch of String(str)) {
+    if (acc + w(ch) > px) return out ? out + "…" : out;
+    acc += w(ch); out += ch;
+  }
+  return out;
+}
 function labeledDonut(rows, kind) {
   const total = rows.reduce((a, c) => a + c[1], 0) || 1;
   const n = rows.length;
@@ -5842,7 +5858,8 @@ function labeledDonut(rows, kind) {
   const hue = kind === "out" ? "var(--warn)" : "var(--green-01)";
   /* 透明度按排名降，不按占比：稿子里两块一样大的也是 .6 / .5 */
   const alpha = (i) => n < 2 ? 1 : Math.max(0.3, 1 - (i / (n - 1)) * 0.7);
-  const Ro = PIE_R, Ri = PIE_R - PIE_TH, cx = PIE_R, cy = PIE_R;
+  const W = PIE_W, H = PIE_H, cx = W / 2, cy = H / 2;
+  const Ro = PIE_R, Ri = PIE_R - PIE_TH;
   let off = 0;
   const segs = [], marks = [];
   rows.forEach(([name, v], i) => {
@@ -5860,52 +5877,56 @@ function labeledDonut(rows, kind) {
     off += span;
   });
 
-  /* 标签分左右两列、纵向均分 —— 天生不会叠在一起。
-     两边强行分得一样多（最右边的那一半去右列），不按「落在哪半边」分：
-     小切片常常挤在同一侧，真按角度分会排出 6 : 2 这种一边倒的版面。
-     药丸上那颗点已经把它和哪一段对上了，所以位置不必贴着切片。 */
-  const chips = [], CH = PIE_CH;
+  /* 每一块牵一根线出去，左右两栏各自纵向排开。先按线脚的高低排序，
+     再从上往下推开、从下往上收回来 —— 两头都不出框，中间互不重叠。
+     上一版是两列药丸、没有引线，哪块对哪个标签全靠药丸上那颗点认，
+     而且名字一长就被截成一个省略号。 */
+  const JOIN = 92, PAD = 16, GAP = 32;
+  /* 两边强行分得一样多（最靠右的那一半去右栏），不按「落在哪半边」分：
+     一块占了半圈的时候，剩下全部会挤到另一边，排成一长条。
+     偏上/偏下那几块的引线从环的上下方绕过去，不会穿过环本身。 */
   const byRight = marks.slice().sort((a, b) => Math.sin(b.ang) - Math.sin(a.ang));
-  const rightSet = new Set(byRight.slice(0, Math.ceil(n / 2)).map((m) => m.i));
+  const rightSet = new Set(byRight.slice(0, Math.ceil(n / 2)).map((mk) => mk.i));
+  const out = [];
   ["left", "right"].forEach((side) => {
-    const list = marks.filter((m) => rightSet.has(m.i) === (side === "right"))
-      .sort((a, b) => Math.cos(b.ang) - Math.cos(a.ang));
-    const k = list.length;
-    list.forEach((L, j) => {
-      /* 纵向不是平均分，是往两头推：环最宽的地方在正中间，越靠中间药丸
-         能用的宽度越窄（50% - 72px）。把位置按 ^.6 往两端拉一把，中间那两格
-         就从环的「腰」挪到了「肩」上，能多拿 15~20px，名字少打点。 */
-      const u = k === 1 ? 0.5 : j / (k - 1);
-      const uu = 0.5 + 0.5 * Math.sign(u - 0.5) * Math.pow(Math.abs(2 * u - 1), 0.6);
-      let top = k === 1
-        ? PIE_CY - CH / 2 - PIE_R * Math.cos(L.ang)
-        : 12 + ((PIE_H - 24 - CH) * uu);
-      /* 一侧只有一个的时候把它推到环带外面去 —— 贴着环的那一格只有
-         50% - 72px 的宽度，长一点的名字（「固定还贷」）就得打点。 */
-      if (k === 1) top = top + CH / 2 < PIE_CY ? 12 : PIE_H - 12 - CH;
-      top = Math.max(12, Math.min(PIE_H - 12 - CH, top));
-      /* 能用多宽，按圆在这一段高度上的真实轮廓算，不是拿外接方框一刀切 */
-      const dy = (top <= PIE_CY && top + CH >= PIE_CY) ? 0
-        : Math.min(Math.abs(top - PIE_CY), Math.abs(top + CH - PIE_CY));
-      const half = dy < PIE_R ? Math.sqrt(PIE_R * PIE_R - dy * dy) : 0;
-      chips.push('<div class="pchip" title="' + esc(L.name) + '" style="top:' +
-        Math.round(top) + "px;" + (side === "right" ? "right:0;" : "left:0;") +
-        "max-width:calc(50% - " + Math.round(half + 6) + 'px)">' +
-        '<span class="pdot" style="background:' + hue + ";opacity:" +
-        alpha(L.i).toFixed(3) + '"></span>' +
-        '<span class="pname">' + esc(L.name) + "</span>" +
-        '<span class="ppct">' + moneyShort(L.v) + " · " + pctLabel(L.v, total) +
-        "</span></div>");
+    const right = side === "right";
+    const items = marks
+      .filter((mk) => rightSet.has(mk.i) === right)
+      .map((mk) => ({ mk, ky: cy - (Ro + 16) * Math.cos(mk.ang) }))
+      .sort((a, b) => a.ky - b.ky);
+    let y = PAD;
+    items.forEach((it) => { it.y = Math.max(y, it.ky); y = it.y + GAP; });
+    let floor = H - PAD;
+    for (let i = items.length - 1; i >= 0; i--) {
+      items[i].y = Math.min(items[i].y, floor); floor = items[i].y - GAP;
+    }
+    items.forEach((it) => {
+      const a = it.mk.ang;
+      const jx = right ? W - JOIN : JOIN;
+      const tx = right ? jx + 9 : jx - 9;
+      const room = right ? W - 6 - tx : tx - 6;
+      const pts = [[cx + (Ro + 2) * Math.sin(a), cy - (Ro + 2) * Math.cos(a)],
+        [cx + (Ro + 16) * Math.sin(a), cy - (Ro + 16) * Math.cos(a)],
+        [jx, it.y]].map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" ");
+      out.push('<polyline points="' + pts + '" fill="none" stroke="var(--ink-faint)" ' +
+        'stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<circle cx="' + jx + '" cy="' + it.y.toFixed(1) + '" r="3.2" fill="' + hue +
+        '" opacity="' + alpha(it.mk.i).toFixed(3) + '"/>' +
+        '<text class="plname" x="' + tx + '" y="' + (it.y - 1).toFixed(1) +
+        '" text-anchor="' + (right ? "start" : "end") + '">' +
+        esc(fitText(it.mk.name, room, 11)) + "</text>" +
+        '<text class="plval" x="' + tx + '" y="' + (it.y + 12).toFixed(1) +
+        '" text-anchor="' + (right ? "start" : "end") + '">' +
+        esc(moneyShort(it.mk.v) + " \u00b7 " + pctLabel(it.mk.v, total)) + "</text>");
     });
   });
 
   return '<div class="pie">' +
-    '<svg class="piesvg" viewBox="0 0 ' + (PIE_R * 2) + " " + (PIE_R * 2) + '" ' +
-    'style="top:' + (PIE_CY - PIE_R) + 'px">' + segs.join("") + "</svg>" +
-    '<div class="pienum" style="top:' + PIE_CY + 'px"><div class="sub">' +
+    '<svg class="piesvg" viewBox="0 0 ' + W + " " + H + '" aria-hidden="true">' +
+    segs.join("") + out.join("") + "</svg>" +
+    '<div class="pienum"><div class="sub">' +
     t(kind === "in" ? "word.income" : kind === "save" ? "word.savings" : "word.spending") +
-    '</div><div class="pietot">' + yuan(total) + "</div></div>" +
-    chips.join("") + "</div>";
+    '</div><div class="pietot">' + yuan(total) + "</div></div></div>";
 }
 
 SHEETS.cats = () => {
@@ -7615,6 +7636,37 @@ app.addEventListener("touchmove", (e) => {
 }, { passive: false });
 app.addEventListener("pointerup", endStackDrag);
 app.addEventListener("pointercancel", endStackDrag);
+
+/* 分析页的柱状图：横着拖就像在刻度上走，每 44px 翻一个月，翻一格震一下。
+   纵向留给页面滚动（.chart 上写了 touch-action:pan-y），所以这儿只认横向。 */
+let anDrag = null;
+const AN_STEP = 44;
+app.addEventListener("pointerdown", (e) => {
+  anDrag = e.target.closest && e.target.closest(".chart")
+    ? { x0: e.clientX, y0: e.clientY, steps: 0, lock: null, base: viewMonth() } : null;
+});
+app.addEventListener("pointermove", (e) => {
+  if (!anDrag) return;
+  const dx = e.clientX - anDrag.x0, dy = e.clientY - anDrag.y0;
+  if (!anDrag.lock) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    anDrag.lock = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+  }
+  if (anDrag.lock !== "x") return;
+  /* 往左拖 = 把刻度往左推 = 看后面的月份 */
+  const want = -Math.round(dx / AN_STEP);
+  if (want === anDrag.steps) return;
+  anDrag.steps = want;
+  const mm = shiftMonth(anDrag.base, want);
+  if (mm === viewMonth()) return;
+  ui.month = mm;
+  buzz("light");
+  render();
+});
+/* 拖过就把紧跟其后的那次 click 吞掉，不然松手时会顺带点中某根柱子 */
+const endAnDrag = () => { if (anDrag && anDrag.lock === "x" && anDrag.steps) swallow(); anDrag = null; };
+app.addEventListener("pointerup", endAnDrag);
+app.addEventListener("pointercancel", endAnDrag);
 
 const endSwipe = () => {
   if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
