@@ -626,11 +626,23 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 稿子 26:895：191×34、内边距 7/14、里面间隔 8、3px 浅灰描边。
    所有页面（首页月份、分析页月份和年份）共用这一条，不许各写各的。 */
 .mochip{display:inline-flex;align-items:center;gap:8px;background:var(--icon-bg);
- border:3px solid var(--chip-edge);border-radius:var(--r-pill);padding:0 14px;
- min-height:34px;backdrop-filter:blur(8px)}
+ border:1px solid var(--icon-edge);border-radius:var(--r-pill);padding:0 14px;
+ min-height:42px;backdrop-filter:blur(8px)}
 /* 稿子里英文月份是全大写；中文没有大小写，套上去无害 */
 .mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
- min-width:78px;text-align:center;text-transform:uppercase}
+ min-width:104px;text-align:center;text-transform:uppercase;cursor:pointer}
+/* 跳月面板：上面一行翻年，下面 4×3 的十二个月 */
+.yrow{display:flex;align-items:center;justify-content:space-between;
+ padding:2px 2px 2px 2px}
+.yrow>span{font-size:17px;line-height:22px;font-weight:var(--w-mid);letter-spacing:-.02em;
+ font-variant-numeric:lining-nums tabular-nums}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mcell{height:44px;display:flex;align-items:center;justify-content:center;
+ border-radius:var(--r-sm);border:1px solid var(--edge);background:var(--sunken);
+ font-size:13px;cursor:pointer;color:var(--ink)}
+/* 今天所在的那个月给一圈实边，一眼看得出「现在在哪儿」 */
+.mcell.now{border-color:var(--ink-faint)}
+.mcell.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .heroamt{display:flex;align-items:center;gap:8px}
 /* 主数字：42/46，字距 −1.47px；小数同号但压灰 */
 .heroamt .big{font-size:48px;line-height:54px;letter-spacing:-1.68px}
@@ -1419,7 +1431,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v112";
+const BUILD = "v113";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1474,7 +1486,7 @@ zh: {
   "nav.me": "我", "nav.sections": "分区", "scope.month": "月", "scope.year": "年",
   "pro.cta": "升级 Pro", "pro.soon": "Pro 还在做，先把这套用顺手",
   "word.back": "返回", "word.addOne": "记一笔", "word.quickAdd": "一句话记一笔",
-  "date.month": (v) => v.y + "年" + +v.m + "月", "date.monthOnly": (v) => +v.m + "月",
+  "date.month": (v) => v.y + "年" + +v.m + "月",
   "date.monthShort": (v) => +v.m + "月",
   "date.day": (v) => +v.m + "月" + +v.d + "日",
   "date.year": (v) => v.y + " 年",
@@ -1526,6 +1538,7 @@ zh: {
   "mo.committed": "固定承诺",
   "mo.upcoming": (v) => "即将 " + v.n + " 笔",
   "mo.willArrive": "到账", "mo.willLeave": "扣款", "mo.willMove": "转存",
+  "mo.pick": "跳到哪个月",
   "mo.emptyNow": "这个月还没有账目。按右下角说一句，或者点「记一笔」。",
   "mo.emptyPast": (v) => v.month + "没有记录。",
   "mo.emptyFuture": (v) => v.month + "还没有安排。固定收支到了日子会自己出现在这儿。",
@@ -1925,7 +1938,6 @@ en: {
   "pro.cta": "Get Pro", "pro.soon": "Pro isn't ready yet — enjoy this first",
   "word.back": "Back", "word.addOne": "Add", "word.quickAdd": "Quick add",
   "date.month": (v) => MON[+v.m - 1] + " · " + v.y,
-  "date.monthOnly": (v) => MON[+v.m - 1],
   "date.monthShort": (v) => MON3[+v.m - 1],
   "date.day": (v) => MON3[+v.m - 1] + " " + +v.d,
   "date.year": (v) => v.y,
@@ -1983,6 +1995,7 @@ en: {
   "mo.thisMonth": "Total Income", "mo.committed": "Committed",
   "mo.upcoming": (v) => plural(v.n, "entry", "entries") + " coming up",
   "mo.willArrive": "in", "mo.willLeave": "out", "mo.willMove": "moved",
+  "mo.pick": "Jump to a month",
   "mo.emptyNow": "Nothing logged this month yet. Hold the mic and say it, or tap Add.",
   "mo.emptyPast": (v) => "Nothing recorded in " + v.month + ".",
   "mo.emptyFuture": (v) => "Nothing lined up for " + v.month +
@@ -2557,8 +2570,6 @@ const shiftMonth = (m, n) => { const [y, mo] = m.split("-").map(Number);
   const d = new Date(Date.UTC(y, mo - 1 + n, 1));
   return d.toISOString().slice(0, 7); };
 const monthName = (m) => { const [y, mo] = m.split("-"); return t("date.month", { y, m: mo }); };
-/* 首页那颗胶囊只说月份 —— 年份在「你现在在哪个月」这件事上是噪音 */
-const monthOnly = (m) => { const [y, mo] = m.split("-"); return t("date.monthOnly", { y, m: mo }); };
 const lastDayOf = (m) => { const [y, mo] = m.split("-").map(Number);
   return new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10); };
 const sumIn = (s, m, type) => s.tx
@@ -2895,18 +2906,27 @@ const DATE_PATS = [
   /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]?\s*[-–—~至到]\s*(?:(\d{1,2})\s*月\s*)?(\d{1,2})\s*[日号]?/,
   /(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/,
 ];
+/* 没写年份就挑离今天最近的那一个。原来写的是「算出来比今天晚就当去年」——
+   补过去的账时对，记未来的账单（十月里写 11.15）时正好反了。 */
+function nearYear(mo, d) {
+  const pad = (x) => String(x).padStart(2, "0");
+  const t0 = Date.parse(today() + "T00:00:00Z");
+  const y0 = +today().slice(0, 4);
+  let best = null;
+  [y0 - 1, y0, y0 + 1].forEach((y) => {
+    const iso = y + "-" + pad(mo) + "-" + pad(d);
+    const gap = Math.abs(Date.parse(iso + "T00:00:00Z") - t0);
+    if (!best || gap < best.gap) best = { iso, gap };
+  });
+  return best.iso;
+}
 function grabDate(text) {
   for (const re of DATE_PATS) {
     const m = re.exec(text);
     if (!m) continue;
     const mo = +m[1], d = +m[2];
     if (mo < 1 || mo > 12 || d < 1 || d > 31) continue;
-    const pad = (x) => String(x).padStart(2, "0");
-    const mk = (y) => y + "-" + pad(mo) + "-" + pad(d);
-    /* 没写年份就按最近的那一个 —— 算出来比今天还晚，说的就是去年 */
-    const y0 = +today().slice(0, 4);
-    const iso = mk(y0) > today() ? mk(y0 - 1) : mk(y0);
-    return { iso, start: m.index, end: m.index + m[0].length,
+    return { iso: nearYear(mo, d), start: m.index, end: m.index + m[0].length,
       label: m[0].replace(/\s+/g, "") };
   }
   return null;
@@ -2921,11 +2941,8 @@ function grabBareDate(text) {
   if (!m) return null;
   const mo = +m[1], d = +m[2];
   if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
-  const pad = (x) => String(x).padStart(2, "0");
-  const mk = (y) => y + "-" + pad(mo) + "-" + pad(d);
-  const y0 = +today().slice(0, 4);
-  return { iso: mk(y0) > today() ? mk(y0 - 1) : mk(y0),
-    start: 0, end: m[0].length, label: m[0].replace(/\s+/g, "") };
+  return { iso: nearYear(mo, d), start: 0, end: m[0].length,
+    label: m[0].replace(/\s+/g, "") };
 }
 /* 整段用空格盖掉：长度不变，后面所有按下标切句的地方才对得上 */
 const blankOut = (text, a, b) =>
@@ -4308,7 +4325,8 @@ function monthView() {
          「分析」页去了（点左边那张卡进去），首页开场是「你有多少」。 */
       '<div class="hero">' +
       '<div class="mochip">' + monthArrow("prev", true) +
-      '<span>' + monthOnly(m) + "</span>" + monthArrow("next", true) + "</div>" +
+      '<span data-a="monthPick">' + monthName(m) + "</span>" +
+      monthArrow("next", true) + "</div>" +
       '<div class="hlbl">' + t("mo.available") + "</div>" +
       '<div class="heroamt">' +
       (ui.hideBal ? '<span class="big">' + ccy().sym +
@@ -5899,6 +5917,24 @@ SHEETS.editDraft = () => grab + head(t("tx.editDraft")) + txForm() + errline() +
   '<div class="mbtn sm" data-a="dropDraft" style="color:' + RED + ";border-color:" + RED +
   '">' + t("tx.dropDraft") + "</div>";
 
+SHEETS.monthPick = () => {
+  const y = ui.f.y || +viewMonth().slice(0, 4);
+  const cur = viewMonth();
+  return grab + head(t("mo.pick")) +
+    '<div class="yrow">' +
+    '<div class="tapout" data-a="pickYear:' + (y - 1) + '" style="cursor:pointer">' +
+    ic("back", 18) + "</div><span>" + y + "</span>" +
+    '<div class="tapout" data-a="pickYear:' + (y + 1) + '" style="cursor:pointer">' +
+    ic("chev", 18) + "</div></div>" +
+    '<div class="mgrid">' +
+    MON.map((name, i) => {
+      const mm = String(i + 1).padStart(2, "0"), key = y + "-" + mm;
+      return '<div class="mcell' + (key === cur ? " on" : "") +
+        (key === thisMonth() ? " now" : "") + '" data-a="pickMonth:' + key + '">' +
+        t("date.monthShort", { m: mm }) + "</div>";
+    }).join("") + "</div>";
+};
+
 SHEETS.addTx = () => grab + head(t("tx.add")) + txForm() +
   errline() + btn(t("tx.addBtn"), "submitTx", "pri");
 
@@ -6357,6 +6393,9 @@ const ACT = {
   toggleCalc: () => { ui.showCalc = !ui.showCalc; render(); },
   /* 年度清单里点某个月 —— 回首页看那个月 */
   toMonth: (mm) => { ui.month = mm; go("dashboard"); },
+  monthPick: () => sheet("monthPick", { y: +viewMonth().slice(0, 4) }),
+  pickYear: (y) => { ui.f.y = +y; render(); },
+  pickMonth: (mm) => { ui.month = mm; close(); },
   wizAdd: () => {
     if ((ui.wizard || 0) === 1) {
       const name = (ui.f.name || "").trim(), amount = num(ui.f.amount);
