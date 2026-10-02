@@ -706,6 +706,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 柱子在格子里居中 —— 月份也是居中的，两者的中线必须重合 */
 .dcol{flex:0 0 var(--bp);height:100%;position:relative;
  display:flex;justify-content:center}
+/* 透明开关：撑满整格、看不见，但手指是真的点在它身上 */
+.hswitch{position:absolute;inset:0;width:100%;height:100%;margin:0;
+ opacity:0;z-index:1;cursor:pointer}
 /* 收入贴底往上长，支出贴顶往下长。对齐要写在格子上：
    .drow 的 align-items 管不着它，格子自己是 height:100% 的。 */
 .drow.up .dcol{align-items:flex-end}
@@ -1490,7 +1493,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v118";
+const BUILD = "v119";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4367,6 +4370,11 @@ function dotChart(sel, opt) {
     const on = i === k0;
     return '<div class="dcol' + (on ? " on" : "") + '"' +
       (o.ruler ? ' data-a="anMonth:' + months[i] + '"' : "") + ">" +
+      /* 铺一个透明的开关在这一格上。iOS 的网页触感只认「真手指点在
+         switch 控件上」这一种情况（isTrusted），程序化 click 不算数 ——
+         所以不能等到判定出月份再去「播放」一下震动，只能让手指直接点到它。 */
+      (o.ruler ? '<input class="hswitch" type="checkbox" switch tabindex="-1" ' +
+        'aria-hidden="true">' : "") +
       '<i class="dbar" style="height:' + h + 'px"></i>' +
       (on && o.callout ? '<b class="dcall" style="' + (up ? "bottom" : "top") +
         ":calc(" + h + 'px + 5px)">' + (up ? plus(v) : neg(v)) + "</b>" : "") +
@@ -5930,7 +5938,9 @@ function labeledDonut(rows, kind) {
      再从上往下推开、从下往上收回来 —— 两头都不出框，中间互不重叠。
      上一版是两列药丸、没有引线，哪块对哪个标签全靠药丸上那颗点认，
      而且名字一长就被截成一个省略号。 */
-  const JOIN = 92, PAD = 16, GAP = 32;
+  /* JOIN 越大，折线的拐点越靠近圆环、留给文字的横向空间就越多。
+     上限是别压到环上：环的右沿在 cx + Ro = 225，所以 JOIN 最多 101。 */
+  const JOIN = 100, PAD = 16, GAP = 32;
   /* 两边强行分得一样多（最靠右的那一半去右栏），不按「落在哪半边」分：
      一块占了半圈的时候，剩下全部会挤到另一边，排成一长条。
      偏上/偏下那几块的引线从环的上下方绕过去，不会穿过环本身。 */
@@ -5966,7 +5976,7 @@ function labeledDonut(rows, kind) {
         esc(fitText(it.mk.name, room, 11)) + "</text>" +
         '<text class="plval" x="' + tx + '" y="' + (it.y + 12).toFixed(1) +
         '" text-anchor="' + (right ? "start" : "end") + '">' +
-        esc(moneyShort(it.mk.v) + " \u00b7 " + pctLabel(it.mk.v, total)) + "</text>");
+        esc(yuan(it.mk.v) + " \u00b7 " + pctLabel(it.mk.v, total)) + "</text>");
     });
   });
 
@@ -7724,6 +7734,9 @@ app.addEventListener("pointermove", (e) => {
   const want = -Math.round(dx / AN_STEP);
   if (want === anDrag.steps) return;
   anDrag.steps = want;
+  /* 这里不 buzz：拖动中没有「真手指点在开关上」这个动作，
+     iOS 的那条路要求 isTrusted，程序化触发一律无效（见 haptics()）。
+     点选某一格才有震动 —— 那一下是真的点在 .hswitch 上。 */
   buzz("medium");
   const cols = anDrag.strip.querySelectorAll(".drow .dcol");
   const per = cols.length / 2, k = Math.round(per / 2 - 0.5) + want;
