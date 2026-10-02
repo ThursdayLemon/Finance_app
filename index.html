@@ -696,11 +696,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    一根柱子一个 div，点距和点径直接照稿子写（点 2.5、行列间距都是 5）。
    收入那排贴底往上长，支出那排贴顶往下长，所以背景也要分别锚在底/顶，
    否则两排的点行对不齐。 */
-.dchart{--bw:35px;--bp:44px;--dot:2.5px;--grid:5px;position:relative}
+.dchart{--bw:50px;--bp:56px;--dot:2.5px;--grid:5px;position:relative}
 .dwin{overflow:hidden;
  /* 走到边缘的淡出去 —— 柱子和月份一起淡，刻度感就是从这儿来的 */
- -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18%,#000 82%,transparent 100%);
- mask-image:linear-gradient(90deg,transparent 0,#000 18%,#000 82%,transparent 100%)}
+ -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);
+ mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
 .dstrip{position:relative;left:50%;will-change:transform}
 .drow{display:flex;height:100%}
 /* 柱子在格子里居中 —— 月份也是居中的，两者的中线必须重合 */
@@ -745,7 +745,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .dchart.mini .dwin{-webkit-mask-image:none;mask-image:none}
 /* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
 .chart{padding:18px 0 6px;position:relative}
-.dwin{touch-action:pan-y}
+.anpanel{touch-action:pan-y}
 /* 这一块是透明的版面，不是卡：没有底色、没有描边、没有投影 */
 .anpanel{background:transparent;border:0;box-shadow:none;backdrop-filter:none;
  padding:0 0 4px}
@@ -1493,7 +1493,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v119";
+const BUILD = "v120";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4309,7 +4309,8 @@ function analyticsMonth() {
       monthArrow("next", !isThisMonth()) + "</div></div>" +
 
       /* 稿子 2168:4252：收入 · 点阵刻度 · 支出，整块收进一张卡 */
-      '<div class="card anpanel">' +
+      /* 上下那两个大数字也是拖动区的一部分 —— 手指落在数字上一样能推刻度 */
+      '<div class="card anpanel" data-ruler="1">' +
       '<div class="hero" style="padding:2px 0 0">' +
       '<div class="hlbl">' + t("an.income") + "</div>" +
       '<div class="heroamt an"><span class="big" data-ck="anIn" data-count="' + inc +
@@ -4346,6 +4347,9 @@ function analyticsMonth() {
       "</div>" };
 };
 
+/* 一格的间距。窗口 326 宽：5 格整的 280 摆正中，两边各露 23 的边角料，
+   正好落在渐隐里 —— 「中间五个看得全、两头各漏一点」就是这么来的。 */
+const AN_PITCH = 56, AN_MINI_PITCH = 21.7;
 /* 镜像点阵图。首页那张（mini）固定 7 格不能拖；分析页那张是一条刻度，
    左右拖得动，所以多画几个月当余量，再靠 translateX 把选中的那格推到正中。
 
@@ -4361,8 +4365,8 @@ function dotChart(sel, opt) {
   const top = Math.max.apply(null, ins.concat(outs, [1]));
   const k0 = months.indexOf(sel);
   const G = o.mini ? 2.6 : 5;                 /* 点距 */
-  const pitch = o.mini ? 21.7 : 44;
-  const upRows = o.mini ? 23 : 19, dnRows = o.mini ? 18 : 15;
+  const pitch = o.mini ? AN_MINI_PITCH : AN_PITCH;
+  const upRows = o.mini ? 23 : 24, dnRows = o.mini ? 18 : 19;
   const PAD = o.mini ? 18 : 22;               /* 给数字留的一条带 */
   const col = (v, i, up) => {
     const rows = Math.max(1, Math.round((v / top) * (up ? upRows : dnRows)));
@@ -4383,7 +4387,7 @@ function dotChart(sel, opt) {
   const row = (vals, cls, up) => '<div class="drow ' + cls + '">' +
     vals.map((v, i) => col(v, i, up)).join("") + "</div>";
   return '<div class="dchart' + (o.mini ? " mini" : "") + '">' +
-    '<div class="dwin"' + (o.ruler ? ' data-ruler="1"' : "") + ">" +
+    '<div class="dwin">' +
     '<div class="dstrip" style="transform:translateX(' +
       (-(k0 + 0.5) * pitch).toFixed(1) + 'px)">' +
     /* 多出来的 PAD 是数字那一条带，必须算在窗口里面 ——
@@ -7709,7 +7713,7 @@ app.addEventListener("pointercancel", endStackDrag);
    松手先用 .18s 滑到吸附位，再 render 定稿。
    纵向留给页面滚动（.dwin 上写了 touch-action:pan-y）。 */
 let anDrag = null;
-const AN_STEP = 44;
+const AN_STEP = AN_PITCH;
 app.addEventListener("pointerdown", (e) => {
   const win = e.target.closest && e.target.closest('[data-ruler="1"]');
   if (!win) { anDrag = null; return; }
