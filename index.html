@@ -743,7 +743,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    不是分析页那张镜像图的缩小版 —— 那张有上下两排和正负数字，这张都没有。 */
 .gcard.anl{padding:16px 12px;align-items:center;justify-content:space-between;gap:12px}
 .mfig{text-align:center}
-.mfig .money{font-family:var(--font-display);font-size:17px;line-height:22px;
+.mfig .money{font-family:var(--font-display);font-size:17px;line-height:20px;
  color:var(--ink)}
 .mfig .sub{font-size:11px;line-height:13px;color:var(--ink-muted);margin-top:4px}
 .mchart{--bw:20.8px;--dot:1.6px;--grid:2.6px;align-self:stretch}
@@ -811,10 +811,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .callout{text-align:right;font-size:12px;font-weight:var(--w-body);line-height:16px;
  color:var(--ink);height:16px}
 .callout.bot{color:var(--bad);padding-top:6px}
-/* 稿子：标题 →(12)→ 网格，两行之间 12，一行里两个之间 8，图标 36。
-   align-content 不能用 center —— 那样标题到图标的距离会随卡片高度变。 */
+/* 稿子 2150:1982：网格 SPACE_BETWEEN 撑满内容区，一行里两个之间 8。
+   标题已经去掉了，所以也没有「标题 →(12)→ 网格」那段上边距 ——
+   留着的话上面 29、下面 17，一眼就看得出不对称。 */
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;flex:1;
- align-content:start;margin-top:12px}
+ align-content:space-between}
 /* 60% 白，不描边 —— 描边在玻璃卡上会把圆切出一道硬线 */
 .quick .circ{width:36px;height:36px;background:rgba(255,255,255,.6);border:0}
 .qi{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
@@ -1512,7 +1513,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v126";
+const BUILD = "v127";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
