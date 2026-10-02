@@ -817,11 +817,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  align-content:start;margin-top:12px}
 /* 60% 白，不描边 —— 描边在玻璃卡上会把圆切出一道硬线 */
 .quick .circ{width:36px;height:36px;background:rgba(255,255,255,.6);border:0}
-.qi{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.qi{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
 /* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
  letter-spacing:-.19px;font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
-.tilelbl{font-family:var(--font);font-size:10px;line-height:13px;color:var(--ink)}
+.tilelbl{font-family:var(--font);font-size:11px;line-height:13px;color:var(--ink)}
 /* 统一的白圆底：分类图标、快捷入口、行图标都用它。
    按稿子：40% 白 + 1px 纯白描边，不带投影 —— 玻璃卡上再叠投影会糊成一团。 */
 .circ{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;
@@ -1512,7 +1512,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v125";
+const BUILD = "v126";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4493,7 +4493,7 @@ function monthView() {
        [t("tile.bills"), S.fixedOut.reduce((a, x) => a + x.amount, 0), "route:out", "tileBill"],
        [t("tile.debt"), debtCommit(S), "route:debt", "card"]].map(([l, v, a, g]) =>
         /* 稿子 2150:1925 把金额去掉了 —— 这一格现在只是四个入口 */
-        '<div class="qi" data-a="' + a + '"><div class="circ">' + ic(g, 18) + "</div>" +
+        '<div class="qi" data-a="' + a + '"><div class="circ">' + ic(g, 16) + "</div>" +
         '<div class="tilelbl">' + esc(l) + "</div></div>").join("") +
       "</div></div></div>" +
 
