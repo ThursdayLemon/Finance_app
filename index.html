@@ -629,8 +629,13 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  border:1px solid var(--icon-edge);border-radius:var(--r-pill);padding:0 14px;
  min-height:42px;backdrop-filter:blur(8px)}
 /* 稿子里英文月份是全大写；中文没有大小写，套上去无害 */
-.mochip>span{font-size:12.5px;font-weight:var(--w-mid);line-height:16px;
- min-width:104px;text-align:center;text-transform:uppercase;cursor:pointer}
+.mochip>span{display:flex;flex-direction:column;align-items:center;
+ min-width:92px;text-transform:uppercase;cursor:pointer}
+.mochip>span>b{font-size:12.5px;font-weight:var(--w-mid);line-height:16px}
+/* 年份是配角：比月份小 4px，颜色也压下去 */
+.mochip>span>em{font-style:normal;font-size:8.5px;line-height:11px;
+ font-weight:var(--w-body);color:var(--ink-muted);
+ font-variant-numeric:lining-nums tabular-nums}
 /* 跳月面板：上面一行翻年，下面 4×3 的十二个月 */
 .yrow{display:flex;align-items:center;justify-content:space-between;
  padding:2px 2px 2px 2px}
@@ -1513,7 +1518,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v127";
+const BUILD = "v128";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1568,7 +1573,7 @@ zh: {
   "nav.me": "我", "nav.sections": "分区", "scope.month": "月", "scope.year": "年",
   "pro.cta": "升级 Pro", "pro.soon": "Pro 还在做，先把这套用顺手",
   "word.back": "返回", "word.addOne": "记一笔", "word.quickAdd": "一句话记一笔",
-  "date.month": (v) => v.y + "年" + +v.m + "月",
+  "date.month": (v) => v.y + "年" + +v.m + "月", "date.monthOnly": (v) => +v.m + "月",
   "date.monthShort": (v) => +v.m + "月",
   "date.day": (v) => +v.m + "月" + +v.d + "日",
   "date.year": (v) => v.y + " 年",
@@ -2020,6 +2025,7 @@ en: {
   "pro.cta": "Get Pro", "pro.soon": "Pro isn't ready yet — enjoy this first",
   "word.back": "Back", "word.addOne": "Add", "word.quickAdd": "Quick add",
   "date.month": (v) => MON[+v.m - 1] + " · " + v.y,
+  "date.monthOnly": (v) => MON[+v.m - 1],
   "date.monthShort": (v) => MON3[+v.m - 1],
   "date.day": (v) => MON3[+v.m - 1] + " " + +v.d,
   "date.year": (v) => v.y,
@@ -2652,6 +2658,9 @@ const shiftMonth = (m, n) => { const [y, mo] = m.split("-").map(Number);
   const d = new Date(Date.UTC(y, mo - 1 + n, 1));
   return d.toISOString().slice(0, 7); };
 const monthName = (m) => { const [y, mo] = m.split("-"); return t("date.month", { y, m: mo }); };
+/* 胶囊里月份和年份分两行：月份是主角，年份压到第二行、小一档 */
+const monthStack = (m) => { const [y, mo] = m.split("-");
+  return "<b>" + t("date.monthOnly", { y, m: mo }) + "</b><em>" + y + "</em>"; };
 const lastDayOf = (m) => { const [y, mo] = m.split("-").map(Number);
   return new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10); };
 const sumIn = (s, m, type) => s.tx
@@ -4325,7 +4334,7 @@ function analyticsMonth() {
       '<div class="hero" style="padding-top:2px;padding-bottom:10px">' +
       /* 月视图也要左右箭头：没有的话，切到年视图时药丸的宽高会跳一下 */
       '<div class="mochip">' + monthArrow("prev", true) +
-      "<span>" + monthName(m) + "</span>" +
+      "<span>" + monthStack(m) + "</span>" +
       monthArrow("next", !isThisMonth()) + "</div></div>" +
 
       /* 稿子 2168:4252：收入 · 点阵刻度 · 支出，整块收进一张卡 */
@@ -4462,7 +4471,7 @@ function monthView() {
          「分析」页去了（点左边那张卡进去），首页开场是「你有多少」。 */
       '<div class="hero">' +
       '<div class="mochip">' + monthArrow("prev", true) +
-      '<span data-a="monthPick">' + monthName(m) + "</span>" +
+      '<span data-a="monthPick">' + monthStack(m) + "</span>" +
       monthArrow("next", true) + "</div>" +
       '<div class="hlbl">' + t("mo.available") + "</div>" +
       '<div class="heroamt">' +
@@ -5985,16 +5994,14 @@ function labeledDonut(rows, kind) {
   /* JOIN 越大，折线的拐点越靠近圆环、留给文字的横向空间就越多。
      上限是别压到环上：环的右沿在 cx + Ro = 225，所以 JOIN 最多 101。 */
   const JOIN = 100, PAD = 16, GAP = 32;
-  /* 两边强行分得一样多（最靠右的那一半去右栏），不按「落在哪半边」分：
-     一块占了半圈的时候，剩下全部会挤到另一边，排成一长条。
-     偏上/偏下那几块的引线从环的上下方绕过去，不会穿过环本身。 */
-  const byRight = marks.slice().sort((a, b) => Math.sin(b.ang) - Math.sin(a.ang));
-  const rightSet = new Set(byRight.slice(0, Math.ceil(n / 2)).map((mk) => mk.i));
+  /* 哪一块落在哪半边，就牵到哪一栏 —— 线才走得有道理。
+     不强行左右均分：那样版面是齐了，但有的线得绕到对面去。
+     容量够用：foldSmall 之后最多 8 块，一侧 (300−32)/32+1 = 9 个位置。 */
   const out = [];
   ["left", "right"].forEach((side) => {
     const right = side === "right";
     const items = marks
-      .filter((mk) => rightSet.has(mk.i) === right)
+      .filter((mk) => (Math.sin(mk.ang) >= 0) === right)
       .map((mk) => ({ mk, ky: cy - (Ro + 16) * Math.cos(mk.ang) }))
       .sort((a, b) => a.ky - b.ky);
     let y = PAD;
@@ -6008,9 +6015,11 @@ function labeledDonut(rows, kind) {
       const jx = right ? W - JOIN : JOIN;
       const tx = right ? jx + 9 : jx - 9;
       const room = right ? W - 6 - tx : tx - 6;
+      /* 末端收在圆点之前 5px：线走到点为止，不从点里穿出去 */
+      const stop = jx - (right ? 5 : -5);
       const pts = [[cx + (Ro + 2) * Math.sin(a), cy - (Ro + 2) * Math.cos(a)],
         [cx + (Ro + 16) * Math.sin(a), cy - (Ro + 16) * Math.cos(a)],
-        [jx, it.y]].map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" ");
+        [stop, it.y]].map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" ");
       out.push('<polyline points="' + pts + '" fill="none" stroke="var(--ink-faint)" ' +
         'stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>' +
         '<circle cx="' + jx + '" cy="' + it.y.toFixed(1) + '" r="3.2" fill="' + hue +
