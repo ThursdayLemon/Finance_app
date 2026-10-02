@@ -737,6 +737,22 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  font-weight:var(--w-body)}
 .drow.up .dcall{color:var(--good)}
 .drow.down .dcall{color:var(--warn)}
+/* 首页左卡（稿子 2150:1925）：只有收入这一排，6 根，当月第 4 根。
+   不是分析页那张镜像图的缩小版 —— 那张有上下两排和正负数字，这张都没有。 */
+.gcard.anl{padding:16px 12px;align-items:center;justify-content:space-between;gap:12px}
+.mfig{text-align:center}
+.mfig .money{font-family:var(--font-display);font-size:17px;line-height:22px;
+ color:var(--ink)}
+.mfig .sub{font-size:11px;line-height:13px;color:var(--ink-muted);margin-top:4px}
+.mchart{--bw:20.8px;--dot:1.6px;--grid:2.6px;align-self:stretch}
+.mbars{display:flex;justify-content:space-between;align-items:flex-end;height:64px}
+.mcol{width:var(--bw);display:flex;align-items:flex-end}
+.mcol .dbar{width:100%;color:var(--ink-faint);background-position:left bottom}
+.mcol.on .dbar{color:var(--good)}
+.max{display:flex;justify-content:space-between;padding-top:6px}
+.max > span{width:var(--bw);text-align:center;font-size:9px;line-height:12px;
+ color:var(--ink-faint)}
+.max > span.on{color:var(--ink);font-weight:var(--w-mid)}
 /* 首页那张缩一半：点和间距一起缩，不然挤成一团 */
 .dchart.mini{--bw:18.2px;--bp:21.7px;--dot:1.6px;--grid:2.6px}
 .dchart.mini .dcall{font-size:11px;line-height:14px}
@@ -1494,7 +1510,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v122";
+const BUILD = "v123";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1593,7 +1609,7 @@ zh: {
   "mo.ledger": "本月账本", "mo.rows": (v) => v.n + " 条",
   "app.wordmark": "MARGIN",
   "an.title": "分析", "an.income": "本月收入", "an.expenses": "本月支出",
-  "mo.available": "可用余额", "mo.totalIn": "分析", "mo.thisMonth": "本月收入",
+  "mo.available": "可用余额", "mo.totalIn": "本月收入", "mo.thisMonth": "本月收入",
   "tx.search": "搜账本", "tx.filter": "筛选",
   "tile.income": "收入", "tile.savings": "储蓄", "tile.bills": "账单", "tile.debt": "还贷",
   "tx.fAll": "全部", "tx.fIn": "进账", "tx.fOut": "花销",
@@ -2054,7 +2070,7 @@ en: {
   "tile.bills": "Bills", "tile.debt": "Debt",
   "tx.fAll": "All", "tx.fIn": "Money in", "tx.fOut": "Money out",
   "tx.in": "Income", "tx.out": "Spend", "tx.noMatch": "Nothing matches that.",
-  "mo.available": "Available balance", "mo.totalIn": "Analytics",
+  "mo.available": "Available balance", "mo.totalIn": "Total Income",
   "mo.thisMonth": "Total Income", "mo.committed": "Committed",
   "mo.upcoming": (v) => plural(v.n, "entry", "entries") + " coming up",
   "mo.willArrive": "in", "mo.willLeave": "out", "mo.willMove": "moved",
@@ -4348,6 +4364,24 @@ function analyticsMonth() {
       "</div>" };
 };
 
+/* 首页左卡那张小图。当月摆第 4 根（前三后二）—— 稿子里绿的那根就在那个位置。 */
+function miniIncomeChart(sel) {
+  const months = [];
+  for (let i = -3; i <= 2; i++) months.push(shiftMonth(sel, i));
+  const vals = months.map((k) => incomeIn(S, k));
+  const top = Math.max.apply(null, vals.concat([1]));
+  const G = 2.6, ROWS = 24;
+  return '<div class="mchart"><div class="mbars">' + vals.map((v, i) => {
+    /* 高度按整行算，不然底下那行点会被切掉半颗（见 dotChart 那段注释） */
+    const rows = Math.max(1, Math.round((v / top) * ROWS));
+    return '<div class="mcol' + (i === 3 ? " on" : "") + '">' +
+      '<i class="dbar" style="height:' + (rows * G).toFixed(1) + 'px"></i></div>';
+  }).join("") + "</div>" +
+  '<div class="max">' + months.map((mk, i) =>
+    '<span' + (i === 3 ? ' class="on"' : "") + ">" +
+    t("date.monthShort", { m: mk.slice(5) }) + "</span>").join("") + "</div></div>";
+}
+
 /* 一格的间距。窗口 326 宽：5 格整的 280 摆正中，两边各露 23 的边角料，
    正好落在渐隐里 —— 「中间五个看得全、两头各漏一点」就是这么来的。 */
 const AN_PITCH = 56, AN_MINI_PITCH = 21.7;
@@ -4445,8 +4479,10 @@ function monthView() {
 
       /* 左：本月收入 + 近六个月走势，点进去是分析页。右：四项固定承诺。 */
       '<div class="duo">' +
-      '<div class="card gcard" data-a="analytics">' +
-      dotChart(m, { mini: true, callout: true }) + "</div>" +
+      '<div class="card gcard anl" data-a="analytics">' +
+      '<div class="mfig"><div class="money">' + withDec(yuan(inc)) + "</div>" +
+      '<div class="sub">' + t("mo.totalIn") + "</div></div>" +
+      miniIncomeChart(m) + "</div>" +
       '<div class="card gcard">' +
       '<div class="quick">' +
       /* 标签按稿子：Income · Savings · Bills · Debt，不是页面上那些长名字 */
