@@ -706,7 +706,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 柱子在格子里居中 —— 月份也是居中的，两者的中线必须重合 */
 .dcol{flex:0 0 var(--bp);height:100%;position:relative;
  display:flex;justify-content:center}
-/* 透明开关：撑满整格、看不见，但手指是真的点在它身上 */
+/* 透明开关：撑满整个控件、看不见，但手指是真的点在它身上 */
+.hhost{position:relative}
 .hswitch{position:absolute;inset:0;width:100%;height:100%;margin:0;
  opacity:0;z-index:1;cursor:pointer}
 /* 收入贴底往上长，支出贴顶往下长。对齐要写在格子上：
@@ -1493,7 +1494,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v121";
+const BUILD = "v122";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -7176,7 +7177,14 @@ function render() {
   playSeg();
   playNav();
   playCount();
+  paintHaptics();
+  /* 出错给一次重反馈。挂在这儿而不是逐个校验点里写 ——
+     错误最后都落到 ui.f.err 上，看它从无到有就够了。 */
+  const err = (ui.f && ui.f.err) || null;
+  if (err && err !== lastErr) buzz("heavy");
+  lastErr = err;
 }
+let lastErr = null;
 
 /* 底栏那颗白底：同一半边里换格子就横着滑过去（苹果那个手感），
    换到另一半边就没法滑了 —— 中间隔着点阵那颗按钮，滑过去要穿过它。
@@ -7460,18 +7468,55 @@ function haptics() {
   hapticSwitch = { wrap, inp, ok: "switch" in inp || inp.matches("input[switch]") };
   return hapticSwitch;
 }
-/* kind: "light" 轻点（切换、选中）/ "solid" 落定（提交、删除） */
+/* iOS 的网页触感只认「真手指点在 switch 控件上」，程序化触发一律无效 ——
+   所以要让一个按钮有触感，就得在它身上铺一个透明的开关。每次重绘后补一遍。
+
+   只铺「按一下就完事」的控件：侧滑行、输入框、下拉这些手势和焦点各有归属，
+   铺上去只会打架。铺不到的地方在 iOS 上就是没有触感，这是平台的限制。 */
+const HAPTIC_SEL = ".mbtn,.navb,.qi,.rnd,.chip[data-a],.seg > span,.toggle," +
+  ".adot,.mcell,.gopro,.wishpill,.dash,.avatar,.iconbtn,.eye,.jotmini,.asmini";
+function paintHaptics() {
+  if (S.haptics === false) return;
+  if (!haptics().ok) return;
+  app.querySelectorAll(HAPTIC_SEL).forEach((el) => {
+    const first = el.firstElementChild;
+    if (first && first.classList.contains("hswitch")) return;
+    /* 里面还嵌着别的可点元素就不铺 —— 开关是铺满的，会把那一个吞掉
+       （分类 chip 里的删除 × 就是这么一个） */
+    if (el.closest(".sw-body") || el.querySelector("input,select,textarea,[data-a]")) return;
+    const sw = document.createElement("input");
+    sw.type = "checkbox";
+    sw.setAttribute("switch", "");
+    sw.className = "hswitch";
+    sw.tabIndex = -1;
+    sw.setAttribute("aria-hidden", "true");
+    el.insertBefore(sw, el.firstChild);
+    el.classList.add("hhost");
+  });
+}
+/* 三档，和 iOS 那套对齐：
+     light  —— 开关、Tab、分段控件、选项、滑块微调
+     medium —— 确认、打开面板/菜单、成功提示、选择器到位
+     heavy  —— 删除、出错、付款成败这类「要你停一下」的事
+   heavy 用一组脉冲而不是一下长震 —— 系统的 Notification 反馈本身就是有节奏的，
+   把单次时长拉长只会变成「嗡」一声，分量感反而没了。 */
 function buzz(kind) {
   if (S.haptics === false) return;
   if (navigator.vibrate) {
-    navigator.vibrate(kind === "solid" ? 18 : kind === "medium" ? 12 : 8); return; }
+    navigator.vibrate(kind === "heavy" ? [14, 46, 28]
+      : kind === "medium" || kind === "solid" ? 14 : 8);
+    return; }
   const h = haptics();
   /* 要点的是 <label> 不是 input —— 直接 click input 不会触发开关那一下触感。
      Safari 从来没实现过 Vibration API，iPhone 上这是唯一一条路（17.4+）。 */
   if (h.ok) { try { h.wrap.click(); } catch (err) { /* 拨不动就算了 */ } }
 }
-/* 落定感更重的那几个动作，其余一律轻点 */
-const SOLID = /^(commit|submit|delTx|delFixed|delGoal|delDebt|delAcct|delWish|wipeData|parse|confirm|goalDone|debtDone)/;
+/* 哪个动作算哪一档，没列进来的一律轻点。
+   heavy：删掉东西、放弃计划、花钱买下 —— 都是不想让人误触的那几个。
+   medium：确认、提交、打开抽屉或菜单、跳到某个月。 */
+const HEAVY = /^(delTx|delFixed|delGoal|delDebt|delAcct|delWish|delBook|doDelBook|delCat|wipeData|dropWish|dropPlan|planAbandon|buyNow|buyWish|buyDuringPlan|tooSoon)/;
+const MEDIUM = /^(commit|submit|parse|confirm|goalDone|debtDone|pickMonth|monthPick|newBook|editBook|useBook|addTx|jot|assistant|cats|detail|startPlan|logSale|retest|wishlist|txFilter|getPro)/;
+const buzzFor = (act) => HEAVY.test(act) ? "heavy" : MEDIUM.test(act) ? "medium" : "light";
 
 app.addEventListener("click", (e) => {
   if (swallowClick) {
@@ -7502,7 +7547,7 @@ app.addEventListener("click", (e) => {
   const raw = el.dataset.a, i = raw.indexOf(":");
   const act = i < 0 ? raw : raw.slice(0, i);
   const arg = i < 0 ? null : raw.slice(i + 1);
-  if (ACT[act]) { buzz(SOLID.test(act) ? "solid" : "light"); e.stopPropagation(); ACT[act](arg); }
+  if (ACT[act]) { buzz(buzzFor(act)); e.stopPropagation(); ACT[act](arg); }
 });
 /* 手势：只认横向；纵向一律让给滚动。滑过阈值就吞掉这次 click，避免误触发行内动作 */
 /* 只吞紧跟其后的那一次 click。按下时会清一次，但手势要是没能正常收尾
