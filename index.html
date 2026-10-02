@@ -691,8 +691,53 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .chartcol > .callout.bot{padding:3px 0 0}
 /* 稿子 2150:2125：第一张卡既没有底色，也没有描边 —— 它就是一块透明的版面 */
 .anchart{gap:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none}
+/* ---- 点阵镜像图（稿子 2168:4252 / 2150:1925）----------------------------
+   柱子是点阵不是实心条。不拿几百个 <circle> 去画 —— 一块重复的径向渐变就够了，
+   一根柱子一个 div，点距和点径直接照稿子写（点 2.5、行列间距都是 5）。
+   收入那排贴底往上长，支出那排贴顶往下长，所以背景也要分别锚在底/顶，
+   否则两排的点行对不齐。 */
+.dchart{--bw:38px;--bp:44px;--dot:2.5px;--grid:5px;position:relative;padding:20px 0}
+.dwin{overflow:hidden;
+ /* 走到边缘的淡出去 —— 柱子和月份一起淡，刻度感就是从这儿来的 */
+ -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);
+ mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
+.dstrip{position:relative;left:50%;will-change:transform}
+.drow{display:flex;height:100%}
+.dcol{flex:0 0 var(--bp);height:100%;display:flex;justify-content:flex-start}
+/* 点的边缘留 .2px 的羽化：小尺寸下硬切会被舍进舍出成一片糊或者整块空 */
+.dbar{width:var(--bw);color:var(--ink-faint);
+ background-image:radial-gradient(circle at center,
+   currentColor calc(var(--dot)/2 - .2px),transparent calc(var(--dot)/2 + .2px));
+ background-size:var(--grid) var(--grid);background-repeat:repeat}
+.drow.up{align-items:flex-end}
+.drow.up .dbar{background-position:left bottom}
+.drow.down{align-items:flex-start}
+.drow.down .dbar{background-position:left top}
+/* 选中那一根：收入绿、支出橘（稿子里就是 --good / --warn 这两支） */
+.drow.up .dcol.on .dbar{color:var(--good)}
+.drow.down .dcol.on .dbar{color:var(--warn)}
+.dax{display:flex}
+.dax > span{flex:0 0 var(--bp);width:var(--bw);text-align:center;
+ font-size:11px;line-height:13px;color:var(--ink-muted);
+ transition:font-size .16s ease,color .16s ease}
+/* 中间那个是选中态：字大一档、换成标题字族、压实色 */
+.dax > span.on{font-family:var(--font-display);font-size:14px;line-height:16px;
+ color:var(--ink)}
+.dcall{position:absolute;left:50%;transform:translateX(-50%);
+ font-size:12px;line-height:16px;white-space:nowrap;pointer-events:none}
+.dcall.up{color:var(--good)}
+.dcall.down{color:var(--warn)}
+/* 首页那张缩一半：点和间距一起缩，不然挤成一团 */
+.dchart.mini{--bw:18.5px;--bp:21.7px;--dot:1.6px;--grid:2.8px;padding:17px 0}
+.dchart.mini .dax > span{font-size:6px;line-height:12px;color:var(--ink-faint)}
+.dchart.mini .dax > span.on{font-family:var(--font);font-size:6px;
+ font-weight:var(--w-mid);color:var(--ink)}
+.dchart.mini .dwin{-webkit-mask-image:none;mask-image:none}
 /* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
-.chart{padding:18px 0 6px;position:relative;touch-action:pan-y}
+.chart{padding:18px 0 6px;position:relative}
+.dwin{touch-action:pan-y}
+/* 稿子 2168:4252：面板自己是 60% 白的卡，上下各留一段放大数字 */
+.anpanel{padding:0 12px 20px}
 /* 每根柱子现在自己一列（列里还要放那个数字标注），所以行是 stretch，
    柱子贴哪一边由列自己决定：上排贴底往上长，下排贴顶往下长。 */
 .chartrow{display:flex;gap:6px;height:78px;align-items:stretch}
@@ -1437,7 +1482,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v116";
+const BUILD = "v117";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4078,11 +4123,11 @@ function analyticsYear() {
   const yOut = years.map((yy) =>
     sumOver(activeMonths(yy), (m) => outgoIn(S, m) + savedIn(m)));
   const yTop = Math.max.apply(null, yIn.concat(yOut, [1]));
-  const yBars = (vals, sel, callout, below) => '<div class="chartrow">' +
-    vals.map((v, i) => '<div class="chartcol">' +
+  const yBars = (vals, callout, below) => '<div class="chartrow' + (below ? " down" : "") +
+    '">' + vals.map((v, i) => '<div class="chartcol" data-a="toYear:' + years[i] + '">' +
       (!below && years[i] === y ? '<div class="callout">' + callout + "</div>" : "") +
       '<i style="height:' + Math.max(3, Math.round((v / yTop) * 100)) + '%"' +
-      (years[i] === y ? ' class="' + sel + '"' : "") + "></i>" +
+      (years[i] === y ? ' class="on"' : "") + "><b></b></i>" +
       (below && years[i] === y ? '<div class="callout bot">' + callout + "</div>" : "") +
       "</div>").join("") + "</div>";
   const label = (name, v) => '<div style="display:flex;align-items:baseline;gap:9px;' +
@@ -4107,11 +4152,11 @@ function analyticsYear() {
         '<div class="heroamt an"><span class="big">' + withDec(yuan(inc)) +
         "</span></div></div>" +
         '<div class="chart">' +
-        yBars(yIn, "on", yuan(inc), false) +
+        yBars(yIn, yuan(inc), false) +
         '<div class="chartax">' + years.map((yy) =>
           '<span' + (yy === y ? ' class="on"' : "") + ">" + yy + "</span>").join("") +
         "</div>" +
-        yBars(yOut, "bad", neg(out + saved), true) + "</div>" +
+        yBars(yOut, neg(out + saved), true) + "</div>" +
         '<div class="hero" style="padding:8px 0 2px">' +
         '<div class="hlbl">' + t("an.expenses") + "</div>" +
         '<div class="heroamt an"><span class="big neg">' +
@@ -4243,30 +4288,6 @@ function analyticsMonth() {
   const inc = incomeIn(S, m), out = outgoIn(S, m), saved = savedIn(m);
   const net = inc - out - saved;
   const need = cur ? stillToSave(S) : 0;
-  /* 7 根柱子，当月居中 —— 左右都看得见，横着拖就是在这条刻度上走。 */
-  const months = [];
-  let [y, mo] = m.split("-").map(Number);
-  /* 当月摆正中：前三个月、后三个月。原来是前 5 后 1，当月挤在右边第二格 */
-  for (let i = 3; i >= -3; i--) {
-    let yy = y, mm = mo - i;
-    while (mm <= 0) { mm += 12; yy--; }
-    while (mm > 12) { mm -= 12; yy++; }
-    months.push(yy + "-" + String(mm).padStart(2, "0"));
-  }
-  const ins = months.map((k) => incomeIn(S, k));
-  const outs = months.map((k) => outgoIn(S, k) + savedIn(k));
-  const top = Math.max.apply(null, ins.concat(outs, [1]));
-  /* 数字标在当月那一根的正上/正下方，不再右对齐贴在整张图的边上 */
-  /* 每一根都可点 —— 点哪个月，整页就换成那个月 */
-  const bars = (vals, callout, below) =>
-    '<div class="chartrow' + (below ? " down" : "") + '">' + vals.map((v, i) =>
-    '<div class="chartcol" data-a="anMonth:' + months[i] + '" title="' +
-    esc(monthName(months[i])) + '">' +
-    (!below && months[i] === m ? '<div class="callout">' + callout + "</div>" : "") +
-    '<i style="height:' + Math.max(3, Math.round(v / top * 100)) + '%"' +
-    (months[i] === m ? ' class="on"' : "") + "><b></b></i>" +
-    (below && months[i] === m ? '<div class="callout bot">' + callout + "</div>" : "") +
-    "</div>").join("") + "</div>";
   return { tab: "dashboard", fab: "both",
     nav: navBack() + '<div class="navt">' + t("an.title") + "</div>" + scopeToggle(),
     body:
@@ -4276,19 +4297,14 @@ function analyticsMonth() {
       "<span>" + monthName(m) + "</span>" +
       monthArrow("next", !isThisMonth()) + "</div></div>" +
 
-      /* 稿子把「收入 · 图 · 支出」整块收进一张卡里 */
-      '<div class="card anchart">' +
+      /* 稿子 2168:4252：收入 · 点阵刻度 · 支出，整块收进一张卡 */
+      '<div class="card anpanel">' +
       '<div class="hero" style="padding:2px 0 0">' +
       '<div class="hlbl">' + t("an.income") + "</div>" +
       '<div class="heroamt an"><span class="big" data-ck="anIn" data-count="' + inc +
       '">' + withDec(yuan(inc)) + "</span></div></div>" +
 
-      '<div class="chart">' +
-      bars(ins, yuan(inc), false) +
-      '<div class="chartax">' + months.map((k) =>
-        '<span' + (k === m ? ' class="on"' : "") + ">" +
-        t("date.monthShort", { m: k.slice(5) }) + "</span>").join("") + "</div>" +
-      bars(outs, neg(out + saved), true) + "</div>" +
+      dotChart(m, { ruler: true, callout: true }) +
 
       '<div class="hero" style="padding:8px 0 2px">' +
       '<div class="hlbl">' + t("an.expenses") + "</div>" +
@@ -4319,23 +4335,38 @@ function analyticsMonth() {
       "</div>" };
 };
 
-/* 近六个月的收入走势。柱子是一束细线 —— 样机里那个质感全在这儿。 */
-function sparkline(cur) {
+/* 镜像点阵图。首页那张（mini）固定 7 格不能拖；分析页那张是一条刻度，
+   左右拖得动，所以多画几个月当余量，再靠 translateX 把选中的那格推到正中。 */
+function dotChart(sel, opt) {
+  const o = opt || {};
+  const half = o.ruler ? 9 : 3;
   const months = [];
-  let [y, mo] = cur.split("-").map(Number);
-  for (let i = 5; i >= 0; i--) {
-    let yy = y, mm = mo - i;
-    while (mm <= 0) { mm += 12; yy--; }
-    months.push(yy + "-" + String(mm).padStart(2, "0"));
-  }
-  const vals = months.map((mk) => incomeIn(S, mk));
-  const top = Math.max.apply(null, vals.concat([1]));
-  return '<div class="spark">' + months.map((mk, i) =>
-    '<i style="height:' + Math.max(6, Math.round(vals[i] / top * 100)) + '%"' +
-    (mk === cur ? ' class="on"' : "") + "></i>").join("") + "</div>" +
-    '<div class="sparkl">' + months.map((mk, i) =>
-      '<span' + (mk === cur ? ' class="on"' : "") + ">" +
-      t("date.monthShort", { m: mk.slice(5) }) + "</span>").join("") + "</div>";
+  for (let i = -half; i <= half; i++) months.push(shiftMonth(sel, i));
+  const ins = months.map((k) => incomeIn(S, k));
+  const outs = months.map((k) => outgoIn(S, k) + savedIn(k));
+  const top = Math.max.apply(null, ins.concat(outs, [1]));
+  const k0 = months.indexOf(sel);
+  const pitch = o.mini ? 21.7 : 44;
+  const col = (vals, cls) => '<div class="drow ' + cls + '">' + vals.map((v, i) =>
+    '<div class="dcol' + (i === k0 ? " on" : "") + '"' +
+    (o.ruler ? ' data-a="anMonth:' + months[i] + '"' : "") + '>' +
+    '<i class="dbar" style="height:' + Math.max(8, Math.round(v / top * 100)) +
+    '%"></i></div>').join("") + "</div>";
+  const inH = o.mini ? 60 : 99, outH = o.mini ? 49 : 78;
+  return '<div class="dchart' + (o.mini ? " mini" : "") + '">' +
+    (o.callout ? '<div class="dcall up" style="top:0">' + plus(ins[k0]) + "</div>" : "") +
+    '<div class="dwin"' + (o.ruler ? ' data-ruler="1"' : "") + '>' +
+    '<div class="dstrip" style="transform:translateX(' +
+      (-(k0 + 0.5) * pitch).toFixed(1) + 'px)">' +
+    '<div style="height:' + inH + 'px">' + col(ins, "up") + "</div>" +
+    '<div class="dax" style="padding:' + (o.mini ? "4px 0" : "9px 0") + '">' +
+    months.map((mk, i) => '<span' + (i === k0 ? ' class="on"' : "") + ">" +
+      t("date.monthShort", { m: mk.slice(5) }).toUpperCase() + "</span>").join("") +
+    "</div>" +
+    '<div style="height:' + outH + 'px">' + col(outs, "down") + "</div>" +
+    "</div></div>" +
+    (o.callout ? '<div class="dcall down" style="bottom:0">' + neg(outs[k0]) +
+      "</div>" : "") + "</div>";
 }
 
 function monthView() {
@@ -4380,10 +4411,8 @@ function monthView() {
       /* 左：本月收入 + 近六个月走势，点进去是分析页。右：四项固定承诺。 */
       '<div class="duo">' +
       '<div class="card gcard" data-a="analytics">' +
-      '<div class="cardtitle">' + t("mo.totalIn") + "</div>" +
-      '<div class="figure"><div class="money">' + withDec(yuan(inc)) + "</div>" +
-      '<div class="sub">' + t("mo.thisMonth") + "</div></div>" +
-      sparkline(m) + "</div>" +
+      '<div class="cardtitle">' + t("an.title") + "</div>" +
+      dotChart(m, { mini: true, callout: true }) + "</div>" +
       '<div class="card gcard">' +
       '<div class="cardtitle">' + t("mo.committed") + "</div>" +
       '<div class="quick">' +
@@ -4392,8 +4421,8 @@ function monthView() {
        [t("tile.savings"), goalCommit(S), "toSavings2", "tileSave"],
        [t("tile.bills"), S.fixedOut.reduce((a, x) => a + x.amount, 0), "route:out", "tileBill"],
        [t("tile.debt"), debtCommit(S), "route:debt", "card"]].map(([l, v, a, g]) =>
+        /* 稿子 2150:1925 把金额去掉了 —— 这一格现在只是四个入口 */
         '<div class="qi" data-a="' + a + '"><div class="circ">' + ic(g, 18) + "</div>" +
-        '<div class="tileval">' + moneyShort(v) + "</div>" +
         '<div class="tilelbl">' + esc(l) + "</div></div>").join("") +
       "</div></div></div>" +
 
@@ -6459,6 +6488,8 @@ const ACT = {
   toMonth: (mm) => { ui.month = mm; go("dashboard"); },
   /* 分析页点柱子：只换月份，别跳回首页 */
   anMonth: (mm) => { if (mm === viewMonth()) return; ui.month = mm; render(); },
+  toYear: (yy) => { const mm = yy + viewMonth().slice(4);
+    if (mm === viewMonth()) return; ui.month = mm; render(); },
   monthPick: () => sheet("monthPick", { y: +viewMonth().slice(0, 4) }),
   pickYear: (y) => { ui.f.y = +y; render(); },
   pickMonth: (mm) => { ui.month = mm; close(); },
@@ -7396,7 +7427,8 @@ function haptics() {
 /* kind: "light" 轻点（切换、选中）/ "solid" 落定（提交、删除） */
 function buzz(kind) {
   if (S.haptics === false) return;
-  if (navigator.vibrate) { navigator.vibrate(kind === "solid" ? 18 : 8); return; }
+  if (navigator.vibrate) {
+    navigator.vibrate(kind === "solid" ? 18 : kind === "medium" ? 12 : 8); return; }
   const h = haptics();
   if (h.ok) { try { h.inp.click(); } catch (err) { /* 拨不动就算了 */ } }
 }
@@ -7637,13 +7669,22 @@ app.addEventListener("touchmove", (e) => {
 app.addEventListener("pointerup", endStackDrag);
 app.addEventListener("pointercancel", endStackDrag);
 
-/* 分析页的柱状图：横着拖就像在刻度上走，每 44px 翻一个月，翻一格震一下。
-   纵向留给页面滚动（.chart 上写了 touch-action:pan-y），所以这儿只认横向。 */
+/* 点阵刻度：横着拖，内容跟着手指走，松手吸附到最近的一格。
+   原来是「每过 44px 就 render 一次」—— 那是直接跳，手指下面没有东西在动。
+   现在拖的过程只改 transform（不重绘），过线时把 .on 挪一格并震一下，
+   松手先用 .18s 滑到吸附位，再 render 定稿。
+   纵向留给页面滚动（.dwin 上写了 touch-action:pan-y）。 */
 let anDrag = null;
 const AN_STEP = 44;
 app.addEventListener("pointerdown", (e) => {
-  anDrag = e.target.closest && e.target.closest(".chart")
-    ? { x0: e.clientX, y0: e.clientY, steps: 0, lock: null, base: viewMonth() } : null;
+  const win = e.target.closest && e.target.closest('[data-ruler="1"]');
+  if (!win) { anDrag = null; return; }
+  const strip = win.querySelector(".dstrip");
+  if (!strip) { anDrag = null; return; }
+  strip.style.transition = "none";
+  anDrag = { x0: e.clientX, y0: e.clientY, steps: 0, lock: null,
+    base: viewMonth(), strip,
+    x: parseFloat((strip.style.transform.match(/-?[\d.]+/) || [0])[0]) };
 });
 app.addEventListener("pointermove", (e) => {
   if (!anDrag) return;
@@ -7653,18 +7694,32 @@ app.addEventListener("pointermove", (e) => {
     anDrag.lock = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
   }
   if (anDrag.lock !== "x") return;
-  /* 往左拖 = 把刻度往左推 = 看后面的月份 */
+  /* 内容跟手 */
+  anDrag.strip.style.transform = "translateX(" + (anDrag.x + dx).toFixed(1) + "px)";
+  /* 过线才换高亮，顺手震一下 —— 苹果选择器那种「到位」的中等反馈 */
   const want = -Math.round(dx / AN_STEP);
   if (want === anDrag.steps) return;
   anDrag.steps = want;
-  const mm = shiftMonth(anDrag.base, want);
-  if (mm === viewMonth()) return;
-  ui.month = mm;
-  buzz("light");
-  render();
+  buzz("medium");
+  const cols = anDrag.strip.querySelectorAll(".drow .dcol");
+  const per = cols.length / 2, k = Math.round(per / 2 - 0.5) + want;
+  anDrag.strip.querySelectorAll(".dcol.on,.dax > span.on")
+    .forEach((el) => el.classList.remove("on"));
+  const lbls = anDrag.strip.querySelectorAll(".dax > span");
+  [cols[k], cols[per + k], lbls[k]].forEach((el) => { if (el) el.classList.add("on"); });
 });
-/* 拖过就把紧跟其后的那次 click 吞掉，不然松手时会顺带点中某根柱子 */
-const endAnDrag = () => { if (anDrag && anDrag.lock === "x" && anDrag.steps) swallow(); anDrag = null; };
+const endAnDrag = () => {
+  const d = anDrag;
+  anDrag = null;
+  if (!d || d.lock !== "x") return;
+  swallow();                       /* 别让松手那下顺带点中某根柱子 */
+  const mm = shiftMonth(d.base, d.steps);
+  d.strip.style.transition = "transform .18s cubic-bezier(.22,1,.3,1)";
+  d.strip.style.transform = "translateX(" + (d.x - d.steps * AN_STEP).toFixed(1) + "px)";
+  if (mm === viewMonth()) return;
+  /* 等吸附动画走完再重绘，否则刚滑到位就被整屏重画打断 */
+  setTimeout(() => { ui.month = mm; render(); }, 180);
+};
 app.addEventListener("pointerup", endAnDrag);
 app.addEventListener("pointercancel", endAnDrag);
 
