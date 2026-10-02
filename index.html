@@ -696,22 +696,26 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    一根柱子一个 div，点距和点径直接照稿子写（点 2.5、行列间距都是 5）。
    收入那排贴底往上长，支出那排贴顶往下长，所以背景也要分别锚在底/顶，
    否则两排的点行对不齐。 */
-.dchart{--bw:38px;--bp:44px;--dot:2.5px;--grid:5px;position:relative;padding:20px 0}
+.dchart{--bw:35px;--bp:44px;--dot:2.5px;--grid:5px;position:relative}
 .dwin{overflow:hidden;
  /* 走到边缘的淡出去 —— 柱子和月份一起淡，刻度感就是从这儿来的 */
- -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);
- mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
+ -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18%,#000 82%,transparent 100%);
+ mask-image:linear-gradient(90deg,transparent 0,#000 18%,#000 82%,transparent 100%)}
 .dstrip{position:relative;left:50%;will-change:transform}
 .drow{display:flex;height:100%}
-.dcol{flex:0 0 var(--bp);height:100%;display:flex;justify-content:flex-start}
+/* 柱子在格子里居中 —— 月份也是居中的，两者的中线必须重合 */
+.dcol{flex:0 0 var(--bp);height:100%;position:relative;
+ display:flex;justify-content:center}
+/* 收入贴底往上长，支出贴顶往下长。对齐要写在格子上：
+   .drow 的 align-items 管不着它，格子自己是 height:100% 的。 */
+.drow.up .dcol{align-items:flex-end}
+.drow.down .dcol{align-items:flex-start}
 /* 点的边缘留 .2px 的羽化：小尺寸下硬切会被舍进舍出成一片糊或者整块空 */
 .dbar{width:var(--bw);color:var(--ink-faint);
  background-image:radial-gradient(circle at center,
    currentColor calc(var(--dot)/2 - .2px),transparent calc(var(--dot)/2 + .2px));
  background-size:var(--grid) var(--grid);background-repeat:repeat}
-.drow.up{align-items:flex-end}
 .drow.up .dbar{background-position:left bottom}
-.drow.down{align-items:flex-start}
 .drow.down .dbar{background-position:left top}
 /* 选中那一根：收入绿、支出橘（稿子里就是 --good / --warn 这两支） */
 .drow.up .dcol.on .dbar{color:var(--good)}
@@ -723,12 +727,15 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 中间那个是选中态：字大一档、换成标题字族、压实色 */
 .dax > span.on{font-family:var(--font-display);font-size:14px;line-height:16px;
  color:var(--ink)}
+/* 数字贴着它那根柱子的末端，不是贴着整张图的上下边 */
 .dcall{position:absolute;left:50%;transform:translateX(-50%);
- font-size:12px;line-height:16px;white-space:nowrap;pointer-events:none}
-.dcall.up{color:var(--good)}
-.dcall.down{color:var(--warn)}
+ font-size:12px;line-height:16px;white-space:nowrap;pointer-events:none;
+ font-weight:var(--w-body)}
+.drow.up .dcall{color:var(--good)}
+.drow.down .dcall{color:var(--warn)}
 /* 首页那张缩一半：点和间距一起缩，不然挤成一团 */
-.dchart.mini{--bw:18.5px;--bp:21.7px;--dot:1.6px;--grid:2.8px;padding:17px 0}
+.dchart.mini{--bw:18.2px;--bp:21.7px;--dot:1.6px;--grid:2.6px}
+.dchart.mini .dcall{font-size:11px;line-height:14px}
 .dchart.mini .dax > span{font-size:6px;line-height:12px;color:var(--ink-faint)}
 .dchart.mini .dax > span.on{font-family:var(--font);font-size:6px;
  font-weight:var(--w-mid);color:var(--ink)}
@@ -736,8 +743,9 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 分析页的镜像柱状图：收入朝上、支出朝下，中间那行是月份 */
 .chart{padding:18px 0 6px;position:relative}
 .dwin{touch-action:pan-y}
-/* 稿子 2168:4252：面板自己是 60% 白的卡，上下各留一段放大数字 */
-.anpanel{padding:0 12px 20px}
+/* 这一块是透明的版面，不是卡：没有底色、没有描边、没有投影 */
+.anpanel{background:transparent;border:0;box-shadow:none;backdrop-filter:none;
+ padding:0 0 4px}
 /* 每根柱子现在自己一列（列里还要放那个数字标注），所以行是 stretch，
    柱子贴哪一边由列自己决定：上排贴底往上长，下排贴顶往下长。 */
 .chartrow{display:flex;gap:6px;height:78px;align-items:stretch}
@@ -1482,7 +1490,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v117";
+const BUILD = "v118";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4336,7 +4344,10 @@ function analyticsMonth() {
 };
 
 /* 镜像点阵图。首页那张（mini）固定 7 格不能拖；分析页那张是一条刻度，
-   左右拖得动，所以多画几个月当余量，再靠 translateX 把选中的那格推到正中。 */
+   左右拖得动，所以多画几个月当余量，再靠 translateX 把选中的那格推到正中。
+
+   高度一律按「整行」算，宽度也正好是整列 —— 背景是按 grid 平铺的点阵，
+   尺寸只要不是 grid 的整数倍，边上那一行/那一列就会被切掉半颗点。 */
 function dotChart(sel, opt) {
   const o = opt || {};
   const half = o.ruler ? 9 : 3;
@@ -4346,27 +4357,38 @@ function dotChart(sel, opt) {
   const outs = months.map((k) => outgoIn(S, k) + savedIn(k));
   const top = Math.max.apply(null, ins.concat(outs, [1]));
   const k0 = months.indexOf(sel);
+  const G = o.mini ? 2.6 : 5;                 /* 点距 */
   const pitch = o.mini ? 21.7 : 44;
-  const col = (vals, cls) => '<div class="drow ' + cls + '">' + vals.map((v, i) =>
-    '<div class="dcol' + (i === k0 ? " on" : "") + '"' +
-    (o.ruler ? ' data-a="anMonth:' + months[i] + '"' : "") + '>' +
-    '<i class="dbar" style="height:' + Math.max(8, Math.round(v / top * 100)) +
-    '%"></i></div>').join("") + "</div>";
-  const inH = o.mini ? 60 : 99, outH = o.mini ? 49 : 78;
+  const upRows = o.mini ? 23 : 19, dnRows = o.mini ? 18 : 15;
+  const PAD = o.mini ? 18 : 22;               /* 给数字留的一条带 */
+  const col = (v, i, up) => {
+    const rows = Math.max(1, Math.round((v / top) * (up ? upRows : dnRows)));
+    const h = (rows * G).toFixed(1);
+    const on = i === k0;
+    return '<div class="dcol' + (on ? " on" : "") + '"' +
+      (o.ruler ? ' data-a="anMonth:' + months[i] + '"' : "") + ">" +
+      '<i class="dbar" style="height:' + h + 'px"></i>' +
+      (on && o.callout ? '<b class="dcall" style="' + (up ? "bottom" : "top") +
+        ":calc(" + h + 'px + 5px)">' + (up ? plus(v) : neg(v)) + "</b>" : "") +
+      "</div>";
+  };
+  const row = (vals, cls, up) => '<div class="drow ' + cls + '">' +
+    vals.map((v, i) => col(v, i, up)).join("") + "</div>";
   return '<div class="dchart' + (o.mini ? " mini" : "") + '">' +
-    (o.callout ? '<div class="dcall up" style="top:0">' + plus(ins[k0]) + "</div>" : "") +
-    '<div class="dwin"' + (o.ruler ? ' data-ruler="1"' : "") + '>' +
+    '<div class="dwin"' + (o.ruler ? ' data-ruler="1"' : "") + ">" +
     '<div class="dstrip" style="transform:translateX(' +
       (-(k0 + 0.5) * pitch).toFixed(1) + 'px)">' +
-    '<div style="height:' + inH + 'px">' + col(ins, "up") + "</div>" +
+    /* 多出来的 PAD 是数字那一条带，必须算在窗口里面 ——
+       .dwin 为了做左右渐隐开了 overflow:hidden，露在外面的会被剪掉 */
+    '<div style="height:' + (upRows * G + PAD).toFixed(1) + 'px">' +
+    row(ins, "up", true) + "</div>" +
     '<div class="dax" style="padding:' + (o.mini ? "4px 0" : "9px 0") + '">' +
     months.map((mk, i) => '<span' + (i === k0 ? ' class="on"' : "") + ">" +
       t("date.monthShort", { m: mk.slice(5) }).toUpperCase() + "</span>").join("") +
     "</div>" +
-    '<div style="height:' + outH + 'px">' + col(outs, "down") + "</div>" +
-    "</div></div>" +
-    (o.callout ? '<div class="dcall down" style="bottom:0">' + neg(outs[k0]) +
-      "</div>" : "") + "</div>";
+    '<div style="height:' + (dnRows * G + PAD).toFixed(1) + 'px">' +
+    row(outs, "down", false) + "</div>" +
+    "</div></div></div>";
 }
 
 function monthView() {
@@ -4411,10 +4433,8 @@ function monthView() {
       /* 左：本月收入 + 近六个月走势，点进去是分析页。右：四项固定承诺。 */
       '<div class="duo">' +
       '<div class="card gcard" data-a="analytics">' +
-      '<div class="cardtitle">' + t("an.title") + "</div>" +
       dotChart(m, { mini: true, callout: true }) + "</div>" +
       '<div class="card gcard">' +
-      '<div class="cardtitle">' + t("mo.committed") + "</div>" +
       '<div class="quick">' +
       /* 标签按稿子：Income · Savings · Bills · Debt，不是页面上那些长名字 */
       [[t("tile.income"), fixedIn(S), "settings", "tileIn"],
@@ -7412,8 +7432,10 @@ let hapticSwitch = null;
 function haptics() {
   if (hapticSwitch) return hapticSwitch;
   const wrap = document.createElement("label");
-  wrap.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;" +
-    "pointer-events:none;left:-9999px;top:0";
+  /* 不能挪到视口外、也不能 display:none —— 那样 iOS 就不认它了。
+     留在左下角一个 1px 的点上，透明到看不见但依然在布局里。 */
+  wrap.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;" +
+    "opacity:.001;pointer-events:none;z-index:-1";
   const inp = document.createElement("input");
   inp.type = "checkbox";
   inp.setAttribute("switch", "");           /* iOS 17.4+ 才认得这个属性 */
@@ -7430,7 +7452,9 @@ function buzz(kind) {
   if (navigator.vibrate) {
     navigator.vibrate(kind === "solid" ? 18 : kind === "medium" ? 12 : 8); return; }
   const h = haptics();
-  if (h.ok) { try { h.inp.click(); } catch (err) { /* 拨不动就算了 */ } }
+  /* 要点的是 <label> 不是 input —— 直接 click input 不会触发开关那一下触感。
+     Safari 从来没实现过 Vibration API，iPhone 上这是唯一一条路（17.4+）。 */
+  if (h.ok) { try { h.wrap.click(); } catch (err) { /* 拨不动就算了 */ } }
 }
 /* 落定感更重的那几个动作，其余一律轻点 */
 const SOLID = /^(commit|submit|delTx|delFixed|delGoal|delDebt|delAcct|delWish|wipeData|parse|confirm|goalDone|debtDone)/;
