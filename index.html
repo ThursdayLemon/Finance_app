@@ -1510,7 +1510,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v123";
+const BUILD = "v124";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -7070,7 +7070,8 @@ function paintDock() {
     sides[0].innerHTML = dockSlots.left(acts);
     sides[1].innerHTML = dockSlots.right(acts);
     sides.forEach((el) => el.classList.remove("swapping"));
-    playNav();     /* 这条路不走 render，滑块得自己就位 */
+    playNav();        /* 这条路不走 render，滑块和触感开关都得自己补 */
+    paintHaptics();
   }, 110);
 }
 
@@ -7510,7 +7511,9 @@ function haptics() {
    只铺「按一下就完事」的控件：侧滑行、输入框、下拉这些手势和焦点各有归属，
    铺上去只会打架。铺不到的地方在 iOS 上就是没有触感，这是平台的限制。 */
 const HAPTIC_SEL = ".mbtn,.navb,.qi,.rnd,.chip[data-a],.seg > span,.toggle," +
-  ".adot,.mcell,.gopro,.wishpill,.dash,.avatar,.iconbtn,.eye,.jotmini,.asmini";
+  ".adot,.mcell,.gopro,.wishpill,.dash,.avatar,.iconbtn,.eye,.jotmini,.asmini," +
+  /* 底栏：中间那颗点阵、换出来的「说一句 / 记一笔」，以及悬浮的快记 + */
+  ".gridb,.act,.qlog";
 function paintHaptics() {
   if (S.haptics === false) return;
   if (!haptics().ok) return;
