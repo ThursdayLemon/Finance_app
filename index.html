@@ -1179,15 +1179,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .sw{position:relative;overflow:hidden;border-radius:0;display:flex;flex-direction:column}
 .sw.boxed{border-radius:var(--r)}
 /* 自己也圆一下：不然它的直角顶在卡片圆角的抗锯齿边上，会透出一条红发丝 */
-/* 平时整块停在行外（右侧 76），靠 .sw 的 overflow:hidden 裁掉 ——
+/* 平时整块停在行外（右侧 92），靠 .sw 的 overflow:hidden 裁掉 ——
    不是「铺在行底下用 opacity 开关」。行的底色是透明的（见下面 .card .sw-body），
    铺在底下的话红色会从金额底下透出来，而且是滑 6px 就整块透出来。
    跟着行一起往左挪，露出来的红才刚好等于行让开的那一段。
    transition 跟 .sw-body 一模一样，两层必须同步，差一点就看得出来错位。 */
-.sw-del{position:absolute;top:0;right:0;bottom:0;width:76px;color:#fff;
- border-radius:inherit;display:flex;transform:translateX(76px);
+/* 行一共让开 92，但橙色只铺最右边的 76：左边 16 用 padding 空出来，
+   background-clip:content-box 让底色不画进 padding 里，于是那 16px 透出来
+   的是页面底色。金额和橙块之间就有了一条缝。
+   为什么不是「给 .sw-body 加 padding-right」：那样只有 .open 之后才有缝，
+   手指正在滑的过程中金额还是贴着橙色的 —— 而那正是看得最清楚的时候。 */
+.sw-del{position:absolute;top:0;right:0;bottom:0;width:92px;color:#fff;
+ padding-left:16px;background-clip:content-box;
+ border-radius:inherit;display:flex;transform:translateX(92px);
  transition:transform .18s ease;
- align-items:center;justify-content:center;cursor:pointer;background:var(--bad)}
+ align-items:center;justify-content:center;cursor:pointer;background-color:var(--bad)}
 .sw.open .sw-del{transform:translateX(0)}
 /* 跟外壳一样圆：卡片圆角外那一圈才不会露出底下的红 */
 .sw-body{position:relative;flex:1 0 auto;background:var(--page);border-radius:inherit;
@@ -1201,7 +1207,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 /* 行一律不刷底 —— 刷了就把底下的珠光挡死，而且和玻璃卡永远对不齐。
    正因为不刷底，删除层才不能铺在行底下：它停在行外，见 .sw-del。 */
 .card .sw-body,.listcard .sw-body,.daycard .sw-body{background:transparent}
-.sw.open .sw-body{transform:translateX(-76px)}
+.sw.open .sw-body{transform:translateX(-92px)}
 .dim{position:absolute;inset:0;background:rgba(34,32,28,.36)}
 /* 抽屉就老老实实贴在「手机」的底上。键盘来了不是把抽屉往上挪 ——
    是把整台手机缩到可视视口那么高（见 visualViewport 那一段），
@@ -1636,7 +1642,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v148";
+const BUILD = "v149";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -7848,39 +7854,68 @@ function grain(ac, t0, o) {
 const SFX = {
   /* 录屏里量的：1ms、3k–20k、峰在 9–13k。带通 Q 压到 0.55 才够宽，
      Q 再大就从「嗒」变成「叮」了。 */
+  /* 中心从 8000 挪到 6500：录屏的能量峰在 9–13k，但人耳在 2–5k 最灵敏，
+     照搬频谱会「量够了听着还是小」。峰值也从 .16 提到 .5 —— 1.8ms 的
+     脉冲能量本来就少，靠幅度补。 */
   tap:    (ac, t) => grain(ac, t,
-            { filter: "bandpass", freq: 8000, q: 0.55, peak: 0.16, atk: 0.0004, dec: 0.004 }),
+            { filter: "bandpass", freq: 6500, q: 0.5, peak: 0.5, atk: 0.0004, dec: 0.005 }),
   /* 刻度过一格那声。比 tap 闷、比 tap 长，像机械挡位。 */
   detent: (ac, t) => grain(ac, t,
             { filter: "bandpass", freq: 2700, q: 1.3, peak: 0.2, dec: 0.022 }),
   /* 三粒，一粒比一粒轻，中心频率和 Q 各不相同 —— 录屏里那几粒的
      Q 从 1.3 到 62 都有，正是这种参差才像「沙沙」而不是三声同样的响。 */
-  /* 这里的 peak 是乘在「已经过完滤波」的信号上的，不是目标幅度。
-     Q=9 的带通会把宽带噪声砍掉十倍以上，所以这几个数看着离谱地大 ——
-     离线渲出来量过，实际峰值 0.11 左右，和录屏里那粒对得上。 */
+  /* 一条连续的「沙——」，不是三粒分开的响。
+     上一版拆成三粒，粒和粒之间有空档、幅度还一跳一跳（.9 → .2 → .25），
+     听着就是三下顿响。录屏里那几粒其实是重叠的：每 61ms 一粒、每粒却要
+     衰 120ms，所以始终叠着，耳朵听到的是连成一片的一条。
+
+     改成一条噪声从头铺到尾，Q 也从 9 降到 3.5 —— Q 大了是「嗡」，
+     小了才是「沙」。中心频率顺带从 1500 滑到 1050，给它一点「落定」的
+     走向；颗粒感交给噪声本身，不靠切断。
+
+     peak 是乘在滤完的信号上的，不是目标幅度：带通会把宽带噪声砍掉几倍，
+     所以这个数看着偏大。 */
   rustle: (ac, t) => {
-    [[0, 1240, 9, 0.9, 0.09], [0.048, 1480, 3, 0.195, 0.075],
-     [0.094, 1260, 6, 0.25, 0.06]].forEach(([dt, f, q, p, d]) =>
-      grain(ac, t + dt, { filter: "bandpass", freq: f, q, peak: p, atk: 0.002, dec: d }));
+    const src = noiseAt(ac);
+    const f = ac.createBiquadFilter();
+    f.type = "bandpass"; f.Q.value = 3.5;
+    f.frequency.setValueAtTime(1520, t);
+    f.frequency.exponentialRampToValueAtTime(1050, t + 0.2);
+    const g = envAt(ac, t, 0.5, 0.006, 0.2);
+    src.connect(f); f.connect(g); g.connect(sfxBus(ac));
+    src.start(t); src.stop(t + 0.26);
+    /* 上面叠一层更高更薄的，是那层「沙」的毛边 */
+    const s2 = noiseAt(ac);
+    const f2 = ac.createBiquadFilter();
+    f2.type = "bandpass"; f2.frequency.value = 2600; f2.Q.value = 1.6;
+    const g2 = envAt(ac, t, 0.22, 0.004, 0.14);
+    s2.connect(f2); f2.connect(g2); g2.connect(sfxBus(ac));
+    s2.start(t); s2.stop(t + 0.2);
   },
   /* 金属：四个不成谐波关系的泛音（谐波会听成乐音，不像硬币）＋
      一记高频噪声当撞击的那一下，再在 68ms 后补一记轻的。 */
+  /* 一枚硬币掉在硬面上。参考音（freesound 384921）扒出来是这样的：
+       · 能量只在 5520 和 9430 两支上，3kHz 以下完全是空的 ——
+         上一版我用的是 2410/3730，整整低了一个八度多，所以像钟不像钱。
+       · 不是「落地一下＋补一下」，是连续弹跳九次、约 10ms 一次。
+       · 最响的不是第一下，是第五下 —— 硬币落稳之前会越弹越密。
+       · 9430 那支拖得最长（300ms 之后还占 84% 的能量）。 */
   coin: (ac, t) => {
-    const hit = (t0, amp, k) => {
-      /* 基音别给太足、也别拖太长：一拖长，整个音的能量就压在 2.4k 那一支
-         上，听着变成钟。硬币的辨识度在上面那几支泛音和撞击那一下噪声里。 */
-      /* 四支同相起音会叠出一个假的尖峰（听着是「啪」不是「叮」），
-         各自错开零点几毫秒就平了，也更像真撞击那一下的参差。 */
-      [[2410 * k, 0.5, 0.10, 0], [3730 * k, 0.85, 0.095, 0.0004],
-       [5290 * k, 0.7, 0.07, 0.0009], [7120 * k, 0.5, 0.05, 0.0013]]
-        .forEach(([f, a, d, off]) =>
-          grain(ac, t0 + off, { tone: true, freq: f, peak: amp * a * 0.033,
-            atk: 0.0008, dec: d }));
-      grain(ac, t0, { filter: "highpass", freq: 4200, q: 0.7,
-        peak: amp * 0.18, atk: 0.0005, dec: 0.009 });
-    };
-    hit(t, 1, 1);
-    hit(t + 0.068, 0.55, 1.19);
+    const GAP = [0, 10, 20, 30, 48, 58, 68, 78, 92];     /* ms */
+    const AMP = [0.45, 0.46, 0.33, 0.24, 1.0, 0.70, 0.52, 0.38, 0.26];
+    GAP.forEach((ms, i) => {
+      const t0 = t + ms / 1000;
+      const a = AMP[i];
+      /* 每一下的音高略微不同：硬币每次是以不同的角度碰下去的 */
+      const k = 1 + (Math.random() - 0.5) * 0.05;
+      const last = i === GAP.length - 1;
+      grain(ac, t0, { tone: true, freq: 5520 * k, peak: a * 0.09,
+        atk: 0.0004, dec: last ? 0.14 : 0.05 });
+      grain(ac, t0, { tone: true, freq: 9430 * k, peak: a * 0.13,
+        atk: 0.0004, dec: last ? 0.30 : 0.09 });
+      grain(ac, t0, { filter: "highpass", freq: 5000, q: 0.7,
+        peak: a * 0.21, atk: 0.0003, dec: 0.004 });
+    });
   },
 };
 function sfx(name) {
@@ -7984,6 +8019,9 @@ app.addEventListener("click", (e) => {
 /* 只吞紧跟其后的那一次 click。按下时会清一次，但手势要是没能正常收尾
    （pointerup 丢了、DOM 被重建导致 click 压根没派发），它就会挂在那儿，
    下一次点哪儿都被吃掉。加个时效兜底：过了 400ms 自动失效。 */
+/* 一行让开多远。CSS 里的 .sw-del 宽度、它的初始位移、.sw.open 的位移
+   都是这个数 —— 改这儿记得一起改（搜 92px）。 */
+const SW_W = 92;
 let swState = null, swallowClick = false, swallowAt = 0;
 const swallow = () => { swallowClick = true; swallowAt = Date.now(); };
 const closeSwipes = (except) => app.querySelectorAll(".sw.open")
@@ -8023,13 +8061,13 @@ app.addEventListener("pointermove", (e) => {
   }
   swState.dx = dx;
   const body = swState.el.querySelector(".sw-body");
-  const base = swState.el.classList.contains("open") ? -76 : 0;
-  const move = Math.max(-76, Math.min(0, base + dx));
+  const base = swState.el.classList.contains("open") ? -SW_W : 0;
+  const move = Math.max(-SW_W, Math.min(0, base + dx));
   body.style.transform = "translateX(" + move + "px)";
   /* 删除层跟着走，位移差正好是一个身位：行让开多少，红就进来多少。
      行的底色是透明的，红块要是留在原地就会从金额底下透上来。 */
   const del = swState.el.querySelector(".sw-del");
-  if (del) del.style.transform = "translateX(" + (76 + move) + "px)";
+  if (del) del.style.transform = "translateX(" + (SW_W + move) + "px)";
 });
 /* 详情页那张卡上往下拉 = 送它回列表。
    卡是 touch-action:none 的，纵向也归我们管，所以得自己分流：
