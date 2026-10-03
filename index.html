@@ -909,6 +909,17 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    段是 SVG，标签是浮在外面的白药丸 —— 没有引线了。
    整块固定 268 高，切支出/收入/储蓄不会让页面跳。 */
 .pie{position:relative;height:196px;width:100%}
+/* 顺时针依次滑出：每一段沿着圆周从零长出来，后一段比前一段晚 85ms。
+   用 dash 长度做动画配 round 线帽有个副作用 —— 长度为 0 时线帽自己会画成
+   一个圆点，于是动画开始前所有段的起点会先冒出一排点。所以另挂一条只管
+   opacity 的动画，延迟一样、时长极短：轮到它之前整段是透明的。 */
+.pieseg{stroke-dasharray:var(--dash) var(--rest);
+ animation:pieGrow .52s cubic-bezier(.25,.9,.35,1) var(--d) both,
+           pieShow .01s linear var(--d) both}
+@keyframes pieGrow{from{stroke-dasharray:0 var(--c)}
+ to{stroke-dasharray:var(--dash) var(--rest)}}
+@keyframes pieShow{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){.pieseg{animation:none}}
 /* 线和字都画在这张 SVG 里 —— 和扇形同一套坐标，缩放时永远对得上 */
 .piesvg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;
  font-family:var(--font)}
@@ -1686,13 +1697,16 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v156";
+const BUILD = "v157";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
   CNY: { sym: "¥", dec: 2, loc: "zh-CN" },
   USD: { sym: "$",  dec: 2, loc: "en-US" },
   GBP: { sym: "£",  dec: 2, loc: "en-GB" },
+  /* 欧元按 en-IE 排版：符号在前、逗号分千位，和上面三种一个样子。
+     德法那套（1.234,56 €）符号在后，会把全站「符号+数字」的拼法打乱。 */
+  EUR: { sym: "€",  dec: 2, loc: "en-IE" },
 };
 const ccy = () => CUR[S.currency] || CUR.CNY;
 const unit = () => Math.pow(10, ccy().dec);
@@ -6223,31 +6237,20 @@ function foldSmall(rows) {
    标签不再用引线，是浮在环外面的白药丸；左右两列分栏，天生不会重叠。
    整块固定 268 高，所以切「支出 / 收入 / 储蓄」时页面不会跳。 */
 const PIE_W = 326;                        /* 设计宽；SVG 按百分比缩放 */
-const PIE_H = 196, PIE_R = 62, PIE_TH = 21;
+/* 稿子 2304:15499 量的：外径 122（R=61），arcData.inner=0.745 →
+   内径 45.4，所以环宽 15.6。原来是 21，粗了一圈。 */
+const PIE_H = 196, PIE_R = 61, PIE_TH = 16;
 const PIE_GAP = 4.5 * Math.PI / 180;      /* 段与段之间的缝 */
 const PIE_K = 4;                          /* 段的四个角的圆角 */
 
-/* 一段带圆角的环形扇区。先把内外半径各往里收 K、两头各收对应的角度，
-   再用同色的 2K 圆角描边把它「吹」回原尺寸 —— 四个角就自然圆了 K。
-   直接使用 round 线帽会圆掉半个环宽（11），比稿子圆一倍还多。 */
-function ringSeg(cx, cy, Ro, Ri, a0, a1, fill, op) {
-  const k = Math.max(0, Math.min(PIE_K, (Ro - Ri) / 2 - 0.5,
-    (a1 - a0) * (Ro + Ri) / 4 - 0.5));
-  const ro = Ro - k, ri = Ri + k;
-  const dO = k / ro, dI = k / ri;
-  const b0 = a0 + dO, b1 = Math.max(a0 + dO, a1 - dO);
-  const c0 = a0 + dI, c1 = Math.max(a0 + dI, a1 - dI);
-  const P = (rad, a) => (cx + rad * Math.sin(a)).toFixed(2) + " " +
-    (cy - rad * Math.cos(a)).toFixed(2);
-  const big = (b1 - b0) > Math.PI ? 1 : 0;
-  const d = "M" + P(ro, b0) + "A" + ro + " " + ro + " 0 " + big + " 1 " + P(ro, b1) +
-    "L" + P(ri, c1) + "A" + ri + " " + ri + " 0 " + big + " 0 " + P(ri, c0) + "Z";
-  /* 透明度必须写在元素上：半透明的 fill 和同色半透明的 stroke 叠在一起会加深，
-     段里会浮出一圈更深的描边（踩过）。元素级 opacity 只合成一次。 */
-  return '<path d="' + d + '" fill="' + fill + '" stroke="' + fill +
-    '" stroke-width="' + (2 * k).toFixed(2) + '" stroke-linejoin="round"' +
-    ' opacity="' + op.toFixed(3) + '"/>';
-}
+/* 每一段都是一条带 round 线帽的描边圆弧，不再是手工算四个角的扇形路径。
+   以前躲着不用 round 线帽，是因为它会把两端圆掉半个环宽，比当时的稿子
+   圆一倍；现在稿子 2304:15499 量出来的圆角半径就是 6.9 ≈ 环宽的一半，
+   也就是「全圆」—— 那正是 round 线帽的天然效果，于是反过来成了最省事的
+   写法，还白送一个按 stroke-dasharray 顺时针生长的动效。
+
+   线帽会往两端各探出半个环宽，所以 dash 必须先扣掉一整个环宽，
+   画出来的可见长度才等于这一段应占的弧长。 */
 
 /* 按可用像素裁字 —— SVG 里没有 text-overflow。
    中日韩字宽约等于字号，拉丁字母约 0.56 倍，够用了。 */
@@ -6265,29 +6268,38 @@ function fitText(str, px, size) {
 function labeledDonut(rows, kind) {
   const total = rows.reduce((a, c) => a + c[1], 0) || 1;
   const n = rows.length;
-  /* 支出走暖色，收入和储蓄走绿 —— 和上面镜像柱状图用的是同两个颜色。
-     绿这里用 --green-01（柱子那支柔和的绿），不是 --good：--good 是判定灯
-     用的饱和绿，铺成一整个环会把整页的调子打掉。 */
-  const hue = kind === "out" ? "var(--warn)" : "var(--green-01)";
+  /* 稿子 2304:15499 / 2304:15423：支出橙、收入绿、储蓄墨色。
+     绿用 --green-01（柱子那支柔和的绿），不是 --good —— 那是判定灯用的
+     饱和绿，铺成一整个环会把整页的调子打掉。
+     储蓄原来跟收入共用绿，现在按稿子换成 --ink（#414140）。 */
+  const hue = kind === "out" ? "var(--warn)"
+    : kind === "save" ? "var(--ink)" : "var(--green-01)";
   /* 透明度按排名降，不按占比：稿子里两块一样大的也是 .6 / .5 */
   const alpha = (i) => n < 2 ? 1 : Math.max(0.3, 1 - (i / (n - 1)) * 0.7);
   const W = PIE_W, H = PIE_H, cx = W / 2, cy = H / 2;
-  const Ro = PIE_R, Ri = PIE_R - PIE_TH;
-  let off = 0;
+  const Ro = PIE_R;
+  const Rm = PIE_R - PIE_TH / 2;              /* 描边走中线 */
+  const C = 2 * Math.PI * Rm;
+  const gapLen = PIE_GAP * Rm;
+  let off = 0, len = 0;
   const segs = [], marks = [];
   rows.forEach(([name, v], i) => {
     const span = (v / total) * Math.PI * 2;
-    /* 缝从两头各吃一半；整块太小就留一道最细的 */
-    const trim = n > 1 ? Math.min(PIE_GAP, span * 0.7) : 0;
-    const a0 = off + trim / 2, a1 = off + span - trim / 2;
-    /* 只有一段时画一个整环：走扇形那条路的话，两头的圆角会在 12 点方向
-       咬出一个缺口，看着像坏了。 */
-    segs.push(n === 1
-      ? '<circle cx="' + cx + '" cy="' + cy + '" r="' + ((Ro + Ri) / 2) +
-        '" fill="none" stroke="' + hue + '" stroke-width="' + (Ro - Ri) + '"/>'
-      : ringSeg(cx, cy, Ro, Ri, a0, a1, hue, alpha(i)));
+    const arc = (v / total) * C;
+    const one = n === 1;
+    const gap = one ? 0 : Math.min(gapLen, arc * 0.6);
+    /* 扣掉一个环宽给两头的圆帽；小到扣不动就留一个点 */
+    const dash = one ? C : Math.max(0.1, arc - gap - PIE_TH);
+    const start = len + gap / 2 + (one ? 0 : PIE_TH / 2);
+    segs.push('<g opacity="' + alpha(i).toFixed(3) + '">' +
+      '<circle class="pieseg" cx="' + cx + '" cy="' + cy + '" r="' + Rm.toFixed(2) +
+      '" fill="none" stroke="' + hue + '" stroke-width="' + PIE_TH +
+      '" stroke-linecap="' + (one ? "butt" : "round") +
+      '" stroke-dashoffset="' + (-start).toFixed(1) + '" style="--c:' + C.toFixed(1) +
+      ";--dash:" + dash.toFixed(1) + ";--rest:" + (C - dash).toFixed(1) +
+      ";--d:" + (i * 85) + 'ms"/></g>');
     marks.push({ name, v, i, ang: off + span / 2 });
-    off += span;
+    off += span; len += arc;
   });
 
   /* 稿子 2304:15439 把引线和圆点都去掉了，标签直接浮在环外面，
@@ -6342,7 +6354,10 @@ function labeledDonut(rows, kind) {
 
   return '<div class="pie">' +
     '<svg class="piesvg" viewBox="0 0 ' + W + " " + H + '" aria-hidden="true">' +
-    segs.join("") + out.join("") + "</svg>" +
+    /* <circle> 的路径从 3 点方向起步，整组转 -90° 才是从 12 点顺时针。
+       标签那一组不能跟着转 —— 它们的坐标本来就是按 12 点算的。 */
+    '<g transform="rotate(-90 ' + cx + " " + cy + ')">' + segs.join("") + "</g>" +
+    out.join("") + "</svg>" +
     '<div class="pienum"><div class="sub">' +
     t(kind === "in" ? "word.income" : kind === "save" ? "an.saved" : "word.spending") +
     '</div><div class="pietot">' + yuan(total) + "</div></div></div>";
