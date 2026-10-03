@@ -1680,7 +1680,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v153";
+const BUILD = "v154";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -8103,9 +8103,14 @@ const buzzFor = (act) => HEAVY.test(act) ? "heavy" : MEDIUM.test(act) ? "medium"
 /* 记一笔钱 —— 不管是快捷记账、详情表单，还是「买了」那几条路，
    只要真的往 S.tx 里塞了东西，就给一声硬币。 */
 const SFX_COIN = /^(commit|submitTx|buyNow|buyWish|doCashBuy)$/;
-/* 金库里点开某个账户 —— 翻存折那种沙沙声 */
-const SFX_RUSTLE = /^openJar$/;
+/* 点开金库里那张账户卡 —— 卡落在桌面上那一下。
+   往下拖把卡送回列表时也是它（见 endCardDrag），一张卡的两头用同一声。 */
+const SFX_CARD = /^openJar$/;
+/* 沙沙留给储蓄那一档的卡：那几张是纸质感的白卡，和账户那张硬卡不是
+   一个手感。原来沙沙挂在 openJar 上，现在那儿换成卡片音了。 */
+const SFX_RUSTLE = /^editGoal$/;
 const sfxFor = (act) => SFX_COIN.test(act) ? "coin"
+  : SFX_CARD.test(act) ? "card"
   : SFX_RUSTLE.test(act) ? "rustle" : "tap";
 
 app.addEventListener("click", (e) => {
