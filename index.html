@@ -806,17 +806,29 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    松手才落回正中 —— 那就不叫轴心了。
    底色是稿子量的 #eae9e7，比页面底（#f2f1ef）还深一点点，所以「浮起来」
    全靠那层投影；加一圈白描边会把它顶回平面。 */
-.dhub{position:absolute;left:50%;width:38px;height:44px;margin-left:-19px;
- border-radius:14px;background:#eae9e7;z-index:0;pointer-events:none;
- box-shadow:0 1px 2px rgba(65,65,64,.06),0 4px 12px -2px rgba(65,65,64,.14)}
+.dhub{position:absolute;left:50%;height:46px;margin-left:-19px;
+ border-radius:15px;z-index:0;pointer-events:none;
+ /* 稿子 2414:9690 改成内凹了：外投影撤掉，换成从上边压下来的内阴影 +
+    0.5px 的白→浅灰渐变描边。质感上这是把取景窗「嵌进」表面，而不是浮在
+    上面 —— 对一个刻度盘来说也更说得通：窗口是开在盘面上的。
+    渐变描边只能靠两层背景做：底色铺到 padding-box，渐变铺到 border-box，
+    再让 border 本身透明。border-image 做不了，它不认圆角。 */
+ border:.5px solid transparent;
+ background:linear-gradient(#eeedeb,#eeedeb) padding-box,
+   linear-gradient(180deg,#ffffff 0%,#f7f7f7 100%) border-box;
+ box-shadow:inset 0 1px 2px rgba(0,0,0,.25)}
 /* 深色下这颗不能是白的 —— 字是浅的，白底白字。换成比页面亮一档的纸色，
    「浮起来」这件事靠亮度差做，不靠白。 */
+/* 深色下同一套做法，只是把「白描边」换成很淡的一层高光：
+   纯白边在深底上会亮得像条缝。内阴影反而要更重一点才看得出凹陷。 */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dhub{
-  background:var(--card-paper);
-  box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) } }
+  background:linear-gradient(var(--card-paper),var(--card-paper)) padding-box,
+    linear-gradient(180deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.04) 100%) border-box;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.5) } }
 :root[data-theme="dark"] .dhub{
-  background:var(--card-paper);
-  box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) }
+  background:linear-gradient(var(--card-paper),var(--card-paper)) padding-box,
+    linear-gradient(180deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.04) 100%) border-box;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.5) }
 /* 数字贴着它那根柱子的末端，不是贴着整张图的上下边 */
 .dcall{position:absolute;left:50%;transform:translateX(-50%);
  font-size:12px;line-height:16px;white-space:nowrap;pointer-events:none;
@@ -1624,7 +1636,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v143";
+const BUILD = "v144";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
