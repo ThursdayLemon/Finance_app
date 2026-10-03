@@ -1703,7 +1703,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v161";
+const BUILD = "v162";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6296,10 +6296,11 @@ function labeledDonut(rows, kind) {
      储蓄原来跟收入共用绿，现在按稿子换成 --ink（#414140）。 */
   const hue = kind === "out" ? "var(--warn)"
     : kind === "save" ? "var(--ink)" : "var(--green-01)";
-  /* 最长的最浅、最短的最深。rows 是按金额从大到小排的，所以 i=0（占比
-     最大、露出来最长的那块）拿最浅的一档，i=n-1（最小最短）拿最深的。
-     这不是随手定的配色：短的那几块压在最上面，不够深就被底下的盖住了。 */
-  const alpha = (i) => n < 2 ? 1 : 0.25 + (i / (n - 1)) * 0.75;
+  /* 最大的那块最深，往后一块比一块浅（稿子 2304:15499：12 点往顺时针
+     第一截就是最饱和的那支，越往后越淡）。
+     这和「谁压在最上面」是同一件事：最大的那块累计弧最短、最后落笔、
+     压在最上面，所以它必须最深，不然会被底下的长弧盖住。 */
+  const alpha = (i) => n < 2 ? 1 : 1 - (i / (n - 1)) * 0.75;
   const W = PIE_W, H = PIE_H, cx = W / 2, cy = H / 2;
   const Ro = PIE_R;
   const Rm = PIE_R - PIE_TH / 2;              /* 描边走中线 */
@@ -6328,21 +6329,21 @@ function labeledDonut(rows, kind) {
      不够深就被底下的盖住了。 */
   const segs = [ring("pietrack", C, 0, 0.18, 0)];
   const marks = [];
-  /* 从最小的那块往回累加，cum[i] 就是第 i 块该画多长 */
-  const cum = [];
+  /* cum[i] = 前 i+1 块的累计占比（rows 已按金额从大到小排）。
+     所以第 0 块（最大）的弧最短、最后一块的弧绕满一圈。 */
   let acc = 0;
-  for (let i = rows.length - 1; i >= 0; i--) { acc += rows[i][1] / total; cum[i] = acc; }
+  const cum = rows.map(([, v]) => (acc += v / total));
   let off = 0;
   rows.forEach(([name, v], i) => {
     const span = (v / total) * Math.PI * 2;
-    /* 长的先画、压在底下；短的后画、压在最上面。
-       动画的延迟反过来给：最上面那条最短的先长出来，后面一条比一条长，
-       看着才是从 12 点顺时针一路铺开。 */
-    segs.push(ring("pieseg", Math.max(0.1, cum[i] * C), 0, alpha(i),
-      (rows.length - 1 - i) * 70));
     marks.push({ name, v, i, ang: off + span / 2 });
     off += span;
   });
+  /* 从最后一条（绕满一圈、最浅）往前画，最大的那块最后落笔压在最上面。
+     动画延迟顺着给：最大最深的那截先从 12 点长出来，后面一条比一条长，
+     看着就是顺时针一路铺开。 */
+  for (let i = rows.length - 1; i >= 0; i--)
+    segs.push(ring("pieseg", Math.max(0.1, cum[i] * C), 0, alpha(i), i * 70));
 
   /* 稿子 2304:15439 把引线和圆点都去掉了，标签直接浮在环外面，
      靠「离哪一块近」来认。所以摆放也跟着改：不再吸到左右两个固定的
