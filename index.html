@@ -746,8 +746,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .dchart{--bw:50px;--bp:56px;--dot:2.5px;--grid:5px;position:relative}
 .dwin{overflow:hidden;
  /* 走到边缘的淡出去 —— 柱子和月份一起淡，刻度感就是从这儿来的 */
- -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);
- mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
+ -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%);
+ mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%)}
 .dstrip{position:relative;left:50%;will-change:transform}
 .drow{display:flex;height:100%}
 /* 柱子在格子里居中 —— 月份也是居中的，两者的中线必须重合 */
@@ -780,6 +780,18 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 中间那个是选中态：字大一档、换成标题字族、压实色 */
 .dax > span.on{font-family:var(--font-display);font-size:14px;line-height:16px;
  color:var(--ink)}
+/* 分析页那条刻度的格子是两行的（稿子 2414:9684）：上面月份缩写，下面月份
+   数字，选中的那格垫一块圆角底。首页那张 mini 还是单行，所以另起一个类名，
+   别去跟 .dchart.mini .dax > span 抢特异度 —— 那条是三个类，硬碰硬要翻车。 */
+.dax2 > span{display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:3px;padding:5px 0;border-radius:18px;color:var(--ink-faint);
+ font-size:inherit;line-height:normal;
+ transition:color .16s ease,background-color .16s ease}
+.dax2 > span > u{font-size:10px;line-height:12px;text-decoration:none;
+ font-weight:var(--w-body)}
+.dax2 > span > b{font-family:var(--font-display);font-size:15px;line-height:17px;
+ font-weight:var(--w-body)}
+.dax2 > span.on{background-color:var(--track);color:var(--ink)}
 /* 数字贴着它那根柱子的末端，不是贴着整张图的上下边 */
 .dcall{position:absolute;left:50%;transform:translateX(-50%);
  font-size:12px;line-height:16px;white-space:nowrap;pointer-events:none;
@@ -1584,7 +1596,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v138";
+const BUILD = "v139";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1641,6 +1653,10 @@ zh: {
   "word.back": "返回", "word.addOne": "记一笔", "word.quickAdd": "一句话记一笔",
   "date.month": (v) => v.y + "年" + +v.m + "月", "date.monthOnly": (v) => +v.m + "月",
   "date.monthShort": (v) => +v.m + "月",
+  /* 刻度格子的上面那行。下面已经是「10」了，上面再来个「10月」就是重复，
+     所以中文这儿用汉字月名，看着才是两层。 */
+  "date.monthTick": (v) => ["一", "二", "三", "四", "五", "六", "七", "八",
+    "九", "十", "十一", "十二"][+v.m - 1] + "月",
   "date.day": (v) => +v.m + "月" + +v.d + "日",
   "date.year": (v) => v.y + " 年",
   "date.onDay": (v) => "每月 " + v.day + " 号",
@@ -2081,6 +2097,7 @@ zh: {
   "set.skinHint": "两套完整的视觉。换风格不动数据，随时切回来。",
   "set.theme": "外观", "theme.auto": "跟随系统", "theme.light": "浅色", "theme.dark": "深色",
   "set.haptics": "触感反馈",
+  "set.sound": "刻度音效", "set.soundSub": "拖动分析页的刻度时，过一格响一声",
   "set.hapticsSub": "点按时轻轻震一下。iPhone 上装成主屏 App 时可能没有 —— 系统没给网页这个口子。",
   "set.currency": "货币",
   "set.language": "语言",
@@ -2094,6 +2111,7 @@ en: {
   "date.month": (v) => MON[+v.m - 1] + " · " + v.y,
   "date.monthOnly": (v) => MON[+v.m - 1],
   "date.monthShort": (v) => MON3[+v.m - 1],
+  "date.monthTick": (v) => MON3[+v.m - 1],
   "date.day": (v) => MON3[+v.m - 1] + " " + +v.d,
   "date.year": (v) => v.y,
   "date.onDay": (v) => "the " + nth(+v.day) + " of each month",
@@ -2583,6 +2601,7 @@ en: {
   "set.skin": "Style", "skin.pearl": "Pearl", "skin.briefly": "Cream paper",
   "set.skinHint": "Two complete looks. Switching changes nothing but the surface.",
   "set.haptics": "Haptics",
+  "set.sound": "Ruler clicks", "set.soundSub": "A click each time the ruler steps a month",
   "set.hapticsSub": "A light tap when you press things. May not fire on iPhone \u2014 the OS doesn\u2019t expose it to web apps.",
   "set.theme": "Appearance", "theme.auto": "System", "theme.light": "Light",
   "theme.dark": "Dark",
@@ -4541,9 +4560,14 @@ function dotChart(sel, opt) {
        .dwin 为了做左右渐隐开了 overflow:hidden，露在外面的会被剪掉 */
     '<div style="height:' + (upRows * G + PAD).toFixed(1) + 'px">' +
     row(ins, "up", true) + "</div>" +
-    '<div class="dax" style="padding:' + (o.mini ? "4px 0" : "9px 0") + '">' +
+    '<div class="dax' + (o.mini ? "" : " dax2") +
+      '" style="padding:' + (o.mini ? "4px 0" : "7px 0") + '">' +
     months.map((mk, i) => '<span' + (i === k0 ? ' class="on"' : "") + ">" +
-      t("date.monthShort", { m: mk.slice(5) }).toUpperCase() + "</span>").join("") +
+      /* 刻度那张是两行：缩写 + 月份数字（稿子 2414:9684）。
+         首页那张 mini 只有一行，还是老样子的全大写缩写。 */
+      (o.mini ? t("date.monthShort", { m: mk.slice(5) }).toUpperCase()
+        : "<u>" + t("date.monthTick", { m: mk.slice(5) }) + "</u><b>" +
+          (+mk.slice(5)) + "</b>") + "</span>").join("") +
     "</div>" +
     '<div style="height:' + (dnRows * G + PAD).toFixed(1) + 'px">' +
     row(outs, "down", false) + "</div>" +
@@ -5117,6 +5141,13 @@ SCREENS.settings = () => {
       '<div style="flex:1"><div style="font-size:15px">' + t("set.haptics") + "</div>" +
       '<div class="sub" style="font-size:11.5px">' + t("set.hapticsSub") + "</div></div>" +
       '<div class="toggle' + (S.haptics === false ? "" : " on") + '"><i></i></div></div>' +
+
+      /* iOS 上刻度拖动是震不了的，这一声就是那儿唯一的反馈；
+         但在安静的地方会尴尬，所以也给个开关 */
+      '<div class="row" data-a="sound" style="cursor:pointer">' +
+      '<div style="flex:1"><div style="font-size:15px">' + t("set.sound") + "</div>" +
+      '<div class="sub" style="font-size:11.5px">' + t("set.soundSub") + "</div></div>" +
+      '<div class="toggle' + (S.sound === false ? "" : " on") + '"><i></i></div></div>' +
 
       '<div class="fld" style="margin-top:6px"><div class="lbl">' + t("set.cooldown") +
       "</div>" +
@@ -6515,6 +6546,8 @@ const ACT = {
   cur: (k) => { S.currency = k; render(); toast(t("k.currencyNow", { code: k })); },
   theme: (k) => { S.theme = k; applyTheme(); render(); },
   haptics: () => { S.haptics = S.haptics === false; render(); },
+  /* 开的那下顺手响一声，让人听见自己开了什么 */
+  sound: () => { S.sound = S.sound === false; render(); if (S.sound !== false) tick(); },
   skin: (k) => { S.skin = k; applySkin(); render(); },
   hideBal: () => { ui.hideBal = !ui.hideBal; render(); },
   /* 账本卡头的三个键。筛选菜单开着的时候再点一次就收起来。 */
@@ -7322,6 +7355,9 @@ function render() {
   playNav();
   playCount();
   paintHaptics();
+  /* 刻度的鱼眼是逐格写 transform 的，整屏重画之后那些位移全没了，补上 */
+  app.querySelectorAll('[data-ruler="1"] .dstrip')
+    .forEach((st) => anBend(st, null));
   /* 出错给一次重反馈。挂在这儿而不是逐个校验点里写 ——
      错误最后都落到 ui.f.err 上，看它从无到有就够了。 */
   const err = (ui.f && ui.f.err) || null;
@@ -7617,6 +7653,46 @@ function haptics() {
 
    只铺「按一下就完事」的控件：侧滑行、输入框、下拉这些手势和焦点各有归属，
    铺上去只会打架。铺不到的地方在 iOS 上就是没有触感，这是平台的限制。 */
+/* 刻度过一格的那声「嗒」。
+   iOS 的网页拿不到真触感（见 paintHaptics 上面那段），但声音拿得到 ——
+   拖动中唯一能给的反馈就是它，所以这一声挺要紧。
+
+   合成的做法：一小段白噪声过带通，起音 1ms、22ms 衰干净。纯正弦听着像
+   电子音，噪声才有机械刻度盘那种「咔」的质感。噪声缓冲只做一次，之后
+   每一声都是新的 source 节点 —— BufferSource 是一次性的，不能重播。 */
+let AC = null, AC_NOISE = null;
+function wakeAudio() {
+  if (S.sound === false) return null;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!AC) AC = new Ctx();
+    if (AC.state === "suspended") AC.resume();
+    return AC;
+  } catch (err) { return null; }
+}
+function tick(vol) {
+  const ac = wakeAudio();
+  if (!ac || ac.state !== "running") return;
+  try {
+    if (!AC_NOISE) {
+      AC_NOISE = ac.createBuffer(1, Math.ceil(ac.sampleRate * 0.05), ac.sampleRate);
+      const d = AC_NOISE.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t0 = ac.currentTime;
+    const src = ac.createBufferSource(); src.buffer = AC_NOISE;
+    const bp = ac.createBiquadFilter();
+    bp.type = "bandpass"; bp.frequency.value = 2700; bp.Q.value = 1.3;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol == null ? 0.2 : vol, t0 + 0.001);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.022);
+    src.connect(bp); bp.connect(g); g.connect(ac.destination);
+    src.start(t0); src.stop(t0 + 0.04);
+  } catch (err) {}
+}
+
 const HAPTIC_SEL = ".mbtn,.navb,.qi,.rnd,.chip[data-a],.seg > span,.toggle," +
   ".adot,.mcell,.gopro,.wishpill,.dash,.avatar,.iconbtn,.eye,.jotmini,.asmini," +
   /* 月份胶囊里的左右箭头和中间那块 */
@@ -7959,11 +8035,70 @@ app.addEventListener("pointercancel", endStackDrag);
    纵向留给页面滚动（.dwin 上写了 touch-action:pan-y）。 */
 let anDrag = null;
 const AN_STEP = AN_PITCH;
+
+/* 鱼眼：把这条刻度贴在一个竖轴的圆筒上，像那个蛋形计时器的转盘。
+   一格到中线的距离 u 当成筒面上的弧长，θ = u/R，转到屏幕上横坐标就是
+   R·sin(θ)，横向宽度按 cos(θ) 收。中间 θ 小、cos 接近 1，那几格几乎没动；
+   越往外越挤，到 ±90° 就转到筒背面去了，直接藏掉。
+   好处不只是好看：同样宽的窗口，原来只装得下 5 个多月，现在能露出 7 个。
+
+   只压横向、不压纵向 —— 柱子的高度是在读数，跟着缩就是在撒谎。
+   月份那一行是整体缩（它整个在往远处退），用 cos 开方压一下，
+   不然两头的字小到看不清。 */
+const AN_BEND = 1.25;                 /* 窗口边缘对应的角度，约 72° */
+function anBend(strip, tx) {
+  const win = strip.parentNode;
+  const W = win && win.clientWidth;
+  if (!W) return;
+  const R = (W / 2) / Math.sin(AN_BEND);
+  if (tx == null) {
+    /* 吸附动画进行中：读计算值，拿到的是这一帧插值后的位移 */
+    const cur = getComputedStyle(strip).transform;
+    tx = 0;
+    if (cur && cur !== "none") {
+      try { tx = new DOMMatrixReadOnly(cur).m41; }
+      catch (err) { tx = parseFloat((cur.match(/-?[\d.]+/g) || [])[4] || 0) || 0; }
+    }
+  }
+  const lbls = strip.querySelectorAll(".dax > span");
+  const cols = strip.querySelectorAll(".drow .dcol");
+  const per = cols.length / 2;
+  const QUARTER = Math.PI / 2;
+  for (let i = 0; i < lbls.length; i++) {
+    const u = tx + (i + 0.5) * AN_PITCH;
+    const th = u / R;
+    const back = Math.abs(th) >= QUARTER;
+    const c = back ? 0 : Math.cos(th);
+    const x = ((back ? (th < 0 ? -R : R) : R * Math.sin(th)) - u).toFixed(1);
+    const sx = Math.max(c, 0.001).toFixed(3);
+    const ct = "translateX(" + x + "px) scaleX(" + sx + ")";
+    if (cols[i]) cols[i].style.transform = ct;
+    if (cols[per + i]) cols[per + i].style.transform = ct;
+    const lb = lbls[i];
+    if (lb) {
+      lb.style.transform = "translateX(" + x + "px) scale(" +
+        Math.pow(Math.max(c, 0.001), 0.6).toFixed(3) + ")";
+      lb.style.opacity = back ? "0" : "1";
+    }
+  }
+}
+/* 松手之后那 .18s 是 CSS 在插值，每一帧都得重新掰一次，不然弯度是停住的 */
+function anBendFor(strip, ms) {
+  const t0 = performance.now();
+  const step = () => {
+    if (!strip.isConnected) return;
+    anBend(strip, null);
+    if (performance.now() - t0 < ms) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 app.addEventListener("pointerdown", (e) => {
   const win = e.target.closest && e.target.closest('[data-ruler="1"]');
   if (!win) { anDrag = null; return; }
   const strip = win.querySelector(".dstrip");
   if (!strip) { anDrag = null; return; }
+  /* iOS 的 AudioContext 必须在一次真手势里开起来，按下这下就是那个机会 */
+  wakeAudio();
   strip.style.transition = "none";
   anDrag = { x0: e.clientX, y0: e.clientY, steps: 0, lock: null,
     base: anViewMonth(), strip,
@@ -7979,14 +8114,18 @@ app.addEventListener("pointermove", (e) => {
   if (anDrag.lock !== "x") return;
   /* 内容跟手 */
   anDrag.strip.style.transform = "translateX(" + (anDrag.x + dx).toFixed(1) + "px)";
+  anBend(anDrag.strip, anDrag.x + dx);
   /* 过线才换高亮，顺手震一下 —— 苹果选择器那种「到位」的中等反馈 */
   const want = -Math.round(dx / AN_STEP);
   if (want === anDrag.steps) return;
   anDrag.steps = want;
   /* 这里不 buzz：拖动中没有「真手指点在开关上」这个动作，
      iOS 的那条路要求 isTrusted，程序化触发一律无效（见 haptics()）。
-     点选某一格才有震动 —— 那一下是真的点在 .hswitch 上。 */
+     点选某一格才有震动 —— 那一下是真的点在 .hswitch 上。
+     声音没这个限制：Web Audio 在手势里开过一次之后随便放，
+     所以 iOS 上过一格的反馈是靠这一声撑着的。 */
   buzz("medium");
+  tick();
   const cols = anDrag.strip.querySelectorAll(".drow .dcol");
   const per = cols.length / 2, k = Math.round(per / 2 - 0.5) + want;
   anDrag.strip.querySelectorAll(".dcol.on,.dax > span.on")
@@ -8002,6 +8141,7 @@ const endAnDrag = () => {
   const mm = shiftMonth(d.base, d.steps);
   d.strip.style.transition = "transform .18s cubic-bezier(.22,1,.3,1)";
   d.strip.style.transform = "translateX(" + (d.x - d.steps * AN_STEP).toFixed(1) + "px)";
+  anBendFor(d.strip, 220);
   if (mm === anViewMonth()) return;
   /* 等吸附动画走完再重绘，否则刚滑到位就被整屏重画打断 */
   setTimeout(() => { ui.anMonth = mm; render(); }, 180);
