@@ -806,7 +806,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    松手才落回正中 —— 那就不叫轴心了。
    底色是稿子量的 #eae9e7，比页面底（#f2f1ef）还深一点点，所以「浮起来」
    全靠那层投影；加一圈白描边会把它顶回平面。 */
-.dhub{position:absolute;left:50%;height:46px;margin-left:-19px;
+.dhub{position:absolute;left:50%;margin-left:-19px;
  border-radius:15px;z-index:0;pointer-events:none;
  /* 稿子 2414:9690 改成内凹了：外投影撤掉，换成从上边压下来的内阴影 +
     0.5px 的白→浅灰渐变描边。质感上这是把取景窗「嵌进」表面，而不是浮在
@@ -1636,7 +1636,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v144";
+const BUILD = "v145";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4560,7 +4560,10 @@ const AN_SCALES = {
     flat: (k) => t("date.monthShort", { m: k.slice(5) }).toUpperCase(),
     act: "anMonth:",
     half: 9,
-    hub: 38,                       /* 「十一月」最宽，38 刚够 */
+    /* 轴心的尺寸。宽：稿子是 36，但那是按 "Oct" 量的，中文「十一月」在
+       中线上放大之后要 33px，36 会贴着边，所以给 38。
+       高：这一格是两行（13 + 20），加上下的内边距正好 46（稿子量的）。 */
+    hub: 38, hubH: 46, rowH: 55,
   },
   year: {
     step: (k, i) => String(+k + i),
@@ -4571,7 +4574,10 @@ const AN_SCALES = {
     cell: (k) => "<b>" + k + "</b>",
     flat: (k) => k,
     act: "anYear:",
-    hub: 54,                       /* 四位数比「十一月」还宽一截 */
+    /* 年只有一行，轴心也得跟着矮一截 —— 照搬月的 46 会从月份那条
+       带子里探出去，压到下面支出的点阵上。
+       宽上反过来：四位数比「十一月」还宽一截。 */
+    hub: 54, hubH: 34, rowH: 42,
     /* 年比月贵得多 —— 每一格都要把那一年的十二个月都加一遍。
        鱼眼之后大约露得出 13 格，备 13 格就够，不用像月那样备 19 格。 */
     half: 6,
@@ -4619,8 +4625,12 @@ function dotChart(sel, opt) {
     /* 轴心摆在 .dstrip 前面：DOM 在前就画在下面，字压在它上头。
        top 是上半块的高度（点阵 + 数字带）再往下 2px —— 月份那一行就从
        这儿开始。 */
-    (o.ruler ? '<i class="dhub" style="top:' + (upRows * G + PAD + 2).toFixed(1) +
-      "px;width:" + sc.hub + "px;margin-left:" + (-sc.hub / 2) + 'px"></i>' : "") +
+    /* 轴心在月份那条带子里上下居中：带子从上半块的底边开始，
+       高 sc.rowH，轴心高 sc.hubH，差的那点对半分到上下。 */
+    (o.ruler ? '<i class="dhub" style="top:' +
+      (upRows * G + PAD + (sc.rowH - sc.hubH) / 2).toFixed(1) +
+      "px;width:" + sc.hub + "px;height:" + sc.hubH +
+      "px;margin-left:" + (-sc.hub / 2) + 'px"></i>' : "") +
     '<div class="dstrip" style="transform:translateX(' +
       (-(k0 + 0.5) * pitch).toFixed(1) + 'px)">' +
     /* 多出来的 PAD 是数字那一条带，必须算在窗口里面 ——
@@ -8186,16 +8196,21 @@ app.addEventListener("pointerdown", (e) => {
   wakeAudio();
   strip.style.transition = "none";
   const scale = win.dataset.scale === "year" ? "year" : "month";
-  anDrag = { x0: e.clientX, y0: e.clientY, steps: 0, lock: null, scale,
+  anDrag = { x0: e.clientX, y0: e.clientY, steps: 0, lock: null, scale, moved: 0,
     base: scale === "year" ? anViewYear() : anViewMonth(), strip,
     x: parseFloat((strip.style.transform.match(/-?[\d.]+/) || [0])[0]) };
 });
 app.addEventListener("pointermove", (e) => {
   if (!anDrag) return;
   const dx = e.clientX - anDrag.x0, dy = e.clientY - anDrag.y0;
+  anDrag.moved = Math.max(anDrag.moved, Math.abs(dx), Math.abs(dy));
   if (!anDrag.lock) {
     if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-    anDrag.lock = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    /* 判横向要「明显比纵向多」才算。原来是 |dx| > |dy| 一刀切，
+       45° 附近等于掷硬币 —— 想往上滚页面、手指顺带带了点横向，
+       就被判成在拖刻度。纵向这条路属于页面滚动，不跟它抢。 */
+    anDrag.lock = (Math.abs(dx) >= 10 && Math.abs(dx) > Math.abs(dy) * 1.5)
+      ? "x" : "y";
   }
   if (anDrag.lock !== "x") return;
   /* 内容跟手 */
@@ -8228,8 +8243,14 @@ function anMark(strip, want) {
 const endAnDrag = () => {
   const d = anDrag;
   anDrag = null;
-  if (!d || d.lock !== "x") return;
-  swallow();                       /* 别让松手那下顺带点中某根柱子 */
+  if (!d) return;
+  /* 只要手指真的走过，这一下就不能再算成「点中了某一格」。
+     原来只在横向拖完之后吞 click —— 纵向滚页面时，浏览器要是没接管
+     （已经滚到头，或者被判成一次带位移的 tap），那一下 click 会落在
+     手指底下的那一格上。刻度左右各备了九格，于是月份直接跳到九个月
+     开外 —— 就是「跳到了不知道哪年哪月」。 */
+  if (d.moved > 6) swallow();
+  if (d.lock !== "x") return;
   const yr = d.scale === "year";
   let steps = d.steps, kk;
   if (yr) {
