@@ -1703,7 +1703,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v159";
+const BUILD = "v160";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6233,8 +6233,13 @@ function breakdownOver(months, kind) {
 const breakdownOf = (m, kind) => breakdownOver([m], kind);
 const outgoBreakdown = (m) => breakdownOf(m, "out");
 
-/* 小于这个比例的并成「其他」—— 否则 <1% 的切片和它的标签会糊在一起 */
-const SLICE_FLOOR = 0.03;
+/* 小于这个比例的并成「其他」。
+   门槛不是拍脑袋定的 —— 它跟着环宽走。环的周长 333、环宽 16，也就是说
+   round 线帽本身就占掉 4.8% 的一圈：比这还短的切片，扣掉圆头之后没有
+   弧可画，只能是一颗和别人一样大的圆点，长度再也代表不了占比。
+   按 1.5 倍环宽留点余量 = 7.2%，所以写 0.07。
+   （只影响这张图。下面的明细清单照旧逐项列，一笔不合并。） */
+const SLICE_FLOOR = 0.07;
 function foldSmall(rows) {
   const total = rows.reduce((a, c) => a + c[1], 0) || 1;
   const keep = rows.filter((r) => r[1] / total >= SLICE_FLOOR);
@@ -6243,8 +6248,12 @@ function foldSmall(rows) {
   const lump = rest.reduce((a, r) => a + r[1], 0);
   const other = t("pie.other");
   const i = keep.findIndex((r) => r[0] === other);
-  if (i >= 0) { keep[i] = [other, keep[i][1] + lump]; return keep.sort((a, b) => b[1] - a[1]); }
-  return keep.concat([[other, lump]]);
+  /* 合并完一定要重新排一次。「其他」攒起来常常比留下的某几块还大，
+     直接 concat 到末尾的话它就拿了最浅的那档色 —— 可它明明更长。
+     深浅和长度都跟着大小走，才读得通。 */
+  if (i >= 0) keep[i] = [other, keep[i][1] + lump];
+  else keep.push([other, lump]);
+  return keep.sort((a, b) => b[1] - a[1]);
 }
 
 /* 环形图（稿子 2168:4139）------------------------------------------------
@@ -6287,8 +6296,10 @@ function labeledDonut(rows, kind) {
      储蓄原来跟收入共用绿，现在按稿子换成 --ink（#414140）。 */
   const hue = kind === "out" ? "var(--warn)"
     : kind === "save" ? "var(--ink)" : "var(--green-01)";
-  /* 透明度按排名降，不按占比：稿子里两块一样大的也是 .6 / .5 */
-  const alpha = (i) => n < 2 ? 1 : Math.max(0.3, 1 - (i / (n - 1)) * 0.7);
+  /* 深浅按排名降，不按占比：稿子里两块一样大的也是 .6 / .5。
+     跨度从 .3–1 拉到 .22–1 —— 类目多的时候每档才差得开，
+     原来八个类目每档只差 .1，挨在一起几乎分不出深浅。 */
+  const alpha = (i) => n < 2 ? 1 : Math.max(0.22, 1 - (i / (n - 1)) * 0.78);
   const W = PIE_W, H = PIE_H, cx = W / 2, cy = H / 2;
   const Ro = PIE_R;
   const Rm = PIE_R - PIE_TH / 2;              /* 描边走中线 */
@@ -6308,11 +6319,13 @@ function labeledDonut(rows, kind) {
   rows.forEach(([name, v], i) => {
     const span = (v / total) * Math.PI * 2;
     const arc = (v / total) * C;
-    /* 段与段之间不留缝，圆头是压在邻段上的 —— 稿子里那四条弧的角度本来
-       就互相重叠（171.5° / 182.2° / 168.9° 挤在一个圆里）。
-       上一版按「留 4.5° 的缝、再扣掉一个环宽给圆帽」来画，画出来是一截一截
-       断开的，和稿子完全不是一个东西。 */
-    arcs.push(ring("pieseg", Math.max(0.1, arc), len, alpha(i), i * 85));
+    /* 不留缝，但中线要两头各缩进半个环宽 —— round 线帽会从中线端点再
+       鼓出半个环宽，缩进之后鼓出来的正好顶到这一份该占的边界。
+       上一版没缩，于是每段都被撑长了一整个环宽：占比全失真，小段还被
+       邻段的圆头吃掉，整圈糊成一个颜色。缩进之后首尾严丝合缝、长度精确，
+       深浅也都露得出来。 */
+    arcs.push(ring("pieseg", Math.max(0.1, arc - PIE_TH), len + PIE_TH / 2,
+      alpha(i), i * 85));
     marks.push({ name, v, i, ang: off + span / 2 });
     off += span; len += arc;
   });
