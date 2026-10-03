@@ -1071,7 +1071,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  position:relative;flex-shrink:0;cursor:pointer;transition:background .2s}
 .toggle>i{position:absolute;top:2px;left:3px;width:20px;height:20px;border-radius:50%;
  background:#fff;transition:left .2s}
-.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle.on{background:var(--good);border-color:var(--good)}
 /* 开着的时候把手右边也要留 4（外框口径）。原来写的 22 只剩 1px，
    看着就是「开了之后圆贴到边上」。描边 INSIDE，所以这里 19 = 外框的 20。 */
 .toggle.on>i{left:19px}
@@ -1542,7 +1542,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v129";
+const BUILD = "v130";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1913,7 +1913,7 @@ zh: {
   "wi.reachedMeta": (v) => "目标 " + v.target + " · 卖掉 " + v.n + " 件" +
     (v.surplus ? " · 多卖了 " + v.surplus : ""),
   "wi.askAgain": "再确认一次",
-  "wi.scoredThen": (v) => "当初你给「" + v.name + "」打了 <b>" + v.n + " 分</b>。现在呢？",
+  "wi.scoredThen": (v) => "当初你给「" + v.name + "」打了 <b>" + v.n + " / 5</b>。现在呢？",
   "wi.dropped": (v) => "比当初低了 <b>" + v.n + " 分</b>。攒钱的过程会让人看清一件东西" +
     "到底想不想要 —— 现在转成存款一点也不亏。",
   "wi.rose": (v) => "比当初还高了 " + v.n + " 分 —— 那就买吧，钱是你自己挣出来的。",
@@ -1946,10 +1946,10 @@ zh: {
   "re.price": (v) => "价格：占可用预算 " + v.pct + "%",
   "re.dup": "重复：你已经有类似的了",
   "re.mode": (v) => v.save ? "储蓄模式的额外扣分" : "模式附加",
-  "re.almostNone": (v) => "几乎没扣分 —— 必要度 " + v.n + " 分撑住了，价格也不占分量。",
+  "re.almostNone": (v) => "几乎没扣分 —— 必要度 " + v.n + " / 5 撑住了，价格也不占分量。",
   "re.blownOut": (v) => "主要扣在" + v.what + " —— 光这一项就扣穿了。",
   "re.mainly": (v) => "主要扣在" + v.what + "，−" + v.n + " 分。",
-  "bd.base": (v) => "必要度基础分　" + v.n + " × 10",
+  "bd.base": (v) => "必要度基础分　" + v.n + " / 5 × 20",
   "bd.priceRow": (v) => "价格占预算　" + v.pct + "% × " + v.mult,
   "bd.dupRow": (v) => "重复拥有" + (v.dup ? "" : "（无）"),
   "bd.modeRow": (v) => v.save ? "储蓄模式附加" : "模式附加",
@@ -2443,7 +2443,7 @@ en: {
     "/10 carries it, and the price hardly registers.",
   "re.blownOut": (v) => "Main deduction on " + v.what + " — that one alone wipes out the score.",
   "re.mainly": (v) => "Main deduction on " + v.what + ", \u2212" + v.n + " pts.",
-  "bd.base": (v) => "How much you need it　" + v.n + " × 10",
+  "bd.base": (v) => "How much you need it　" + v.n + " / 5 × 20",
   "bd.priceRow": (v) => "Share of budget　" + v.pct + "% × " + v.mult,
   "bd.dupRow": (v) => v.dup ? "Already own one" : "Already own one (no)",
   "bd.modeRow": (v) => v.save ? "Saving-hard penalty" : "Mode",
@@ -2581,7 +2581,9 @@ const paydayPenalty = (days, saveMode) =>
   days == null ? 0 : Math.min(12, (days / 30) * (saveMode ? 12 : 6));
 
 function evaluatePurchase(price, budget, necessity, saveMode, dup, days) {
-  const base = necessity * 10;
+  /* 必要度是 1–5 档（稿子 2188:6375）。一档 20 分，满档还是 100 ——
+     上限不动，绿/黄/红那两条线（75 / 45）就不用跟着改。 */
+  const base = necessity * (100 / NEC_STEPS);
   const ratio = budget > 0 ? (price / budget) * 100 : 100;
   const incomePenalty = ratio * (saveMode ? 4 : 1.5);
   const modePenalty = saveMode ? 10 : 0;
@@ -3457,11 +3459,12 @@ function parseUtterance(text) {
 
   if (has(raw, R().decision)) {
     let necessity = R().necessity(raw);
-    if (necessity != null) necessity = Math.max(1, Math.min(10, necessity));
+    /* 口语里「打 8 分」多半说的是十分制 —— 超过 5 的折半收进 1–5 */
+    if (necessity != null) necessity = necStep(necessity > NEC_STEPS ? necessity / 2 : necessity);
     else {
-      necessity = 5;
+      necessity = 3;
       for (const a of amts)
-        if (a !== amount && a >= 100 && a <= 1000) { necessity = a / 100; break; }
+        if (a !== amount && a >= 100 && a <= 1000) { necessity = necStep(a / 200); break; }
     }
     const name = R().wantName(raw) || t("parse.someThing");
     return { intent: "decision", raw, item: { name, price: amount,
@@ -3711,10 +3714,10 @@ function seed() {
        两个数不一样才是这一页最有用的信息。 */
     onboarded: true,
     wishlist: [
-      { id: id(), name: "游戏掌机", price: 250000, necessity: 4, dup: false,
+      { id: id(), name: "游戏掌机", price: 250000, necessity: 2, dup: false,
         addedAt: t - 12 * 3600e3, cooldownHours: 48, planId: null,
         snap: { score: 0, verdict: "red", budget: 100000, saveMode: true, at: t - 12 * 3600e3 } },
-      { id: id(), name: "无线机械键盘", price: 29800, necessity: 8, dup: false,
+      { id: id(), name: "无线机械键盘", price: 29800, necessity: 4, dup: false,
         addedAt: t - 60 * 3600e3, cooldownHours: 48, planId: null,
         snap: { score: 71.1, verdict: "amber", budget: 500000, saveMode: false,
           at: t - 60 * 3600e3 } }],
@@ -3743,7 +3746,7 @@ const needsSetup = (s2) => !s2.onboarded;
    升不动的时候宁可不加载，也绝不悄悄丢一半。
    ========================================================================== */
 const SAVE_KEY = "savingcoach.v1";
-const SCHEMA = 4;
+const SCHEMA = 5;
 /* 以后每改一次数据结构：SCHEMA 加一，并在这里补一个把 n 变成 n+1 的函数。
    例：MIGRATIONS[1] = (d) => { d.accounts.forEach(a => a.currency = d.currency); }; */
 /* ---- 账本 ---------------------------------------------------------------
@@ -3798,6 +3801,15 @@ const MIGRATIONS = {
     (d.books || []).forEach((b, i) => {
       b.goals = i === 0 ? d.goals : (b.goals || []); });
     delete d.goals;
+  },
+  /* 必要度从十分制改成 5 档（稿子 2188:6375）。存着的分数要跟着折算，
+     否则旧条目会全部顶格 —— 算分是 necessity × 20。 */
+  4: (d) => {
+    const to5 = (v) => Math.max(1, Math.min(5, Math.round((+v || 1) / 2)));
+    (d.wishlist || []).forEach((w) => { if (w.necessity != null) w.necessity = to5(w.necessity); });
+    (d.archive || []).forEach((w) => { if (w.necessity != null) w.necessity = to5(w.necessity); });
+    (d.plans || []).forEach((x) => {
+      if (x.necessityThen != null) x.necessityThen = to5(x.necessityThen); });
   },
   /* 一句话快记建出来的目标和债务一直漏着 marks，而目标那边读 marks 没有兜底 ——
      存档里只要有这么一条，首页就画不出来。把缺的补上，坏档自己就活了。 */
@@ -5732,11 +5744,9 @@ SHEETS.jot = () => {
 
 /* 解析结果那一屏。说话和快速记都走它 —— 两条路一个解析器，也该是同一屏
    确认。稿子里只有「更详细」那条（addTx 表单）是直接填、不用解析的。 */
-/* 稿子 2188:6375 的滑块是 5 档。内部仍按 1–10 存 ——
-   评分算法（base = necessity × 10）和已经记下的东西都不用动，一档就是 2 分。 */
+/* 必要度是 1–5 档（稿子 2188:6375），存的就是档位本身。 */
 const NEC_STEPS = 5;
-const necStep = (v) => Math.max(1, Math.min(NEC_STEPS, Math.round((+v || 1) / 2)));
-const necValue = (st) => Math.max(1, Math.min(10, (+st || 1) * 2));
+const necStep = (v) => Math.max(1, Math.min(NEC_STEPS, Math.round(+v || 1)));
 function necField(f, n0) {
   const st = necStep(n0);
   return '<div class="fld nec">' +
@@ -8180,8 +8190,8 @@ app.addEventListener("input", (e) => {
   }
   if (f === "qname") ui.quiz.name = v;
   else if (f === "qprice") ui.quiz.price = num(v);
-  else if (f === "qnec") { ui.quiz.necessity = necValue(v); liveNec(e.target, v); }
-  else if (f === "renec") { ui.f.renec = necValue(v); liveNec(e.target, v); }
+  else if (f === "qnec") { ui.quiz.necessity = necStep(v); liveNec(e.target, v); }
+  else if (f === "renec") { ui.f.renec = necStep(v); liveNec(e.target, v); }
   else ui.f[f] = v;
   if (f === "text") { const ok = document.getElementById("jotok");
     if (ok) ok.classList.toggle("hide", !v.trim()); }
