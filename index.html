@@ -1031,6 +1031,29 @@ select.fldbox{cursor:pointer;background-image:linear-gradient(45deg,transparent 
 .seg>span{flex:1;padding:11px 0;text-align:center;font-size:14px;line-height:18px;
  cursor:pointer;color:var(--ink)}
 .seg>span.on{color:var(--on-accent);font-weight:var(--w-mid)}
+/* 必要度滑块（稿子 2188:6375）：13 的轨道上点 5 颗白点，22 的橙球压在上面。
+   原生 range 留着 —— 拖拽、键盘、无障碍都是现成的；轨道透明，
+   真正看得见的那条是底下 .ntrack，球则是 range 自己的 thumb。 */
+.nechead{display:flex;justify-content:space-between;align-items:center;
+ font-size:15px;line-height:20px;color:var(--ink)}
+.necends{display:flex;justify-content:space-between;
+ font-size:12px;line-height:16px;color:var(--ink-muted)}
+.nslider{position:relative;height:44px}
+.ntrack{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+ height:13px;border-radius:30px;background:var(--track);border:1px solid var(--line);
+ display:flex;align-items:center;justify-content:space-between;padding:0 10px}
+.ntrack > i{width:4px;height:4px;border-radius:50%;background:#fff;flex:none;
+ box-shadow:0 3px 11px rgba(65,65,64,.28)}
+.nslider input[type=range]{position:relative;margin:0}
+.nec input[type=range]::-webkit-slider-runnable-track{height:44px;background:transparent;
+ border:0}
+.nec input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:11px;
+ background:var(--warn);border-color:var(--warn);
+ box-shadow:0 8px 26px rgba(65,65,64,.28),0 4px 15px rgba(65,65,64,.15)}
+.nec input[type=range]::-moz-range-track{height:44px;background:transparent;border:0}
+.nec input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
+ background:var(--warn);border:1px solid var(--warn);
+ box-shadow:0 8px 26px rgba(65,65,64,.28)}
 /* 轨道 4px 是视觉；外面套一层 44 高的透明盒子当热区 */
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;
  background:transparent;cursor:pointer}
@@ -1046,10 +1069,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .toggle{width:44px;height:26px;border-radius:var(--r-pill);border:1px solid var(--edge);
  background:var(--ink-faint);
  position:relative;flex-shrink:0;cursor:pointer;transition:background .2s}
-.toggle>i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+.toggle>i{position:absolute;top:2px;left:3px;width:20px;height:20px;border-radius:50%;
  background:#fff;transition:left .2s}
 .toggle.on{background:var(--accent);border-color:var(--accent)}
-.toggle.on>i{left:22px}
+/* 开着的时候把手右边也要留 4（外框口径）。原来写的 22 只剩 1px，
+   看着就是「开了之后圆贴到边上」。描边 INSIDE，所以这里 19 = 外框的 20。 */
+.toggle.on>i{left:19px}
 /* 左滑删除：红底垫在下面，内容层往左推 */
 /* 红底放在删除面板上，不要放在容器上 —— 容器铺红色会在行与行之间透出红缝 */
 /* 跟着里面卡片的圆角裁 —— 否则四个圆角处会透出底下的红色删除面板 */
@@ -1291,7 +1316,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .quizcard .fld{gap:5px}
 .quizcard .lbl{font-size:15px;line-height:20px;color:var(--ink)}
 .quizcard .nec{gap:12px}
-.quizcard .ends{font-size:12px;line-height:16px;color:var(--ink-muted)}
 .duprow{display:flex;align-items:center;gap:12px;min-height:26px}
 .duprow > div:first-child{font-size:14px;line-height:18px;
  font-weight:var(--w-light);color:var(--ink)}
@@ -1518,7 +1542,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v128";
+const BUILD = "v129";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -5333,12 +5357,7 @@ SCREENS.decisions = () => {
       '<div class="card quizcard">' +
       field(t("de.name"), input("qname", q.name)) +
       field(t("de.price"), mInput("qprice", (q.price / unit()).toFixed(ccy().dec))) +
-      '<div class="fld nec"><div style="display:flex;justify-content:space-between">' +
-      '<div class="lbl">' + t("de.necessity") + "</div>" +
-      '<div class="lbl">' + q.necessity + " / 10</div></div>" +
-      '<input type="range" min="1" max="10" step="1" data-f="qnec" value="' + q.necessity + '">' +
-      '<div class="sub ends" style="display:flex;justify-content:space-between">' +
-      "<span>" + t("de.necLow") + "</span><span>" + t("de.necHigh") + "</span></div></div>" +
+      necField("qnec", q.necessity) +
       '<div class="duprow"><div style="flex:1">' + t("de.dupQ") + "</div>" +
       '<div class="toggle ' + (q.dup ? "on" : "") + '" data-a="qdup"><i></i></div></div>' +
       "</div>" +
@@ -5500,10 +5519,7 @@ SCREENS.wishItem = () => {
         '<div class="card"><div class="h2">' + t("wi.askAgain") + "</div>" +
         '<div style="font-size:15px;margin:6px 0">' + t("wi.scoredThen",
           { name: esc(p.name), n: p.necessityThen }) + "</div>" +
-        '<input type="range" min="1" max="10" step="1" data-f="renec" value="' + nowN + '">' +
-        '<div class="sub" style="display:flex;justify-content:space-between">' +
-        "<span>" + t("de.necLow") + '</span><span class="money">' + nowN +
-        " / 10</span></div>" +
+        necField("renec", nowN) +
         '<div class="sub" style="margin-top:8px">' + (drop > 0
           ? t("wi.dropped", { n: drop })
           : nowN > p.necessityThen ? t("wi.rose", { n: nowN - p.necessityThen })
@@ -5716,6 +5732,30 @@ SHEETS.jot = () => {
 
 /* 解析结果那一屏。说话和快速记都走它 —— 两条路一个解析器，也该是同一屏
    确认。稿子里只有「更详细」那条（addTx 表单）是直接填、不用解析的。 */
+/* 稿子 2188:6375 的滑块是 5 档。内部仍按 1–10 存 ——
+   评分算法（base = necessity × 10）和已经记下的东西都不用动，一档就是 2 分。 */
+const NEC_STEPS = 5;
+const necStep = (v) => Math.max(1, Math.min(NEC_STEPS, Math.round((+v || 1) / 2)));
+const necValue = (st) => Math.max(1, Math.min(10, (+st || 1) * 2));
+function necField(f, n0) {
+  const st = necStep(n0);
+  return '<div class="fld nec">' +
+    '<div class="nechead"><span>' + t("de.necessity") + "</span>" +
+    '<span class="necnum">' + st + "/" + NEC_STEPS + "</span></div>" +
+    '<div class="nslider"><div class="ntrack">' +
+    new Array(NEC_STEPS).fill("<i></i>").join("") + "</div>" +
+    '<input type="range" min="1" max="' + NEC_STEPS + '" step="1" data-f="' + f +
+    '" value="' + st + '"></div>' +
+    '<div class="necends"><span>' + t("de.necLow") + "</span><span>" +
+    t("de.necHigh") + "</span></div></div>";
+}
+/* 拖的时候只改那个数字，不重绘 —— 重绘会把拖拽打断 */
+function liveNec(el, st) {
+  const box = el.closest(".fld");
+  const num = box && box.querySelector(".necnum");
+  if (num) num.textContent = st + "/" + NEC_STEPS;
+}
+
 function parsePreview(p) {
   const chip = '<div class="chip flat" style="font-family:ui-monospace;font-size:11px;' +
     'background:var(--sunken);border-style:dashed">' +
@@ -8140,8 +8180,8 @@ app.addEventListener("input", (e) => {
   }
   if (f === "qname") ui.quiz.name = v;
   else if (f === "qprice") ui.quiz.price = num(v);
-  else if (f === "qnec") { ui.quiz.necessity = +v; liveLabel(e.target, v + " / 10"); }
-  else if (f === "renec") { ui.f.renec = +v; liveLabel(e.target, v + " / 10"); }
+  else if (f === "qnec") { ui.quiz.necessity = necValue(v); liveNec(e.target, v); }
+  else if (f === "renec") { ui.f.renec = necValue(v); liveNec(e.target, v); }
   else ui.f[f] = v;
   if (f === "text") { const ok = document.getElementById("jotok");
     if (ok) ok.classList.toggle("hide", !v.trim()); }
