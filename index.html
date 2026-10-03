@@ -1091,6 +1091,14 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 详情页顶上那张不是按钮，只是同一张卡飞过来停在这儿 */
 .acard.still{cursor:default}
 .acard.still:active{filter:none}
+/* 箭头的意思是「还能点进去」—— 已经在详情页了，没地方可去，就不该留着。
+   但不能直接不画：点进来那下是同一张卡飞过来的（见 playFlip），两边
+   长得不一样飞到一半就穿帮。所以用动画而不是直接隐藏：飞行那 .34s
+   里原样留着，落位之后再淡出去。 */
+.acard.still .afoot svg{animation:chevGo .22s ease .34s both}
+@keyframes chevGo{from{opacity:1}to{opacity:0}}
+@media (prefers-reduced-motion: reduce){
+  .acard.still .afoot svg{animation:none;opacity:0} }
 /* 名字和金额同一行，两头顶格 —— 都走 display 字体（稿子量的 22/26 和 30/35） */
 /* 22/26/-0.66 设在这一层，名字和金额都继承 —— 稿子把金额从 30 收到了
    和名字一样大，两个并排才是一条线 */
@@ -1672,7 +1680,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v152";
+const BUILD = "v153";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1755,7 +1763,8 @@ zh: {
   "word.breakdown": "分类", "word.expand": "展开", "word.collapse": "收起",
   "word.clear": "清空",
   "cat.food": "餐饮", "cat.transport": "交通", "cat.fun": "娱乐",
-  "cat.shopping": "购物", "cat.social": "人情往来", "cat.salary": "工资",
+  "cat.shopping": "购物", "cat.grocery": "日用", "cat.tech": "电子产品",
+  "cat.social": "人情往来", "cat.salary": "工资",
   "cat.bills": "账单", "cat.clothes": "服饰", "cat.gym": "健身", "cat.pet": "宠物",
   "cat.coffee": "咖啡", "cat.wellness": "身心",
   "cat.other": "其他",
@@ -2214,7 +2223,8 @@ en: {
   "word.breakdown": "Breakdown", "word.expand": "Show", "word.collapse": "Hide",
   "word.clear": "Clear",
   "cat.food": "Food", "cat.transport": "Transport", "cat.fun": "Fun",
-  "cat.shopping": "Shopping", "cat.social": "Gifts", "cat.salary": "Salary",
+  "cat.shopping": "Shopping", "cat.grocery": "Grocery", "cat.tech": "Electronics",
+  "cat.social": "Gifts", "cat.salary": "Salary",
   "cat.bills": "Bills", "cat.clothes": "Clothes", "cat.gym": "Gym", "cat.pet": "Pet",
   "cat.coffee": "Coffee", "cat.wellness": "Wellness",
   "cat.other": "Other",
@@ -2979,7 +2989,14 @@ zh: {
     ["pet", ["宠物", "狗粮", "猫粮", "猫砂", "遛狗", "铲屎", "狗狗", "猫咪",
       "驱虫", "疫苗", "宠物医院", "洗澡美容"]],
     ["fun", ["玩", "电影", "游戏", "娱乐", "网吧", "剧本杀"]],
-    ["shopping", ["买", "网购", "淘宝", "拼多多", "京东", "美团", "超市",
+    /* 电子产品排在购物前面：「买了个耳机」两边都沾，具体的东西先挑 */
+    ["tech", ["手机", "电脑", "笔记本", "平板", "耳机", "充电器", "充电宝",
+      "数据线", "键盘", "鼠标", "显示器", "相机", "镜头", "硬盘", "路由器",
+      "数码", "电子产品", "手表"]],
+    /* 超市日用和「买东西」分开：推车那个图标一眼看过去是在超市 */
+    ["grocery", ["超市", "买菜", "生鲜", "日用", "卫生纸", "洗衣液", "纸巾",
+      "沐浴露", "牙膏", "米面", "调料", "便利店"]],
+    ["shopping", ["买", "网购", "淘宝", "拼多多", "京东", "美团",
       "植物", "绿植", "多肉", "盆栽", "香薰", "摆件"]],
     ["social", ["礼物", "红包", "人情", "随礼", "送礼"]],
     /* 账单排在最后：「房租」这类词容易被前面的表蹭到，让它们先挑完 */
@@ -3092,9 +3109,14 @@ en: {
       "grooming", "kennel", "flea", "microchip"]],
     ["fun", ["cinema", "movie", "film", "game", "concert", "gig", "pub", "bar",
       "drinks", "netflix", "spotify", "museum", "bowling"]],
+    ["tech", ["iphone", "laptop", "macbook", "ipad", "headphones", "airpods",
+      "charger", "cable", "keyboard", "mouse", "monitor", "camera", "lens",
+      "hard drive", "router", "ssd", "electronics", "apple store", "currys"]],
+    ["grocery", ["supermarket", "tesco", "sainsbury", "groceries", "grocery",
+      "aldi", "lidl", "asda", "waitrose", "co-op", "morrisons",
+      "milk", "bread", "toilet roll", "detergent", "washing up"]],
     ["shopping", ["bought", "amazon", "ebay", "argos", "shop", "plant", "succulent",
-      "candle", "vase", "poster", "cushion",
-      "shopping", "supermarket", "tesco", "sainsbury", "groceries", "ikea"]],
+      "candle", "vase", "poster", "cushion", "shopping", "ikea"]],
     ["social", ["gift", "present", "birthday", "wedding", "charity", "donation"]],
     ["bills", ["bill", "rent", "council tax", "electric", "water rates", "broadband",
       "wifi", "utilities", "insurance", "gas and electric", "energy"]],
@@ -3820,8 +3842,8 @@ const ADVICE = (v, dup) => v === "red" ? t(dup ? "advice.redDup" : "advice.red")
    它得按「谁容易被谁抢走」排，两张表的顺序本来就不该一样 */
 /* coffee / wellness 是稿子 2328:1908 新加的，排在 other 后面 —— 照稿子的次序。
    （other 通常压阵，这儿它在中间；要挪回最后说一声。） */
-const SYS_CATS = ["food", "transport", "bills", "clothes", "gym", "pet",
-  "fun", "shopping", "social", "salary", "other", "coffee", "wellness"];
+const SYS_CATS = ["food", "grocery", "transport", "bills", "clothes", "gym", "pet",
+  "fun", "shopping", "tech", "social", "salary", "other", "coffee", "wellness"];
 const catLabel = (c) => { const k = t("cat." + c); return k === "cat." + c ? c : k; };
 const allCats = () => SYS_CATS.concat(S.customCats || []);
 /* 选分类的时候也看得见图标，跟账本行上是同一个 */
@@ -4813,7 +4835,8 @@ function txCard(m, out) {
 /* 一笔属于「进」还是「出」。转存两头都不算，筛「进」「出」时都不出现。 */
 const txDir = (x) => x.xfer ? "move" : (x.fixed === "in" || x.type === "in") ? "in" : "out";
 /* 分类 → 图标。样机里每一行都是白圆底上压一个线描图形。 */
-const TX_GLYPH = { food: "food", transport: "car", fun: "outing", shopping: "shopping",
+const TX_GLYPH = { food: "food", grocery: "shopping", transport: "car",
+  fun: "outing", shopping: "shopping", tech: "shopping",
   social: "ticket", salary: "arrowUp", other: "tag",
   /* bills 借固定支出那颗 bill —— 一次性的水电和每月扣的房贷是一件事的两种样子 */
   bills: "bill", clothes: "shirt", gym: "gym", pet: "paw" };
@@ -4837,9 +4860,13 @@ const CAT_WORDS = [
 /* 账本行上的图标一律走 emoji。挑的都是单码位的字符 —— 带变体选择符的
    那些（🏋️ 🛍️ 这类尾巴上挂 FE0F 的）在不同系统上会掉成黑白线框，
    而这一列是一眼扫过去的东西，不能有的彩有的不彩。 */
-const CAT_EMOJI = { food: "🍜", transport: "🚕", bills: "🧾", clothes: "👕",
-  gym: "💪", pet: "🐾", fun: "🎬", shopping: "🛒", social: "🎁",
-  salary: "💰", other: "👀", coffee: "☕️", wellness: "🧘🏻" };
+/* 购物从 🛒 换成 🛍️ —— 推车那个一眼看过去是在超市，和「买东西」不是
+   一回事，所以推车让给了新开的 grocery。
+   🛍️ 尾巴上挂着 FE0F（见上面那段），在少数系统上会掉成黑白线框；
+   这个 app 是 iOS 优先的，那边渲染正常，先这么用。 */
+const CAT_EMOJI = { food: "🍜", grocery: "🛒", transport: "🚕", bills: "🧾",
+  clothes: "👕", gym: "💪", pet: "🐾", fun: "🎬", shopping: "🛍️", tech: "💻",
+  social: "🎁", salary: "💰", other: "👀", coffee: "☕️", wellness: "🧘🏻" };
 /* 自定义分类走和描述同一张词表（DESC_EMOJI，在下面）——
    原来这儿另有一张十二条的小表，跟那张四十多条的重复了一大半，
    结果「香水」这种分类名在描述里认得出、当分类名就认不出。一张表就够。
