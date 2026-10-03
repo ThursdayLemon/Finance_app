@@ -1584,7 +1584,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v137";
+const BUILD = "v138";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4433,10 +4433,9 @@ function analyticsMonth() {
       /* 月视图也要左右箭头：没有的话，切到年视图时药丸的宽高会跳一下 */
       '<div class="mochip">' + monthArrow("anprev", true) +
       '<span data-a="anPick">' + monthStack(m) + "</span>" +
-      monthArrow("annext", true) + "</div>" +
-      /* 翻走之后给一条回「现在」的路，不用一格一格翻回来 */
-      (cur ? "" : '<div class="chip" data-a="anToday" style="margin-left:8px">' +
-        t("an.today") + "</div>") + "</div>" +
+      monthArrow("annext", true) + "</div></div>" +
+      /* 「回到本月」那颗先摘了 —— 位置没想好。动作和文案还留着（anToday /
+         an.today），想好放哪儿一行就能挂回去。 */
 
       /* 稿子 2168:4252：收入 · 点阵刻度 · 支出，整块收进一张卡 */
       /* 上下那两个大数字也是拖动区的一部分 —— 手指落在数字上一样能推刻度 */
