@@ -1680,7 +1680,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v154";
+const BUILD = "v155";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -5100,9 +5100,7 @@ SCREENS.jars = () => {
                 "</div></div>").join("") + "</div>"
             : "") + vaultNotice()
         : '<div class="sub">' + t("va.savingsHint") + "</div>" +
-          (S.goals.length ? S.goals.map(goalCard).join("")
-            : '<div class="dash" style="min-height:80px;cursor:default;padding:0 24px;' +
-              'text-align:center">' + t("va.savingsEmpty") + "</div>") +
+          S.goals.map(goalCard).join("") +
           /* 合计和「新建」收进同一张白卡，跟账单页那两张一个形状。
              原来按钮孤零零浮在外面，合计又单独占一张卡。 */
           '<div class="listcard">' +
@@ -5111,6 +5109,10 @@ SCREENS.jars = () => {
           '<div class="sumamt">' + yuan(goalCommit(S)) + "</div></div>" +
           '<div class="dash" data-a="addGoal">' + ic("plus", 16) + " " +
           t("va.addGoal") + "</div></div>" +
+          /* 和账单页同一个道理：没有储蓄计划时的那句话是注释，
+             不该画成一个虚线框圈在卡里 */
+          (S.goals.length ? "" :
+            '<div class="sub" style="font-size:11px">' + t("va.savingsEmpty") + "</div>") +
           vaultNotice()) };
 };
 
@@ -5188,11 +5190,14 @@ SCREENS.route = () => {
             '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
             t("bi.sumOut") + "</div>" +
             '<div class="sumamt">' + yuan(fixedTotal) + "</div></div>" +
-            (S.fixedOut.length ? S.fixedOut.map(fixedRow).join("")
-              : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
-                'text-align:center;margin:10px 0 0">' + t("bi.emptyOut") + "</div>") +
+            S.fixedOut.map(fixedRow).join("") +
             '<div class="dash" data-a="addFixedOut">' +
             ic("plus", 16) + " " + t("bi.addOut") + "</div></div>" +
+          /* 空清单的那句提示是注释，不是一个控件 —— 原来画成居中的虚线
+             大框塞在白卡里，看着像「这里有东西可点」。挪到卡下面当普通
+             注释，和它底下那句本来就有的说明排在一起。 */
+          (S.fixedOut.length ? "" :
+            '<div class="sub" style="font-size:11px">' + t("bi.emptyOut") + "</div>") +
           '<div class="sub" style="font-size:11px">' + t("bi.noteOut") + "</div>"
         /* 和上面 fixed costs 同一个形状：合计在卡头，行和「录入还贷」都在
            卡里。原来 .listcard 在卡头之后就关掉了，行和按钮全落在白卡外面。 */
@@ -5200,11 +5205,11 @@ SCREENS.route = () => {
             '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
             t("bi.sumDebt") + "</div>" +
             '<div class="sumamt">' + yuan(debtCommit(S)) + "</div></div>" +
-            (S.debts.length ? S.debts.map(debtRow).join("")
-              : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
-                'text-align:center;margin:10px 0 0">' + t("bi.emptyDebt") + "</div>") +
+            S.debts.map(debtRow).join("") +
             '<div class="dash" data-a="addDebt">' + ic("plus", 16) + " " +
             t("bi.addDebt") + "</div></div>" +
+          (S.debts.length ? "" :
+            '<div class="sub" style="font-size:11px">' + t("bi.emptyDebt") + "</div>") +
           '<div class="sub" style="font-size:11px">' + t("bi.noteDebt") + "</div>") };
 };
 
