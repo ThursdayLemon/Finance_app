@@ -1636,7 +1636,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v146";
+const BUILD = "v147";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1783,7 +1783,10 @@ zh: {
 
   "bi.tabOut": "固定支出", "bi.tabDebt": "固定还贷", "bi.total": "合计",
   "an.noOut": "这个口径下还没有支出", "an.noIn": "这个口径下还没有收入",
-  "an.noSave": "这个口径下还没有确认存入",
+  "an.noSave": "金库里还没有账户",
+  /* 这一档和另外两档口径不同：收入/支出是「这段时间的流水」，
+     存款是「现在账上有多少」—— 所以标题也要说清楚，不能都叫「储蓄」。 */
+  "an.saved": "存款总额",
   "bi.totalAll": "账单合计",
   "bi.totalBreak": (v) => "包含 " + v.nOut + " 笔固定支出 " + v.out +
     " · " + v.nDebt + " 笔还贷 " + v.debt,
@@ -2248,7 +2251,8 @@ en: {
 
   "bi.tabOut": "Fixed costs", "bi.tabDebt": "Loans", "bi.total": "Total",
   "an.noOut": "No spending in this period", "an.noIn": "No income in this period",
-  "an.noSave": "No confirmed deposits in this period",
+  "an.noSave": "No accounts in the vault yet",
+  "an.saved": "Total saved",
   "bi.totalAll": "Total Bills",
   "bi.totalBreak": (v) => "Include " + v.nOut + " fixed bills " + v.out +
     " · " + v.nDebt + " loans " + v.debt,
@@ -6030,7 +6034,7 @@ function anSection(months) {
       S.fixedIn.map((x) => line(times(x.name), x.amount * n)).join("") +
       ledger("in")
     : kind === "save"
-      ? line(t("word.savings"), sumOver(months, savedIn), true) +
+      ? line(t("an.saved"), total, true) +
         rows.map(([nm, v]) => line(nm, v)).join("")
       : line(t("word.spending"), sumOver(months, (m) => outgoIn(S, m)), true) +
         S.fixedOut.map((x) => line(times(x.name), x.amount * n)).join("") +
@@ -6076,11 +6080,16 @@ function passiveRow(x, m) {
 function breakdownOver(months, kind) {
   const map = new Map();
   const add = (k, v) => { if (v > 0) map.set(k, (map.get(k) || 0) + v); };
-  /* 储蓄这一档按「存进哪个目标」拆 —— 只算已经确认存走的那部分，
-     没兑现的钱还在账户里，不该出现在这张图上。 */
+  /* 储蓄这一档按金库里的账户拆，拆的是「现在各账户有多少」。
+     原来拆的是「这几个月确认存进了哪个目标」—— 没设目标、或者这个月还
+     没点确认的人，这张图就是空的，大多数时候都看不到东西。
+
+     为什么不按月统计各账户的存入：账户的 log 里 why 混着 moveIn /
+     moveOut / edit / buy / sold，账户之间倒一次钱两边都会记一笔，
+     按月加正数会把转存算成新存款。余额是唯一不会算错的那个数。
+     代价是这一档不随月份变 —— 所以标题叫「存款总额」而不是「储蓄」。 */
   if (kind === "save") {
-    S.goals.forEach((g) => months.forEach((m) =>
-      add(g.name, ((g.marks || {})[m] || {}).amt || 0)));
+    (S.accounts || []).forEach((a) => add(a.name, a.balance));
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }
   months.forEach(() => {
@@ -6147,12 +6156,14 @@ function ringSeg(cx, cy, Ro, Ri, a0, a1, fill, op) {
 
 /* 按可用像素裁字 —— SVG 里没有 text-overflow。
    中日韩字宽约等于字号，拉丁字母约 0.56 倍，够用了。 */
+const glyphW = (ch, size) => (/[\x00-\xff]/.test(ch) ? size * 0.56 : size);
+const textW = (str, size) =>
+  [...String(str)].reduce((a, ch) => a + glyphW(ch, size), 0);
 function fitText(str, px, size) {
-  const w = (ch) => (/[\x00-\xff]/.test(ch) ? size * 0.56 : size);
   let acc = 0, out = "";
   for (const ch of String(str)) {
-    if (acc + w(ch) > px) return out ? out + "…" : out;
-    acc += w(ch); out += ch;
+    if (acc + glyphW(ch, size) > px) return out ? out + "…" : out;
+    acc += glyphW(ch, size); out += ch;
   }
   return out;
 }
@@ -6220,13 +6231,17 @@ function labeledDonut(rows, kind) {
       const tx = right ? Math.min(cx + hx + 8, W - 64) : Math.max(cx - hx - 8, 64);
       const room = right ? W - 6 - tx : tx - 6;
       /* 稿子：第一行「类别 45%」，第二行只有钱。
-         原来是第一行类别、第二行「钱 · 45%」。 */
+         裁字要先把百分比留出来再裁名字 —— 整串一起裁的话，
+         「中国银行定期 52%」会被截成「中国银行定期 …」，
+         百分比没了，这行就白写了。 */
+      const pct = " " + pctLabel(it.mk.v, total);
+      const nameRoom = room - textW(pct, 11);
       out.push('<text class="plname" x="' + tx.toFixed(1) + '" y="' +
         (it.y - 1).toFixed(1) + '" text-anchor="' + (right ? "start" : "end") + '">' +
-        esc(fitText(it.mk.name + " " + pctLabel(it.mk.v, total), room, 11)) + "</text>" +
+        esc(fitText(it.mk.name, nameRoom, 11) + pct) + "</text>" +
         '<text class="plval" x="' + tx.toFixed(1) + '" y="' + (it.y + 12).toFixed(1) +
         '" text-anchor="' + (right ? "start" : "end") + '">' +
-        esc(yuan(it.mk.v)) + "</text>");
+        esc(fitText(yuan(it.mk.v), room, 11)) + "</text>");
     });
   });
 
@@ -6234,7 +6249,7 @@ function labeledDonut(rows, kind) {
     '<svg class="piesvg" viewBox="0 0 ' + W + " " + H + '" aria-hidden="true">' +
     segs.join("") + out.join("") + "</svg>" +
     '<div class="pienum"><div class="sub">' +
-    t(kind === "in" ? "word.income" : kind === "save" ? "word.savings" : "word.spending") +
+    t(kind === "in" ? "word.income" : kind === "save" ? "an.saved" : "word.spending") +
     '</div><div class="pietot">' + yuan(total) + "</div></div></div>";
 }
 
@@ -6255,8 +6270,9 @@ SHEETS.cats = () => {
   const nextOn = isYear() ? +viewYear() < +thisMonth().slice(0, 4) : !isThisMonth();
   return grab + head(t("pie.title", { period: isYear()
     ? t("date.year", { y: viewYear() }) : monthName(viewMonth()) }), toggle) +
-    /* 固定高度：切支出/收入、翻月份都不会让页面变高 */
-    '<div style="display:flex;align-items:center;height:268px">' +
+    /* 固定高度：切支出/收入、翻月份都不会让页面变高。
+       跟着 PIE_H（196）走 —— 268 是按旧的 300 高定的，现在只是白留 */
+    '<div style="display:flex;align-items:center;height:204px">' +
     monthArrow("prev", true) +
     '<div style="flex:1;min-width:0">' + (rows.length
       ? labeledDonut(rows, kind)
