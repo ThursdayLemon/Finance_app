@@ -801,21 +801,22 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    稿子里那层投影 spread 给到 -18，比框还小，等于没有；这儿按能看见的来。 */
 .dax2 > span.on{color:var(--ink)}
 /* 稿子里这颗是裹着字的（35 宽，旁边的格子 29），不是铺满一格。
-   左右各收 8px、上下各探出 5px —— 换算过来就是那个比例。 */
+   左右各收 8px、上下各探出 5px —— 换算过来就是那个比例。
+   底色是稿子量的 #eae9e7，比页面底（#f2f1ef）还深一点点 ——
+   所以「浮起来」全靠那层投影，不能再加描边，一圈白边会把它顶回平面。 */
 .dax2 > span.on::before{content:"";position:absolute;z-index:0;
  left:8px;right:8px;top:-5px;bottom:-5px;border-radius:15px;
- background:linear-gradient(180deg,#ffffff 0%,#f6f5f3 100%);
- border:1px solid var(--icon-edge);
+ background:#eae9e7;
  box-shadow:0 1px 2px rgba(65,65,64,.06),0 4px 12px -2px rgba(65,65,64,.14)}
 .dax2 > span.on > u{font-size:11px}
 .dax2 > span.on > b{font-size:18px}
 /* 深色下这颗不能是白的 —— 字是浅的，白底白字。换成比页面亮一档的纸色，
    「浮起来」这件事靠亮度差做，不靠白。 */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dax2 > span.on::before{
-  background:var(--card-paper);border-color:rgba(255,255,255,.08);
+  background:var(--card-paper);
   box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) } }
 :root[data-theme="dark"] .dax2 > span.on::before{
-  background:var(--card-paper);border-color:rgba(255,255,255,.08);
+  background:var(--card-paper);
   box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) }
 /* 数字贴着它那根柱子的末端，不是贴着整张图的上下边 */
 .dcall{position:absolute;left:50%;transform:translateX(-50%);
@@ -1621,7 +1622,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v140";
+const BUILD = "v141";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
