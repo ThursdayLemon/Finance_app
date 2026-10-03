@@ -1582,7 +1582,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v134";
+const BUILD = "v135";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4569,12 +4569,6 @@ function monthView() {
           "</span>") +
       '<span class="eye" data-a="hideBal">' + ic(ui.hideBal ? "eyeOff" : "eye", 17) +
       "</span></div>" +
-      /* 光有一个数字不算判断依据，「还要撑几天」才是。没设发薪日就不出现。 */
-      (cur && daysToPayday() != null
-        ? '<div class="sub" style="margin-top:2px">' +
-          (daysToPayday() === 0 ? t("mo.paydayToday")
-            : t("mo.tillPayday", { n: daysToPayday() })) + "</div>"
-        : "") +
       "</div>" +
 
       /* 左：本月收入 + 近六个月走势，点进去是分析页。右：四项固定承诺。 */
@@ -5043,25 +5037,6 @@ SCREENS.settings = () => {
       " " + t("bk.new") + "</div>" +
       '<div class="sub" style="font-size:11px;margin-top:8px">' + t("bk.hint") +
       "</div></div>" +
-
-      /* 稿子 2328:1908 把账本排在了个人前面 —— 账本是「你在哪一本」，
-         是这一页其余设置的前提；个人那两样是附属的。
-         个人那一块的标题也去掉了：卡里两个带标签的字段已经说清是什么。 */
-      '<div class="card stack">' +
-      field(t("pf.name"), input("pfname", prof().name,
-        'placeholder="' + esc(t("pf.namePh")) + '"')) +
-      field(t("pf.payday"), '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div style="flex:1">' +
-        input("pfpayday", prof().payday == null ? "" : prof().payday,
-          'type="text" inputmode="numeric" placeholder="' + esc(t("pf.paydayPh")) + '"') +
-        "</div>" +
-        (daysToPayday() != null
-          ? '<div class="sub" style="white-space:nowrap">' +
-            (daysToPayday() === 0 ? t("mo.paydayToday")
-              : t("mo.tillPayday", { n: daysToPayday() })) + "</div>"
-          : '<div class="sub" style="white-space:nowrap">' + t("pf.paydayNone") + "</div>") +
-        "</div>", t("pf.paydayHint")) +
-      '<div class="sub" style="font-size:11px">' + t("pf.privacy") + "</div></div>" +
 
       '<div class="fld"><div class="lbl">' + t("set.mode") + "</div>" +
       seg("mode", [[t("set.modeSave"), "save"], [t("set.modeComfort"), "comfort"]],
@@ -8334,13 +8309,6 @@ app.addEventListener("input", (e) => {
     const x = app.querySelector(".sclear");
     if (x) x.classList.toggle("hide", !v);
     return; }
-  if (f === "pfname") { prof().name = v; save(); return; }
-  if (f === "pfpayday") {
-    /* 空着就是没设；1–31 之外的一律当没设，别让 0 或 45 号混进去 */
-    const n = parseInt(v, 10);
-    prof().payday = (n >= 1 && n <= 31) ? n : null;
-    save(); return;
-  }
   if (f === "qname") ui.quiz.name = v;
   else if (f === "qprice") ui.quiz.price = num(v);
   /* 滑块每过一格震一下（轻档，和 Tab、月份箭头同一级）。
