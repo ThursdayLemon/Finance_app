@@ -783,15 +783,40 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 /* 分析页那条刻度的格子是两行的（稿子 2414:9684）：上面月份缩写，下面月份
    数字，选中的那格垫一块圆角底。首页那张 mini 还是单行，所以另起一个类名，
    别去跟 .dchart.mini .dax > span 抢特异度 —— 那条是三个类，硬碰硬要翻车。 */
-.dax2 > span{display:flex;flex-direction:column;align-items:center;justify-content:center;
- gap:3px;padding:5px 0;border-radius:18px;color:var(--ink-faint);
- font-size:inherit;line-height:normal;
- transition:color .16s ease,background-color .16s ease}
-.dax2 > span > u{font-size:10px;line-height:12px;text-decoration:none;
+.dax2 > span{position:relative;z-index:0;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:0;padding:4px 6px;color:var(--ink-muted);
+ font-size:inherit;line-height:normal;transition:color .16s ease}
+/* 两行字要压在药丸上面。药丸是个伪元素，不占位 —— 格子的宽度由
+   flex-basis 定死（整条刻度靠等距才对得齐），药丸自己往里收。 */
+.dax2 > span > u,.dax2 > span > b{position:relative;z-index:1}
+.dax2 > span > u{font-size:9px;line-height:13px;text-decoration:none;
+ font-weight:var(--w-light)}
+.dax2 > span > b{font-family:var(--font-display);font-size:15px;line-height:20px;
  font-weight:var(--w-body)}
-.dax2 > span > b{font-family:var(--font-display);font-size:15px;line-height:17px;
- font-weight:var(--w-body)}
-.dax2 > span.on{background-color:var(--track);color:var(--ink)}
+/* 选中那格：白底、浮起来一点、字各大一档（稿子 2414:9690 量的 11/18）。
+   鱼眼的放大是乘在这之上的 —— 中线上 cos≈1，两者不打架。
+   白底跟底栏那颗滑块（.navslide）是同一张配方：白到浅灰的渐变 + 一圈
+   浅描边 + 两层投影。--card-paper 在浅色下等于页面色，拿来当白底是白拿。
+   稿子里那层投影 spread 给到 -18，比框还小，等于没有；这儿按能看见的来。 */
+.dax2 > span.on{color:var(--ink)}
+/* 稿子里这颗是裹着字的（35 宽，旁边的格子 29），不是铺满一格。
+   左右各收 8px、上下各探出 5px —— 换算过来就是那个比例。 */
+.dax2 > span.on::before{content:"";position:absolute;z-index:0;
+ left:8px;right:8px;top:-5px;bottom:-5px;border-radius:15px;
+ background:linear-gradient(180deg,#ffffff 0%,#f6f5f3 100%);
+ border:1px solid var(--icon-edge);
+ box-shadow:0 1px 2px rgba(65,65,64,.06),0 4px 12px -2px rgba(65,65,64,.14)}
+.dax2 > span.on > u{font-size:11px}
+.dax2 > span.on > b{font-size:18px}
+/* 深色下这颗不能是白的 —— 字是浅的，白底白字。换成比页面亮一档的纸色，
+   「浮起来」这件事靠亮度差做，不靠白。 */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dax2 > span.on::before{
+  background:var(--card-paper);border-color:rgba(255,255,255,.08);
+  box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) } }
+:root[data-theme="dark"] .dax2 > span.on::before{
+  background:var(--card-paper);border-color:rgba(255,255,255,.08);
+  box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) }
 /* 数字贴着它那根柱子的末端，不是贴着整张图的上下边 */
 .dcall{position:absolute;left:50%;transform:translateX(-50%);
  font-size:12px;line-height:16px;white-space:nowrap;pointer-events:none;
@@ -1596,7 +1621,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v139";
+const BUILD = "v140";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4456,27 +4481,24 @@ function analyticsMonth() {
       /* 「回到本月」那颗先摘了 —— 位置没想好。动作和文案还留着（anToday /
          an.today），想好放哪儿一行就能挂回去。 */
 
-      /* 稿子 2168:4252：收入 · 点阵刻度 · 支出，整块收进一张卡 */
-      /* 上下那两个大数字也是拖动区的一部分 —— 手指落在数字上一样能推刻度 */
+      /* 稿子 2168:4252：顶上一个大数字（这个月的缺口 / 结余），下面是点阵刻度。
+         收入和支出不再各占一个大数字了 —— 它们在图里，绿的那截和橘的那截
+         各自带着自己的数。下面原本那块「本月支出」整块删掉。
+         大数字也是拖动区的一部分：手指落在数字上一样能推刻度。 */
       '<div class="card anpanel" data-ruler="1">' +
       '<div class="hero" style="padding:2px 0 0">' +
-      '<div class="hlbl">' + t("an.income") + "</div>" +
-      '<div class="heroamt an"><span class="big" data-ck="anIn" data-count="' + inc +
-      '">' + withDec(yuan(inc)) + "</span></div></div>" +
+      '<div class="hlbl">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) + "</div>" +
+      /* 正负都用默认的墨色：绿和橘是图里收入/支出的语言，挪到这儿会串味。
+         符号由 neg() / plus() 带出来，读不岔。 */
+      '<div class="heroamt an"><span class="big" data-ck="anNet" data-sign="1" ' +
+      'data-count="' + net + '">' +
+      withDec(net < 0 ? neg(-net) : plus(net)) + "</span></div></div>" +
 
-      dotChart(m, { ruler: true, callout: true }) +
+      dotChart(m, { ruler: true, callout: true }) + "</div>" +
 
-      '<div class="hero" style="padding:8px 0 2px">' +
-      '<div class="hlbl">' + t("an.expenses") + "</div>" +
-      '<div class="heroamt an"><span class="big neg" data-ck="anOut" data-count="' +
-      (out + saved) + '">' + withDec(yuan(out + saved)) + "</span></div></div></div>" +
-
-      /* 月度那三段减法和教练的话，从首页搬到这儿 */
+      /* 那三段减法和教练的话。原来这张卡头上还有一遍「10月缺口 + 大数字」，
+         现在那两样就在上面那块里，隔一百来像素重复一遍没意义，删了。 */
       '<div class="card gapcard" style="margin-top:22px">' +
-      '<div class="badge">' + t("mo.headline", { m: m.slice(5), neg: net < 0 }) + "</div>" +
-      '<div class="big' + (net < 0 ? " mark" : " mark pos") +
-      '" style="margin:10px 0 6px;font-size:30px">' +
-      (net < 0 ? neg(-net) : plus(net)) + "</div>" +
       '<div class="block" style="display:flex;flex-wrap:wrap;gap:4px 14px">' +
       '<div class="sub">' + t("word.income") +
       ' <span class="money" style="color:var(--ink)">' + yuan(inc) + "</span></div>" +
@@ -6547,7 +6569,7 @@ const ACT = {
   theme: (k) => { S.theme = k; applyTheme(); render(); },
   haptics: () => { S.haptics = S.haptics === false; render(); },
   /* 开的那下顺手响一声，让人听见自己开了什么 */
-  sound: () => { S.sound = S.sound === false; render(); if (S.sound !== false) tick(); },
+  sound: () => { S.sound = S.sound === false; render(); if (S.sound !== false) clack(); },
   skin: (k) => { S.skin = k; applySkin(); render(); },
   hideBal: () => { ui.hideBal = !ui.hideBal; render(); },
   /* 账本卡头的三个键。筛选菜单开着的时候再点一次就收起来。 */
@@ -7385,7 +7407,11 @@ function playCount() {
       if (!el.isConnected) return;
       const p = Math.min(1, (now2 - t0) / dur);
       const e = 1 - Math.pow(1 - p, 3);
-      el.innerHTML = withDec(yuan(Math.round(from + (to - from) * e)));
+      const v = Math.round(from + (to - from) * e);
+      /* 带符号的那几个（比如这个月的缺口）跳动中途也得带着符号，
+         不然从 −¥800 滚到 +¥300 的路上会有一段看着像笔收入 */
+      el.innerHTML = withDec(el.dataset.sign === "1"
+        ? (v < 0 ? neg(-v) : plus(v)) : yuan(v));
       if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -7661,6 +7687,8 @@ function haptics() {
    电子音，噪声才有机械刻度盘那种「咔」的质感。噪声缓冲只做一次，之后
    每一声都是新的 source 节点 —— BufferSource 是一次性的，不能重播。 */
 let AC = null, AC_NOISE = null;
+/* 名字别叫 tick —— playCount 里的那个 rAF 步进器就叫 tick，
+   在那个作用域里会把这个函数整个遮掉。 */
 function wakeAudio() {
   if (S.sound === false) return null;
   try {
@@ -7671,7 +7699,7 @@ function wakeAudio() {
     return AC;
   } catch (err) { return null; }
 }
-function tick(vol) {
+function clack(vol) {
   const ac = wakeAudio();
   if (!ac || ac.state !== "running") return;
   try {
@@ -8045,7 +8073,7 @@ const AN_STEP = AN_PITCH;
    只压横向、不压纵向 —— 柱子的高度是在读数，跟着缩就是在撒谎。
    月份那一行是整体缩（它整个在往远处退），用 cos 开方压一下，
    不然两头的字小到看不清。 */
-const AN_BEND = 1.25;                 /* 窗口边缘对应的角度，约 72° */
+const AN_BEND = 1.40;                 /* 窗口边缘对应的角度，约 80° */
 function anBend(strip, tx) {
   const win = strip.parentNode;
   const W = win && win.clientWidth;
@@ -8125,7 +8153,7 @@ app.addEventListener("pointermove", (e) => {
      声音没这个限制：Web Audio 在手势里开过一次之后随便放，
      所以 iOS 上过一格的反馈是靠这一声撑着的。 */
   buzz("medium");
-  tick();
+  clack();
   const cols = anDrag.strip.querySelectorAll(".drow .dcol");
   const per = cols.length / 2, k = Math.round(per / 2 - 0.5) + want;
   anDrag.strip.querySelectorAll(".dcol.on,.dax > span.on")
