@@ -669,7 +669,8 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    所有页面（首页月份、分析页月份和年份）共用这一条，不许各写各的。 */
 .mochip{display:inline-flex;align-items:center;gap:8px;background:var(--icon-bg);
  border:1px solid var(--icon-edge);border-radius:var(--r-pill);padding:0 14px;
- min-height:42px;backdrop-filter:blur(8px)}
+ /* 42 → 40：里头两行字加起来才 27，高度完全是这个 min-height 给的 */
+ min-height:40px;backdrop-filter:blur(8px)}
 /* 稿子里英文月份是全大写；中文没有大小写，套上去无害 */
 .mochip>span{display:flex;flex-direction:column;align-items:center;
  min-width:92px;text-transform:uppercase;cursor:pointer}
@@ -1041,6 +1042,11 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .mbtn.off{color:var(--ink-faint);border-color:var(--ink-faint);background:transparent;cursor:not-allowed}
 /* 稿子里按钮只有 Size=Large 一档，.sm 只表示「次要」，尺寸和字号一律不变 */
 .mbtn.sm{}
+/* 删除一律橙底白字。白字写死不用 --on-accent —— 那个在深色下会翻成深色，
+   压在橙底上就看不清了；橙底本身两套主题都是暖色，白字都成立。
+   和左滑露出来的那块删除层（.sw-del）是同一套配色。 */
+.mbtn.del{background:var(--bad);border-color:var(--bad);color:#fff;
+ box-shadow:var(--shadow-btn)}
 .barh{height:8px;background:var(--track);border-radius:var(--r-pill);overflow:hidden}
 .barh>i{display:block;height:100%;background:var(--accent);transition:width .35s ease}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -1680,7 +1686,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v155";
+const BUILD = "v156";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -5334,8 +5340,8 @@ SCREENS.settings = () => {
       t("set.import") + "</div>" +
       '<input type="file" accept="application/json,.json" id="importfile" ' +
       'style="display:none">' +
-      '<div class="mbtn pri" data-a="wipeData" style="background:' + RED +
-      ";border-color:" + RED + '">' + ic("wipeIcon", 18) + " " + t("set.wipe") + "</div>" +
+      '<div class="mbtn del" data-a="wipeData">' + ic("wipeIcon", 18) + " " +
+      t("set.wipe") + "</div>" +
       '<div class="mbtn sm" data-a="loadDemo">' + t("set.demo") + "</div>" +
 
       '<div style="display:flex;align-items:center;justify-content:center;gap:7px;' +
@@ -6418,8 +6424,7 @@ SHEETS.addTx = () => grab + head(t("tx.add")) + txForm() +
 
 SHEETS.editTx = () => grab + head(t("tx.one")) + txForm() + errline() +
   btn(t("f.save"), "submitEditTx", "pri") +
-  '<div class="mbtn sm" data-a="delTx:' + ui.f.id + '" style="color:' + RED +
-  ";border-color:" + RED + '">' + t("tx.del") + "</div>";
+  '<div class="mbtn sm del" data-a="delTx:' + ui.f.id + '">' + t("tx.del") + "</div>";
 
 SHEETS.lifeGoal = () => {
   const tgt = num(ui.f.target);            // 别叫 t，那是翻译函数
@@ -6435,8 +6440,8 @@ SHEETS.lifeGoal = () => {
       '<div class="num money">' + Math.round(pct) + "%</div></div>" +
       '<div style="margin-top:8px">' + bar(pct) + "</div></div>" : "") +
     errline() + btn(t("f.save"), "submitLifeGoal", "pri") +
-    (S.lifeGoal ? '<div class="mbtn sm" data-a="delLifeGoal" style="color:' + RED +
-      ";border-color:" + RED + '">' + t("lg.drop") + "</div>" : "");
+    (S.lifeGoal ? '<div class="mbtn sm del" data-a="delLifeGoal">' +
+      t("lg.drop") + "</div>" : "");
 };
 
 const tintField = () => field(t("ja.colour"), '<div class="tints">' +
@@ -6455,8 +6460,8 @@ SHEETS.editJar = () => grab + head(t("ja.edit")) +
   field(t("f.amount"), mInput("balance", ui.f.balance), t("ja.balanceHint")) +
   tintField() +
   errline() + btn(t("f.save"), "submitEditJar", "pri") +
-  '<div class="mbtn sm" data-a="delJar:' + esc(ui.f.was || "") + '" style="color:' + RED +
-  ";border-color:" + RED + '">' + t("ja.del") + "</div>";
+  '<div class="mbtn sm del" data-a="delJar:' + esc(ui.f.was || "") + '">' +
+  t("ja.del") + "</div>";
 
 SHEETS.newCat = () => grab + head(t(ui.f.renameId ? "ca.rename" : "ca.new")) +
   field(t("f.category"), input("name", ui.f.name,
@@ -6476,8 +6481,8 @@ SHEETS.addFixed = () => grab + head(t(ui.f.kind === "in" ? "fx.addIn" : "fx.addO
 
 SHEETS.editFixed = () => grab + head(t(ui.f.kind === "in" ? "fx.editIn" : "fx.editOut")) +
   fixedForm() + errline() + btn(t("f.save"), "submitEditFixed", "pri") +
-  '<div class="mbtn sm" data-a="delFixed:' + ui.f.kind + ":" + ui.f.id + '" style="color:' +
-  RED + ";border-color:" + RED + '">' + t("f.delete") + "</div>";
+  '<div class="mbtn sm del" data-a="delFixed:' + ui.f.kind + ":" + ui.f.id + '">' +
+  t("f.delete") + "</div>";
 
 /* 选账户的地方就能建账户 —— 不然得先退出去、去金库建、再回来重填 */
 const accountField = (label, hint) => {
@@ -6511,8 +6516,7 @@ SHEETS.addGoal = () => grab + head(t("go.new")) + goalForm() +
 SHEETS.editGoal = () => grab + head(t("go.edit")) + goalForm() +
   field(t("go.saved"), mInput("saved", ui.f.saved), t("go.savedHint")) +
   errline() + btn(t("f.save"), "submitEditGoal", "pri") +
-  '<div class="mbtn sm" data-a="delGoal:' + ui.f.id + '" style="color:' + RED +
-  ";border-color:" + RED + '">' + t("go.del") + "</div>";
+  '<div class="mbtn sm del" data-a="delGoal:' + ui.f.id + '">' + t("go.del") + "</div>";
 
 const debtForm = () => field(t("db.desc"), input("description", ui.f.description,
     'placeholder="' + esc(t("db.descPh")) + '"')) +
@@ -6530,8 +6534,7 @@ const debtForm = () => field(t("db.desc"), input("description", ui.f.description
 
 SHEETS.editDebt = () => grab + head(t("db.edit")) + debtForm() +
   errline() + btn(t("f.save"), "submitEditDebt", "pri") +
-  '<div class="mbtn sm" data-a="delDebt:' + ui.f.id + '" style="color:' + RED +
-  ";border-color:" + RED + '">' + t("db.unbind") + "</div>";
+  '<div class="mbtn sm del" data-a="delDebt:' + ui.f.id + '">' + t("db.unbind") + "</div>";
 
 SHEETS.addDebt = () => grab + head(t("db.new")) + debtForm() +
   errline() + btn(t("db.bind"), "submitDebt", "pri");
@@ -6601,8 +6604,7 @@ SHEETS.delBook = () => {
   return grab + head(t("bk.del")) +
     '<div class="sub" style="margin-top:-4px">' +
     t("bk.delConfirm", { name: bookName(b), n: b.tx.length }) + "</div>" +
-    '<div class="mbtn pri" data-a="doDelBook" style="background:' + RED +
-    ";border-color:" + RED + '">' + t("f.delete") + "</div>" +
+    '<div class="mbtn del" data-a="doDelBook">' + t("f.delete") + "</div>" +
     btn(t("as.cancel"), "close", "sm");
 };
 
