@@ -1703,7 +1703,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v160";
+const BUILD = "v161";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -6296,43 +6296,53 @@ function labeledDonut(rows, kind) {
      储蓄原来跟收入共用绿，现在按稿子换成 --ink（#414140）。 */
   const hue = kind === "out" ? "var(--warn)"
     : kind === "save" ? "var(--ink)" : "var(--green-01)";
-  /* 深浅按排名降，不按占比：稿子里两块一样大的也是 .6 / .5。
-     跨度从 .3–1 拉到 .22–1 —— 类目多的时候每档才差得开，
-     原来八个类目每档只差 .1，挨在一起几乎分不出深浅。 */
-  const alpha = (i) => n < 2 ? 1 : Math.max(0.22, 1 - (i / (n - 1)) * 0.78);
+  /* 最长的最浅、最短的最深。rows 是按金额从大到小排的，所以 i=0（占比
+     最大、露出来最长的那块）拿最浅的一档，i=n-1（最小最短）拿最深的。
+     这不是随手定的配色：短的那几块压在最上面，不够深就被底下的盖住了。 */
+  const alpha = (i) => n < 2 ? 1 : 0.25 + (i / (n - 1)) * 0.75;
   const W = PIE_W, H = PIE_H, cx = W / 2, cy = H / 2;
   const Ro = PIE_R;
   const Rm = PIE_R - PIE_TH / 2;              /* 描边走中线 */
   const C = 2 * Math.PI * Rm;
-  const ring = (cls, dash, start, op, delay, extra) =>
+  /* 深浅不用 opacity，用「和页面底色调出来的实色」。
+     各段是互相压着画的，半透明一叠，接缝处会浮出一道更深的月牙。
+     调成实色就没有叠加这回事了 —— 环本来就铺在页面底上，
+     mix 到 --page 看起来和半透明一模一样。 */
+  const tint = (p) => "color-mix(in srgb, " + hue + " " +
+    Math.round(p * 100) + "%, var(--page))";
+  const ring = (cls, dash, start, op, delay) =>
     '<circle class="' + cls + '" cx="' + cx + '" cy="' + cy + '" r="' + Rm.toFixed(2) +
-    '" fill="none" stroke="' + hue + '" stroke-width="' + PIE_TH +
-    '" stroke-linecap="round" opacity="' + op.toFixed(3) +
-    '" stroke-dashoffset="' + (-start).toFixed(1) + '" style="--c:' + C.toFixed(1) +
+    '" fill="none" stroke="' + tint(op) + '" stroke-width="' + PIE_TH +
+    '" stroke-linecap="round"' +
+    ' stroke-dashoffset="' + (-start).toFixed(1) + '" style="--c:' + C.toFixed(1) +
     ";--dash:" + dash.toFixed(1) + ";--rest:" + Math.max(0, C - dash).toFixed(1) +
-    ";--d:" + delay + 'ms"' + (extra || "") + "/>";
-  let off = 0, len = 0;
-  const arcs = [], marks = [];
-  /* 底下先铺一整圈淡的（稿子 2304:15501 里那一层 opacity .2）。
-     有了它，环永远是完整的一圈 —— 只有两三块的时候也不会缺一大段。 */
-  const segs = [ring("pietrack", C, 0, 0.2, 0) ];
+    ";--d:" + delay + 'ms"/>';
+  /* 画法：每一块都是一条从 12 点出发的完整弧，长度 = 「它自己 + 比它小的
+     所有块」的累计占比；由长到短一层层叠上去。
+
+     这样每块露在外面的那一截，正好等于它自己的占比 —— 因为盖在它上面的
+     那条弧，长度正好少了它这一份。好处是接缝天生就是一条圆边（上面那条
+     弧的圆帽），不会有「精确相接」时内外沿被掐出的月牙缺口。
+
+     也正因为是层层叠的，深浅必须「最长的最浅、最短的最深」：短的在最上面，
+     不够深就被底下的盖住了。 */
+  const segs = [ring("pietrack", C, 0, 0.18, 0)];
+  const marks = [];
+  /* 从最小的那块往回累加，cum[i] 就是第 i 块该画多长 */
+  const cum = [];
+  let acc = 0;
+  for (let i = rows.length - 1; i >= 0; i--) { acc += rows[i][1] / total; cum[i] = acc; }
+  let off = 0;
   rows.forEach(([name, v], i) => {
     const span = (v / total) * Math.PI * 2;
-    const arc = (v / total) * C;
-    /* 不留缝，但中线要两头各缩进半个环宽 —— round 线帽会从中线端点再
-       鼓出半个环宽，缩进之后鼓出来的正好顶到这一份该占的边界。
-       上一版没缩，于是每段都被撑长了一整个环宽：占比全失真，小段还被
-       邻段的圆头吃掉，整圈糊成一个颜色。缩进之后首尾严丝合缝、长度精确，
-       深浅也都露得出来。 */
-    arcs.push(ring("pieseg", Math.max(0.1, arc - PIE_TH), len + PIE_TH / 2,
-      alpha(i), i * 85));
+    /* 长的先画、压在底下；短的后画、压在最上面。
+       动画的延迟反过来给：最上面那条最短的先长出来，后面一条比一条长，
+       看着才是从 12 点顺时针一路铺开。 */
+    segs.push(ring("pieseg", Math.max(0.1, cum[i] * C), 0, alpha(i),
+      (rows.length - 1 - i) * 70));
     marks.push({ name, v, i, ang: off + span / 2 });
-    off += span; len += arc;
+    off += span;
   });
-  /* 倒着画：最大、最实的那块最后落笔、压在最上面 —— 就是稿子里
-     opacity:1 那一层的位置。顺着画的话，后面几块淡的会用自己的圆头
-     在它身上啃出豁口。 */
-  for (let i = arcs.length - 1; i >= 0; i--) segs.push(arcs[i]);
 
   /* 稿子 2304:15439 把引线和圆点都去掉了，标签直接浮在环外面，
      靠「离哪一块近」来认。所以摆放也跟着改：不再吸到左右两个固定的
