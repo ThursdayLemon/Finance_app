@@ -744,7 +744,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    收入那排贴底往上长，支出那排贴顶往下长，所以背景也要分别锚在底/顶，
    否则两排的点行对不齐。 */
 .dchart{--bw:50px;--bp:56px;--dot:2.5px;--grid:5px;position:relative}
-.dwin{overflow:hidden;
+.dwin{overflow:hidden;position:relative;
  /* 走到边缘的淡出去 —— 柱子和月份一起淡，刻度感就是从这儿来的 */
  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%);
  mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%)}
@@ -800,22 +800,21 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    浅描边 + 两层投影。--card-paper 在浅色下等于页面色，拿来当白底是白拿。
    稿子里那层投影 spread 给到 -18，比框还小，等于没有；这儿按能看见的来。 */
 .dax2 > span.on{color:var(--ink)}
-/* 稿子里这颗是裹着字的（35 宽，旁边的格子 29），不是铺满一格。
-   左右各收 8px、上下各探出 5px —— 换算过来就是那个比例。
-   底色是稿子量的 #eae9e7，比页面底（#f2f1ef）还深一点点 ——
-   所以「浮起来」全靠那层投影，不能再加描边，一圈白边会把它顶回平面。 */
-.dax2 > span.on::before{content:"";position:absolute;z-index:0;
- left:8px;right:8px;top:-5px;bottom:-5px;border-radius:15px;
- background:#eae9e7;
+/* 轴心那颗取景窗。关键是它不在 .dstrip 里 —— 挂在 .dwin 上，拖动时
+   一动不动，月份从它下面滑过去，就是刻度盘上那个固定的窗口。
+   之前是当作选中那一格的 ::before 画的，格子跟着手指走，它自然也跟着走，
+   松手才落回正中 —— 那就不叫轴心了。
+   底色是稿子量的 #eae9e7，比页面底（#f2f1ef）还深一点点，所以「浮起来」
+   全靠那层投影；加一圈白描边会把它顶回平面。 */
+.dhub{position:absolute;left:50%;width:38px;height:44px;margin-left:-19px;
+ border-radius:14px;background:#eae9e7;z-index:0;pointer-events:none;
  box-shadow:0 1px 2px rgba(65,65,64,.06),0 4px 12px -2px rgba(65,65,64,.14)}
-.dax2 > span.on > u{font-size:11px}
-.dax2 > span.on > b{font-size:18px}
 /* 深色下这颗不能是白的 —— 字是浅的，白底白字。换成比页面亮一档的纸色，
    「浮起来」这件事靠亮度差做，不靠白。 */
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dax2 > span.on::before{
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dhub{
   background:var(--card-paper);
   box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) } }
-:root[data-theme="dark"] .dax2 > span.on::before{
+:root[data-theme="dark"] .dhub{
   background:var(--card-paper);
   box-shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px -2px rgba(0,0,0,.45) }
 /* 数字贴着它那根柱子的末端，不是贴着整张图的上下边 */
@@ -879,7 +878,10 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .piesvg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;
  font-family:var(--font)}
 .plname{font-size:11px;fill:var(--ink)}
-.plval{font-size:10px;fill:var(--ink-muted);
+/* 稿子里这两行是同一个文本框：Onest Light 11/13，两行都是 --ink。
+   钱那行原来小一号、灰一档，是「引线版」留下的主次关系 —— 现在没引线了，
+   两行就是一块标签，不该再分主次。 */
+.plval{font-size:11px;fill:var(--ink);
  font-variant-numeric:lining-nums tabular-nums}
 .pienum{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
  text-align:center;pointer-events:none;line-height:1.2}
@@ -1622,7 +1624,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v141";
+const BUILD = "v142";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4577,6 +4579,11 @@ function dotChart(sel, opt) {
     vals.map((v, i) => col(v, i, up)).join("") + "</div>";
   return '<div class="dchart' + (o.mini ? " mini" : "") + '">' +
     '<div class="dwin">' +
+    /* 轴心摆在 .dstrip 前面：DOM 在前就画在下面，字压在它上头。
+       top 是上半块的高度（点阵 + 数字带）再往下 2px —— 月份那一行就从
+       这儿开始。 */
+    (o.ruler ? '<i class="dhub" style="top:' + (upRows * G + PAD + 2).toFixed(1) +
+      'px"></i>' : "") +
     '<div class="dstrip" style="transform:translateX(' +
       (-(k0 + 0.5) * pitch).toFixed(1) + 'px)">' +
     /* 多出来的 PAD 是数字那一条带，必须算在窗口里面 ——
@@ -6130,13 +6137,14 @@ function labeledDonut(rows, kind) {
     off += span;
   });
 
-  /* 每一块牵一根线出去，左右两栏各自纵向排开。先按线脚的高低排序，
-     再从上往下推开、从下往上收回来 —— 两头都不出框，中间互不重叠。
-     上一版是两列药丸、没有引线，哪块对哪个标签全靠药丸上那颗点认，
-     而且名字一长就被截成一个省略号。 */
-  /* JOIN 越大，折线的拐点越靠近圆环、留给文字的横向空间就越多。
-     上限是别压到环上：环的右沿在 cx + Ro = 225，所以 JOIN 最多 101。 */
-  const JOIN = 100, PAD = 16, GAP = 32;
+  /* 稿子 2304:15439 把引线和圆点都去掉了，标签直接浮在环外面，
+     靠「离哪一块近」来认。所以摆放也跟着改：不再吸到左右两个固定的
+     纵列上，而是按它自己那一块的高度，贴着环的外沿往外推。
+
+     纵向防重叠的那套还留着 —— 没有它，相邻两块的标签会直接叠在一起。
+     先按各自的理想高度排序，再从上往下推开、从下往上收回来，
+     两头都不出框，中间互不重叠。 */
+  const PAD = 16, GAP = 32;
   /* 哪一块落在哪半边，就牵到哪一栏 —— 线才走得有道理。
      不强行左右均分：那样版面是齐了，但有的线得绕到对面去。
      容量够用：foldSmall 之后最多 8 块，一侧 (300−32)/32+1 = 9 个位置。 */
@@ -6154,25 +6162,21 @@ function labeledDonut(rows, kind) {
       items[i].y = Math.min(items[i].y, floor); floor = items[i].y - GAP;
     }
     items.forEach((it) => {
-      const a = it.mk.ang;
-      const jx = right ? W - JOIN : JOIN;
-      const tx = right ? jx + 9 : jx - 9;
+      /* 贴着环放：在 it.y 这个高度上，环外沿的水平半宽是 √(R²−dy²)。
+         标签被推到环的上下两头时 dy 会超过 R，根号归零、标签就被吸到
+         正中间去了 —— 给一个下限兜住，上下两头的标签照样往外站。 */
+      const dy = it.y - cy, RO = Ro + 10;
+      const hx = Math.max(Math.sqrt(Math.max(0, RO * RO - dy * dy)), Ro * 0.55);
+      const tx = right ? Math.min(cx + hx + 8, W - 64) : Math.max(cx - hx - 8, 64);
       const room = right ? W - 6 - tx : tx - 6;
-      /* 末端收在圆点之前 5px：线走到点为止，不从点里穿出去 */
-      const stop = jx - (right ? 5 : -5);
-      const pts = [[cx + (Ro + 2) * Math.sin(a), cy - (Ro + 2) * Math.cos(a)],
-        [cx + (Ro + 16) * Math.sin(a), cy - (Ro + 16) * Math.cos(a)],
-        [stop, it.y]].map((q) => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" ");
-      out.push('<polyline points="' + pts + '" fill="none" stroke="var(--ink-faint)" ' +
-        'stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>' +
-        '<circle cx="' + jx + '" cy="' + it.y.toFixed(1) + '" r="3.2" fill="' + hue +
-        '" opacity="' + alpha(it.mk.i).toFixed(3) + '"/>' +
-        '<text class="plname" x="' + tx + '" y="' + (it.y - 1).toFixed(1) +
+      /* 稿子：第一行「类别 45%」，第二行只有钱。
+         原来是第一行类别、第二行「钱 · 45%」。 */
+      out.push('<text class="plname" x="' + tx.toFixed(1) + '" y="' +
+        (it.y - 1).toFixed(1) + '" text-anchor="' + (right ? "start" : "end") + '">' +
+        esc(fitText(it.mk.name + " " + pctLabel(it.mk.v, total), room, 11)) + "</text>" +
+        '<text class="plval" x="' + tx.toFixed(1) + '" y="' + (it.y + 12).toFixed(1) +
         '" text-anchor="' + (right ? "start" : "end") + '">' +
-        esc(fitText(it.mk.name, room, 11)) + "</text>" +
-        '<text class="plval" x="' + tx + '" y="' + (it.y + 12).toFixed(1) +
-        '" text-anchor="' + (right ? "start" : "end") + '">' +
-        esc(yuan(it.mk.v) + " \u00b7 " + pctLabel(it.mk.v, total)) + "</text>");
+        esc(yuan(it.mk.v)) + "</text>");
     });
   });
 
@@ -8105,8 +8109,13 @@ function anBend(strip, tx) {
     if (cols[per + i]) cols[per + i].style.transform = ct;
     const lb = lbls[i];
     if (lb) {
+      /* 轴心那颗窗口是钉死的，所以「中间那个大一档」也不能靠给某一格挂
+         class —— 那样格子还在中线附近晃的时候字就已经跳大了，和一个不动
+         的窗口摆在一起特别别扭。改成按离中线的距离连续放大：正中 1.22 倍
+         （9/15 放大过去正好是稿子的 11/18），一格开外基本就回到原样。 */
+      const bump = 1 + 0.22 * Math.exp(-(u * u) / (0.42 * AN_PITCH * AN_PITCH));
       lb.style.transform = "translateX(" + x + "px) scale(" +
-        Math.pow(Math.max(c, 0.001), 0.6).toFixed(3) + ")";
+        (Math.pow(Math.max(c, 0.001), 0.6) * bump).toFixed(3) + ")";
       lb.style.opacity = back ? "0" : "1";
     }
   }
