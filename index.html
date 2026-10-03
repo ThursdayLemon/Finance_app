@@ -701,6 +701,28 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .heroamt .eye{color:var(--ink-muted);cursor:pointer;padding:4px;display:flex}
 /* 星号挂在大写高度上，直接替数字会飘在顶上 —— 缩一档再压下来 */
 .mask{display:inline-block;font-size:.6em;letter-spacing:.12em;transform:translateY(-.06em)}
+/* 藏金额：一个字一个 <i>，里头两层 —— <b> 是字，<u> 是替它的那颗点。
+   藏的时候字模糊着淡出、点同时淡入，延迟按位次递增，看着就是从左往右
+   扫过去的。两层都留在版面里（字只是 opacity+blur，不是 display:none），
+   所以藏起来之后整串宽度不变，点正正落在原来每个数字的位置上。 */
+.hidable{display:inline-flex;align-items:baseline}
+.hidable > i{position:relative;display:inline-block;font-style:normal}
+.hidable > i > b{display:inline-block;font-weight:inherit;
+  transition:opacity .2s ease var(--d),filter .2s ease var(--d)}
+/* 竖直方向取行框的中线。写成 top:-.5em 是错的 —— 那是从 <i> 的顶边
+   再往上挪半个 em，点会跑到数字框外面去（踩过，整排点直接看不见）。 */
+.hidable > i > u{position:absolute;left:50%;top:48%;
+  width:.16em;height:.16em;margin:-.08em 0 0 -.08em;border-radius:50%;
+  background:currentColor;text-decoration:none;
+  opacity:0;transform:scale(.3);
+  transition:opacity .2s ease var(--d),transform .2s ease var(--d)}
+/* 逗号小数点那几颗更小更淡 —— 稿子里它们本来就比数字弱一档 */
+.hidable > i > u.sep{width:.08em;height:.08em;margin:-.04em 0 0 -.04em;opacity:0}
+.hidable.off > i > b{opacity:0;filter:blur(.12em)}
+.hidable.off > i > u{opacity:.55;transform:scale(1)}
+.hidable.off > i > u.sep{opacity:.3}
+@media (prefers-reduced-motion: reduce){
+  .hidable > i > b,.hidable > i > u{transition-duration:.01s;transition-delay:0s} }
 /* 稿子里 Body 的间距是拿空 frame 摆出来的：余额→两张卡 22，
    两张卡→账本 6 —— 跟两张卡之间那道缝一样宽。
    .body 自己有 12 的 gap，所以这两块各自补差值。 */
@@ -1267,6 +1289,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  display:flex;flex-direction:column;gap:12px}
 .listcard .sw:not(:last-child) .row{border-bottom:1px solid var(--line)}
 .listcard .sw:last-child .row{border-bottom:0}
+/* 清单里最后一项不画下边线 —— 线是用来分隔两项的，最后一项下面没有
+   下一项，那条线就是在和卡的边框较劲。.card 早有这条，.listcard 漏了。
+   后面跟着「+ 新建」那颗虚线按钮的，按钮不算一项，所以前一行也要摘掉。 */
+.listcard .row:last-child{border-bottom:0}
+/* 行外面常裹一层 .sw（左滑删除），所以 .row 的下一个兄弟是 .sw 不是 .dash，
+   两种写法都得有，光写 .row:has(+ .dash) 是打不中的。 */
+.listcard .row:has(+ .dash),
+.listcard .sw:has(+ .dash) .row{border-bottom:0}
 /* ---- 账本：按样机收进一张玻璃卡 ------------------------------------------
    卡头是「标题 · 放大镜 · 漏斗 · 饼图 · 全部」，下面按天分段。 */
 /* 三块之间统一 12：.body 的 gap 就是 12，所以这里不再往回收 6 */
@@ -1642,7 +1672,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v151";
+const BUILD = "v152";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1655,6 +1685,17 @@ const unit = () => Math.pow(10, ccy().dec);
 /* 稿子里小数一律降一号、压灰 —— 一列数字扫起来只看整数位。
    包一层 span，字号和颜色交给各处的 .dec 规则。 */
 const withDec = (str) => str.replace(/([.,]\d{2})$/, '<span class="dec">$1</span>');
+/* 把一串金额拆成一个字一个 <i>，供上面那套「淡出成点」的动效用。
+   末尾的小数点加两位照旧压灰（.dec），所以是按位次判，不走 withDec 的正则。 */
+function hidable(str, off) {
+  const chars = [...String(str)];
+  const m = String(str).match(/[.,]\d{2}$/);
+  const decFrom = m ? chars.length - 3 : chars.length;
+  return '<span class="hidable' + (off ? " off" : "") + '">' +
+    chars.map((ch, i) => '<i style="--d:' + (i * 22) + 'ms"' +
+      (i >= decFrom ? ' class="dec"' : "") + "><b>" + esc(ch) + "</b><u" +
+      (/[.,，。]/.test(ch) ? ' class="sep"' : "") + "></u></i>").join("") + "</span>";
+}
 /* 统计块那种一行放四个的地方，小数没意义还挤 —— 只给整数 */
 const moneyShort = (c) => { const u = ccy();
   return u.sym + Math.round(c / Math.pow(10, u.dec)).toLocaleString(u.loc); };
@@ -4684,10 +4725,8 @@ function monthView() {
       monthArrow("next", true) + "</div>" +
       '<div class="hlbl">' + t("mo.available") + "</div>" +
       '<div class="heroamt">' +
-      (ui.hideBal ? '<span class="big">' + ccy().sym +
-        '<span class="mask">******</span></span>'
-        : '<span class="big">' + withDec(avail < 0 ? neg(-avail) : yuan(avail)) +
-          "</span>") +
+      '<span class="big">' +
+      hidable(avail < 0 ? neg(-avail) : yuan(avail), ui.hideBal) + "</span>" +
       '<span class="eye" data-a="hideBal">' + ic(ui.hideBal ? "eyeOff" : "eye", 17) +
       "</span></div>" +
       "</div>" +
@@ -5017,24 +5056,34 @@ SCREENS.jars = () => {
           '<div class="dash" data-a="addJar" style="margin-top:12px">' + ic("plus", 16) +
           " " + t("va.addAccount") + "</div>" +
           (planJars.length
-            ? '<div class="lbl" style="margin-top:18px">' + t("va.planJars") + "</div>" +
-              '<div class="sub" style="margin-top:-8px">' + t("va.planJarsHint") + "</div>" +
+            /* 标题、说明和几条专项收进一张白卡 —— 原来是裸着排在页面上，
+               和上面的卡堆、下面的提示条没有边界。 */
+            ? '<div class="listcard" style="margin-top:18px">' +
+              '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
+              t("va.planJars") + "</div>" +
+              '<div class="sumamt">' +
+              yuan(planJars.reduce((sum, x) => sum + x.balance, 0)) + "</div></div>" +
+              '<div class="sub" style="font-size:11px;margin-top:-4px">' +
+              t("va.planJarsHint") + "</div>" +
               planJars.map((a) => '<div class="row" style="opacity:.75">' +
                 '<div style="flex:1"><div style="font-size:15px">' + esc(a.name) + "</div>" +
                 '<div class="sub" style="font-size:11px">' + t("va.planJarGrows") +
                 "</div></div>" +
                 '<div class="money" style="font-size:15px">' + yuan(a.balance) +
-                "</div></div>").join("")
+                "</div></div>").join("") + "</div>"
             : "") + vaultNotice()
         : '<div class="sub">' + t("va.savingsHint") + "</div>" +
           (S.goals.length ? S.goals.map(goalCard).join("")
             : '<div class="dash" style="min-height:80px;cursor:default;padding:0 24px;' +
               'text-align:center">' + t("va.savingsEmpty") + "</div>") +
+          /* 合计和「新建」收进同一张白卡，跟账单页那两张一个形状。
+             原来按钮孤零零浮在外面，合计又单独占一张卡。 */
+          '<div class="listcard">' +
+          '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
+          t("va.sumGoal") + "</div>" +
+          '<div class="sumamt">' + yuan(goalCommit(S)) + "</div></div>" +
           '<div class="dash" data-a="addGoal">' + ic("plus", 16) + " " +
-          t("va.addGoal") + "</div>" +
-          '<div class="card"><div style="display:flex;align-items:baseline;gap:9px">' +
-          '<div class="lbl" style="flex:1">' + t("va.sumGoal") + "</div>" +
-          '<div class="num money">' + yuan(goalCommit(S)) + "</div></div></div>" +
+          t("va.addGoal") + "</div></div>" +
           vaultNotice()) };
 };
 
@@ -5118,15 +5167,17 @@ SCREENS.route = () => {
             '<div class="dash" data-a="addFixedOut">' +
             ic("plus", 16) + " " + t("bi.addOut") + "</div></div>" +
           '<div class="sub" style="font-size:11px">' + t("bi.noteOut") + "</div>"
+        /* 和上面 fixed costs 同一个形状：合计在卡头，行和「录入还贷」都在
+           卡里。原来 .listcard 在卡头之后就关掉了，行和按钮全落在白卡外面。 */
         : '<div class="listcard">' +
             '<div class="lchead"><div class="sub" style="flex:1;font-size:12px">' +
             t("bi.sumDebt") + "</div>" +
-            '<div class="sumamt">' + yuan(debtCommit(S)) + "</div></div></div>" +
-          (S.debts.length ? S.debts.map(debtRow).join("")
-            : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
-              'text-align:center">' + t("bi.emptyDebt") + "</div>") +
-          '<div class="dash" data-a="addDebt">' + ic("plus", 16) + " " +
-          t("bi.addDebt") + "</div>" +
+            '<div class="sumamt">' + yuan(debtCommit(S)) + "</div></div>" +
+            (S.debts.length ? S.debts.map(debtRow).join("")
+              : '<div class="dash" style="min-height:90px;cursor:default;padding:0 24px;' +
+                'text-align:center;margin:10px 0 0">' + t("bi.emptyDebt") + "</div>") +
+            '<div class="dash" data-a="addDebt">' + ic("plus", 16) + " " +
+            t("bi.addDebt") + "</div></div>" +
           '<div class="sub" style="font-size:11px">' + t("bi.noteDebt") + "</div>") };
 };
 
@@ -6648,7 +6699,17 @@ const ACT = {
   /* 开的那下顺手响一声，让人听见自己开了什么 */
   sound: () => { S.sound = S.sound === false; render(); if (S.sound !== false) clack(); },
   skin: (k) => { S.skin = k; applySkin(); render(); },
-  hideBal: () => { ui.hideBal = !ui.hideBal; render(); },
+  /* 不能走 render()：整屏重画等于把元素换掉，CSS 过渡根本没机会跑。
+     就地翻个 class，让那串字自己淡过去；眼睛图标单独换一下。 */
+  hideBal: () => {
+    ui.hideBal = !ui.hideBal;
+    const el = app.querySelector(".hidable");
+    const eye = app.querySelector('[data-a="hideBal"]');
+    if (!el || !eye) { render(); return; }
+    el.classList.toggle("off", ui.hideBal);
+    eye.innerHTML = ic(ui.hideBal ? "eyeOff" : "eye", 17);
+    save();
+  },
   /* 账本卡头的三个键。筛选菜单开着的时候再点一次就收起来。 */
   txSearch: () => { ui.txSearch = !ui.txSearch; if (!ui.txSearch) ui.txq = "";
     ui.txFilter = false; render();
