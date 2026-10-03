@@ -51,6 +51,7 @@
   --ink-muted:#8e8e8c;      /* 说明小字 */
   --ink-faint:#b9b9b6;      /* 占位、禁用 */
   --page:#f2f1ef;           /* 页面底（上面还铺一层珠光） */
+  --card-paper:var(--page);  /* 金库里那张「纸」卡的底色 —— 深色下要比页面亮一档 */
   /* 真机上 iOS 独立模式会拿 body 的背景色去涂状态栏那条，所以 body 不能用
      --page —— 珠光那层压上去之后顶部量出来是 #e0e0dc，差 18/255，真机上就是
      顶上一块比背景浅的色块，下边缘一条直线。--ground 就是「真机看到的底色」。 */
@@ -180,7 +181,10 @@
   --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
     --page:#1a1a19; --ground:var(--page); --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
     --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
-    --accent:#ececeb; --on-accent:#1a1a19;
+    /* 实心件（主按钮、分段选中、圆形按钮…）走深灰 + 浅字。
+     原来是接近白的 #ececeb，在深色页面上一块块白斑太跳。 */
+  --accent:#3a3a38; --on-accent:#ececeb;
+  --card-paper:#2e2e2c;
     --nav:rgba(40,40,39,.86); --on-nav:#ececeb;
     --mark:rgba(255,255,255,.1); --accent2:rgba(255,255,255,.1); --on-tint:#ececeb;
     --icon-bg:rgba(255,255,255,.1);
@@ -237,7 +241,10 @@
   --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
   --page:#1a1a19; --ground:var(--page); --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
   --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
-  --accent:#ececeb; --on-accent:#1a1a19;
+  /* 实心件（主按钮、分段选中、圆形按钮…）走深灰 + 浅字。
+     原来是接近白的 #ececeb，在深色页面上一块块白斑太跳。 */
+  --accent:#3a3a38; --on-accent:#ececeb;
+  --card-paper:#2e2e2c;
   --nav:rgba(40,40,39,.86); --on-nav:#ececeb;
   --mark:rgba(255,255,255,.1); --accent2:rgba(255,255,255,.1); --on-tint:#ececeb;
   --icon-bg:rgba(255,255,255,.1);
@@ -549,6 +556,21 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .setpage > .lbl{font-size:14px;line-height:18px;color:var(--ink)}
 /* 紧跟在标题后面的说明，往上收一点，别被 14 的栏目间距推开 */
 .setpage > .lbl + .sub{margin-top:-10px}
+/* 底栏在深色模式下保持浅色：它的底是写死的白渐变，本来就没变深，
+   可里面的字和图标跟着 --ink 变浅了 —— 浅底浅字。
+   把这一小块的 token 就地换回浅色那套，整个子树一次翻回来，
+   比逐个元素去改色靠谱得多。 */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dock {
+  --ink:#414140; --ink-muted:#8e8e8c; --ink-faint:#b9b9b6;
+  --accent:#414140; --on-accent:#ffffff;
+  --icon-edge:#ffffff; --edge:rgba(255,255,255,.95);
+  --surface:rgba(255,255,255,.6); --icon-bg:rgba(255,255,255,.4) } }
+:root[data-theme="dark"] .dock {
+  --ink:#414140; --ink-muted:#8e8e8c; --ink-faint:#b9b9b6;
+  --accent:#414140; --on-accent:#ffffff;
+  --icon-edge:#ffffff; --edge:rgba(255,255,255,.95);
+  --surface:rgba(255,255,255,.6); --icon-bg:rgba(255,255,255,.4) }
+
 /* ---- 排版 ------------------------------------------------------------------
    字号/行高/字距抄自 Figma（Pearl · Home / Pearl · Analytics）。
    三套字各管一摊：
@@ -906,7 +928,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  font-family:var(--font-mono)}
 :root[data-skin="briefly"] .mbtn{border-color:var(--ink);background:var(--surface);
  border-radius:var(--r-sm)}
-.chip.on{background:var(--ink);border-color:var(--ink);color:var(--on-accent);
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
  font-weight:var(--w-mid);box-shadow:var(--shadow-pill)}
 .chip.flat{cursor:default}
 /* 自定义分类就是普通标签，只是右边多一个 ×；「新建」是同一个壳子，描边改虚线 */
@@ -1136,7 +1158,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .grab{width:38px;height:4px;border-radius:var(--r-pill);background:var(--ink-faint);align-self:center;
  margin-bottom:5px;flex-shrink:0}
 .toast.high{bottom:auto;top:52px}
-.toast{position:absolute;left:16px;right:16px;bottom:78px;background:var(--ink);
+.toast{position:absolute;left:16px;right:16px;bottom:78px;background:var(--accent);
  color:var(--on-accent);border-radius:var(--r-sm);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:14px;
  animation:up .2s ease;z-index:5}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -1542,7 +1564,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v131";
+const BUILD = "v132";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -1640,7 +1662,8 @@ zh: {
   "mo.stillToSave": (v) => "本月还需存 " + v.amt + "（还没确认的不会先扣）",
   "mo.ledger": "本月账本", "mo.rows": (v) => v.n + " 条",
   "app.wordmark": "MARGIN",
-  "an.title": "分析", "an.income": "本月收入", "an.expenses": "本月支出",
+  "an.title": "分析", "an.today": "回到本月",
+  "an.income": "本月收入", "an.expenses": "本月支出",
   "mo.available": "可用余额", "mo.totalIn": "本月收入", "mo.thisMonth": "本月收入",
   "tx.search": "搜账本", "tx.filter": "筛选",
   "tile.income": "收入", "tile.savings": "储蓄", "tile.bills": "账单", "tile.debt": "还贷",
@@ -2097,7 +2120,8 @@ en: {
     " (nothing is taken until you confirm it)",
   "mo.ledger": "Transactions", "mo.rows": (v) => plural(v.n, "entry", "entries"),
   "app.wordmark": "MARGIN",
-  "an.title": "Analytics", "an.income": "My income", "an.expenses": "My expenses",
+  "an.title": "Analytics", "an.today": "This month",
+  "an.income": "My income", "an.expenses": "My expenses",
   "tx.search": "Search transactions", "tx.filter": "Filter",
   "tile.income": "Income", "tile.savings": "Savings",
   "tile.bills": "Bills", "tile.debt": "Debt",
@@ -2674,6 +2698,10 @@ const monthOf = (iso) => iso.slice(0, 7);
 const thisMonth = () => monthOf(today());
 /* 正在看的月份（可以翻） */
 const viewMonth = () => ui.month || thisMonth();
+/* 分析页单独记一个月份。和首页共用一个的话，在分析页翻到七月、
+   退回首页，首页也跟着停在七月了 —— 首页该一直是「现在」。 */
+const anViewMonth = () => ui.anMonth || thisMonth();
+const anIsThisMonth = () => anViewMonth() === thisMonth();
 /* 年不是全局开关，是 Analytics 这一页的模式 —— 所以要连当前是哪一页一起判。
    只看 ui.anScope 的话，在分析页拨成年、退回首页，首页的翻页箭头会变成
    ±12 个月，而用户根本不知道是哪里改的。模式跟着页面走，就没有这个坑。 */
@@ -3620,11 +3648,12 @@ const ic = (n, s = 20, c) => {
    尺寸和内边距已经分叉过一次 —— 收成一个，谁都不许再本地定义。
    svg 是行内元素、贴基线排，不套 display:flex 的话会比中间那行字高一两像素。 */
 const monthArrow = (dir, on) => '<div class="tapout" ' +
-  (on ? 'data-a="month:' + dir + '"' : "") +
+  (on ? 'data-a="' + (dir === "anprev" || dir === "annext"
+    ? "anStep:" + (dir === "anprev" ? "prev" : "next") : "month:" + dir) + '"' : "") +
   ' style="padding:0;display:flex;align-items:center;justify-content:center;cursor:' +
   (on ? "pointer" : "default") + ";color:" +
   (on ? "var(--ink)" : "var(--ink-faint)") + '">' +
-  ic(dir === "prev" ? "back" : "chev", 16) + "</div>";
+  ic(dir === "prev" || dir === "anprev" ? "back" : "chev", 16) + "</div>";
 
 
 /* 判定色从 CSS token 里取 —— 换肤时 CSS 和 JS 不能各说各话 */
@@ -4094,7 +4123,7 @@ const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") +
    配死一个固定色的话，深色模式下就成了浅底浅字 / 深底深字。 */
 const TINTS = [
   ["ink",   "var(--accent)", "var(--on-accent)"],
-  ["paper", "var(--page)",   "var(--ink)"],
+  ["paper", "var(--card-paper)", "var(--ink)"],
   ["warn",  "var(--warn)",   "#ececea"],
   ["teal",  "#41b4b4",       "#ececea"],
   ["leaf",  "var(--leaf)",   "#ececea"],
@@ -4362,7 +4391,7 @@ function setupCard() {
 SCREENS.analytics = () => ui.anScope === "year" ? analyticsYear() : analyticsMonth();
 
 function analyticsMonth() {
-  const m = viewMonth(), cur = isThisMonth();
+  const m = anViewMonth(), cur = anIsThisMonth();
   const inc = incomeIn(S, m), out = outgoIn(S, m), saved = savedIn(m);
   const net = inc - out - saved;
   const need = cur ? stillToSave(S) : 0;
@@ -4371,9 +4400,12 @@ function analyticsMonth() {
     body:
       '<div class="hero" style="padding-top:2px;padding-bottom:10px">' +
       /* 月视图也要左右箭头：没有的话，切到年视图时药丸的宽高会跳一下 */
-      '<div class="mochip">' + monthArrow("prev", true) +
-      "<span>" + monthStack(m) + "</span>" +
-      monthArrow("next", !isThisMonth()) + "</div></div>" +
+      '<div class="mochip">' + monthArrow("anprev", true) +
+      '<span data-a="anPick">' + monthStack(m) + "</span>" +
+      monthArrow("annext", true) + "</div>" +
+      /* 翻走之后给一条回「现在」的路，不用一格一格翻回来 */
+      (cur ? "" : '<div class="chip" data-a="anToday" style="margin-left:8px">' +
+        t("an.today") + "</div>") + "</div>" +
 
       /* 稿子 2168:4252：收入 · 点阵刻度 · 支出，整块收进一张卡 */
       /* 上下那两个大数字也是拖动区的一部分 —— 手指落在数字上一样能推刻度 */
@@ -6147,7 +6179,7 @@ SHEETS.editDraft = () => grab + head(t("tx.editDraft")) + txForm() + errline() +
 
 SHEETS.monthPick = () => {
   const y = ui.f.y || +viewMonth().slice(0, 4);
-  const cur = viewMonth();
+  const cur = ui.f.an ? anViewMonth() : viewMonth();
   return grab + head(t("mo.pick")) +
     '<div class="yrow">' +
     '<div class="tapout" data-a="pickYear:' + (y - 1) + '" style="cursor:pointer">' +
@@ -6505,6 +6537,8 @@ const ACT = {
     /* 首页那张小卡的位置和大小，待会儿让分析页的大卡从这儿长出来 */
     const el = app.querySelector('.gcard[data-a="analytics"]');
     ui.grow = el ? el.getBoundingClientRect() : null;
+    /* 进来时跟首页当下看的那个月对齐，之后两边各走各的 */
+    ui.anMonth = ui.month;
     push("analytics"); },
   /* 换语言时顺手把币种也换成常见的那个，省得英文界面配 ￥ */
   lang: (k) => { S.lang = k;
@@ -6621,13 +6655,17 @@ const ACT = {
   toggleCalc: () => { ui.showCalc = !ui.showCalc; render(); },
   /* 年度清单里点某个月 —— 回首页看那个月 */
   toMonth: (mm) => { ui.month = mm; go("dashboard"); },
-  /* 分析页点柱子：只换月份，别跳回首页 */
-  anMonth: (mm) => { if (mm === viewMonth()) return; ui.month = mm; render(); },
+  /* 分析页点柱子：只换分析页自己的月份，别跳回首页、也别动首页的月份 */
+  anMonth: (mm) => { if (mm === anViewMonth()) return; ui.anMonth = mm; render(); },
+  anStep: (dir) => { ui.anMonth = shiftMonth(anViewMonth(), dir === "prev" ? -1 : 1);
+    render(); },
+  anToday: () => { ui.anMonth = null; render(); },
+  anPick: () => sheet("monthPick", { y: +anViewMonth().slice(0, 4), an: true }),
   toYear: (yy) => { const mm = yy + viewMonth().slice(4);
     if (mm === viewMonth()) return; ui.month = mm; render(); },
   monthPick: () => sheet("monthPick", { y: +viewMonth().slice(0, 4) }),
   pickYear: (y) => { ui.f.y = +y; render(); },
-  pickMonth: (mm) => { ui.month = mm; close(); },
+  pickMonth: (mm) => { if (ui.f.an) ui.anMonth = mm; else ui.month = mm; close(); },
   wizAdd: () => {
     if ((ui.wizard || 0) === 1) {
       const name = (ui.f.name || "").trim(), amount = num(ui.f.amount);
@@ -7576,6 +7614,8 @@ function haptics() {
    铺上去只会打架。铺不到的地方在 iOS 上就是没有触感，这是平台的限制。 */
 const HAPTIC_SEL = ".mbtn,.navb,.qi,.rnd,.chip[data-a],.seg > span,.toggle," +
   ".adot,.mcell,.gopro,.wishpill,.dash,.avatar,.iconbtn,.eye,.jotmini,.asmini," +
+  /* 月份胶囊里的左右箭头和中间那块 */
+  ".mochip [data-a]," +
   /* 底栏：中间那颗点阵、换出来的「说一句 / 记一笔」，以及悬浮的快记 + */
   ".gridb,.act,.qlog";
 function paintHaptics() {
@@ -7921,7 +7961,7 @@ app.addEventListener("pointerdown", (e) => {
   if (!strip) { anDrag = null; return; }
   strip.style.transition = "none";
   anDrag = { x0: e.clientX, y0: e.clientY, steps: 0, lock: null,
-    base: viewMonth(), strip,
+    base: anViewMonth(), strip,
     x: parseFloat((strip.style.transform.match(/-?[\d.]+/) || [0])[0]) };
 });
 app.addEventListener("pointermove", (e) => {
@@ -7957,12 +7997,48 @@ const endAnDrag = () => {
   const mm = shiftMonth(d.base, d.steps);
   d.strip.style.transition = "transform .18s cubic-bezier(.22,1,.3,1)";
   d.strip.style.transform = "translateX(" + (d.x - d.steps * AN_STEP).toFixed(1) + "px)";
-  if (mm === viewMonth()) return;
+  if (mm === anViewMonth()) return;
   /* 等吸附动画走完再重绘，否则刚滑到位就被整屏重画打断 */
-  setTimeout(() => { ui.month = mm; render(); }, 180);
+  setTimeout(() => { ui.anMonth = mm; render(); }, 180);
 };
 app.addEventListener("pointerup", endAnDrag);
 app.addEventListener("pointercancel", endAnDrag);
+
+/* 首页左右滑 = 翻月份。横向手势在这个 app 里有好几个主人：
+   侧滑删除行、分析页的刻度、金库的卡堆 —— 从那几处起手的一概不接。 */
+let pageSwipe = null;
+const SWIPE_MIN = 60;
+app.addEventListener("pointerdown", (e) => {
+  pageSwipe = null;
+  if (ui.sheet || screen() !== "dashboard") return;
+  const t = e.target;
+  if (!t.closest || !t.closest(".body")) return;
+  if (t.closest(".sw") || t.closest("[data-ruler]") || t.closest(".cstack") ||
+      t.closest("input,textarea,select")) return;
+  pageSwipe = { x0: e.clientX, y0: e.clientY, lock: null };
+});
+app.addEventListener("pointermove", (e) => {
+  if (!pageSwipe) return;
+  const dx = e.clientX - pageSwipe.x0, dy = e.clientY - pageSwipe.y0;
+  if (pageSwipe.lock) return;
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+  /* 竖着一点的都让给滚动 —— 1.4 倍是为了别把斜着滑的也抢过来 */
+  if (Math.abs(dx) > Math.abs(dy) * 1.4) pageSwipe.lock = "x";
+  else pageSwipe = null;
+});
+const endPageSwipe = (e) => {
+  const g = pageSwipe;
+  pageSwipe = null;
+  if (!g || g.lock !== "x") return;
+  const dx = e.clientX - g.x0;
+  if (Math.abs(dx) < SWIPE_MIN) return;
+  swallow();                 /* 别让松手那下顺带点中滑过的东西 */
+  ui.month = shiftMonth(viewMonth(), dx < 0 ? 1 : -1);
+  buzz("light");
+  render();
+};
+app.addEventListener("pointerup", endPageSwipe);
+app.addEventListener("pointercancel", () => { pageSwipe = null; });
 
 const endSwipe = () => {
   if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
