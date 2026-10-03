@@ -1642,7 +1642,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v149";
+const BUILD = "v150";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -7838,6 +7838,9 @@ function envAt(ac, t0, peak, atk, dec) {
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + atk + dec);
   return g;
 }
+/* 这一声整体的音量系数。SFX 里那几支都是同步搭完的（没有 await），
+   所以在 sfx() 里前后夹一下是安全的，不会有两声交叉改到对方。 */
+let sfxGain = 1;
 function grain(ac, t0, o) {
   const src = o.freq && o.tone ? ac.createOscillator() : noiseAt(ac);
   if (o.tone) { src.type = "sine"; src.frequency.value = o.freq; }
@@ -7847,7 +7850,7 @@ function grain(ac, t0, o) {
     f.type = o.filter; f.frequency.value = o.freq; f.Q.value = o.q || 1;
     src.connect(f); node = f;
   }
-  const g = envAt(ac, t0, o.peak, o.atk || 0.001, o.dec);
+  const g = envAt(ac, t0, o.peak * sfxGain, o.atk || 0.001, o.dec);
   node.connect(g); g.connect(sfxBus(ac));
   src.start(t0); src.stop(t0 + (o.atk || 0.001) + o.dec + 0.02);
 }
@@ -7894,6 +7897,23 @@ const SFX = {
   },
   /* 金属：四个不成谐波关系的泛音（谐波会听成乐音，不像硬币）＋
      一记高频噪声当撞击的那一下，再在 68ms 后补一记轻的。 */
+  /* 一张卡落到桌面上（参考音 freesound 447013）。扒出来的形状很特别：
+       · 先是一记低频闷响 —— 67Hz 的谐波列（67/133/200/267/400/467），
+         那是桌面被拍到的共振，不是卡本身。
+       · 32ms 之后才是主撞击，接着还有两下很近的颤动（卡在回弹）。
+       · 纸的质感在 2700Hz 附近的一层窄带噪声里。
+       · 70ms 就收干净了，比硬币短得多。 */
+  card: (ac, t) => {
+    const hit = (dt, a) => {
+      grain(ac, t + dt, { tone: true, freq: 134, peak: a * 0.21, atk: 0.0008, dec: 0.035 });
+      grain(ac, t + dt, { tone: true, freq: 201, peak: a * 0.12, atk: 0.0008, dec: 0.024 });
+      grain(ac, t + dt, { filter: "bandpass", freq: 2700, q: 1.4,
+        peak: a * 0.42, atk: 0.0004, dec: 0.009 });
+      grain(ac, t + dt, { filter: "highpass", freq: 4000, q: 0.7,
+        peak: a * 0.11, atk: 0.0003, dec: 0.004 });
+    };
+    hit(0, 0.74); hit(0.032, 1); hit(0.038, 0.45);
+  },
   /* 一枚硬币掉在硬面上。参考音（freesound 384921）扒出来是这样的：
        · 能量只在 5520 和 9430 两支上，3kHz 以下完全是空的 ——
          上一版我用的是 2410/3730，整整低了一个八度多，所以像钟不像钱。
@@ -7918,12 +7938,14 @@ const SFX = {
     });
   },
 };
-function sfx(name) {
+function sfx(name, vol) {
   const ac = wakeAudio();
   if (!ac || ac.state !== "running") return;
   const make = SFX[name];
   if (!make) return;
+  sfxGain = vol == null ? 1 : vol;
   try { make(ac, ac.currentTime); } catch (err) {}
+  sfxGain = 1;
 }
 /* 老名字，刻度那边在用 */
 const clack = () => sfx("detent");
@@ -8116,6 +8138,7 @@ const endCardDrag = () => {
     /* 过线：把卡此刻的位置交给下一屏，让列表里的那张从这儿飞回原位 */
     ui.flipBack = d.card.getBoundingClientRect();
     swallow();
+    sfx("card");               /* 把卡放回去的那一下 */
     pop();
     return;
   }
@@ -8739,6 +8762,11 @@ app.addEventListener("change", (e) => {
 app.addEventListener("input", (e) => {
   const f = e.target.dataset.f;
   if (!f) return;
+  /* 输数额时每敲一下给一声，和点按是同一个 tap，轻一半。
+     只给钱的那几个框：备注、名字那种是连续打字，每个字都响就吵了。
+     搜索框也不给（f === "txq" 下面那条分支）—— 那是在找东西不是在记账。 */
+  if (f !== "txq" && (e.target.classList.contains("money") || f === "qprice"))
+    sfx("tap", 0.5);
   const v = e.target.value;
   if (f === "txq") {
     ui.txq = v; paintTxList();
