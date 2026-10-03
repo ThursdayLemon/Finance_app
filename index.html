@@ -1636,7 +1636,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v145";
+const BUILD = "v146";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -8205,12 +8205,18 @@ app.addEventListener("pointermove", (e) => {
   const dx = e.clientX - anDrag.x0, dy = e.clientY - anDrag.y0;
   anDrag.moved = Math.max(anDrag.moved, Math.abs(dx), Math.abs(dy));
   if (!anDrag.lock) {
-    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-    /* 判横向要「明显比纵向多」才算。原来是 |dx| > |dy| 一刀切，
-       45° 附近等于掷硬币 —— 想往上滚页面、手指顺带带了点横向，
-       就被判成在拖刻度。纵向这条路属于页面滚动，不跟它抢。 */
-    anDrag.lock = (Math.abs(dx) >= 10 && Math.abs(dx) > Math.abs(dy) * 1.5)
-      ? "x" : "y";
+    const ax = Math.abs(dx), ay = Math.abs(dy);
+    /* 两个方向各有自己的门槛，谁先过谁赢；都没过就再等一帧。
+       原来是「一越过 8px 就当场比大小、比完锁死」—— 那一刻两个数都还
+       很小，比值基本是噪声，手指稍微带点弧度就判错，而且一锁就没救了。
+       （中间那版要求横向是纵向的 1.5 倍，副作用是横着推推不动。）
+
+       横向门槛比纵向低（10 对 14）：纵向本来就归浏览器滚页面，
+       判晚一两帧没代价；横向判晚了，手感就是「推不动」。
+       打平算纵向 —— 拿不准的时候让给滚动。 */
+    if (ax >= 10 && ax > ay) anDrag.lock = "x";
+    else if (ay >= 14) anDrag.lock = "y";
+    else return;
   }
   if (anDrag.lock !== "x") return;
   /* 内容跟手 */
