@@ -468,7 +468,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .dockside.swapping{opacity:0;transform:scale(.97)}
 .dockside > *{flex:1;min-width:0}
 /* Log 那一态中间那颗是 60% 白 + 深色点阵（稿子 2219:7974）*/
-.gridb.open{background:rgba(255,255,255,.6);color:var(--ink)}
+.gridb.open{background:var(--surface);color:var(--ink)}
 /* 展开时，两颗药丸里各坐两个分区。按样机：药丸和收起时的 .act 同底，
    药丸里是 44 的圆形热区，当前分区实色、其余压到 50%。 */
 .navpill{position:relative;flex:1;min-width:0;height:58px;border-radius:var(--r-pill);
@@ -822,7 +822,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;flex:1;
  align-content:space-between}
 /* 60% 白，不描边 —— 描边在玻璃卡上会把圆切出一道硬线 */
-.quick .circ{width:36px;height:36px;background:rgba(255,255,255,.6);border:0}
+.quick .circ{width:36px;height:36px;background:var(--surface);border:0}
 .qi{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
 /* 小块：数字 12.5/16，标签 Onest 10/13 */
 .tileval{font-size:12.5px;font-weight:var(--w-body);line-height:16px;
@@ -900,7 +900,7 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
  border-bottom:1px solid var(--line)}
 .card .row:last-child{border-bottom:0}
 .chip{border:1px solid var(--edge);border-radius:var(--r-pill);padding:6px 13px;
- font-size:14px;line-height:18px;background:rgba(255,255,255,.6);color:var(--ink);
+ font-size:14px;line-height:18px;background:var(--surface);color:var(--ink);
  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
 :root[data-skin="briefly"] .chip{border-color:var(--ink);background:transparent;
  font-family:var(--font-mono)}
@@ -1177,7 +1177,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
  align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;cursor:pointer;
  border:1px solid var(--icon-edge)}
 /* 账本卡头那几颗跟着承诺卡走：60% 白，不描边 */
-.txcard .thead .rnd{background:rgba(255,255,255,.6);border:0}
+.txcard .thead .rnd{background:var(--surface);border:0}
 .rnd.on,.txcard .thead .rnd.on{background:var(--accent);color:var(--on-accent);border:0}
 /* 漏斗菜单挂在按钮下面，不占默认状态的地方 */
 .fmenu{position:absolute;right:16px;top:52px;z-index:5;background:var(--field);
@@ -1542,7 +1542,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v130";
+const BUILD = "v131";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -4090,9 +4090,11 @@ const swipe = (inner, delAct, sort) => '<div class="sw' + (sort ? " srt" : "") +
    存进账户的是 key 不是色值 —— 换皮肤时卡跟着皮肤走，不会卡死一个死色。 */
 /* 稿子 2282:1587 的八张。一半是现成的 token（墨/纸/橙/绿），
    青蓝黄红是新加的。文字色只有两档：深底 --line，浅底（纸、黄）--ink。 */
+/* 字色和底色必须一起翻：前两个的底色是会跟着主题走的 token，
+   配死一个固定色的话，深色模式下就成了浅底浅字 / 深底深字。 */
 const TINTS = [
-  ["ink",   "var(--accent)", "#ececea"],
-  ["paper", "var(--page)",   "#414140"],
+  ["ink",   "var(--accent)", "var(--on-accent)"],
+  ["paper", "var(--page)",   "var(--ink)"],
   ["warn",  "var(--warn)",   "#ececea"],
   ["teal",  "#41b4b4",       "#ececea"],
   ["leaf",  "var(--leaf)",   "#ececea"],
