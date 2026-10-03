@@ -1636,7 +1636,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v147";
+const BUILD = "v148";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2140,7 +2140,7 @@ zh: {
   "set.skinHint": "两套完整的视觉。换风格不动数据，随时切回来。",
   "set.theme": "外观", "theme.auto": "跟随系统", "theme.light": "浅色", "theme.dark": "深色",
   "set.haptics": "触感反馈",
-  "set.sound": "刻度音效", "set.soundSub": "拖动分析页的刻度时，过一格响一声",
+  "set.sound": "音效", "set.soundSub": "点按、记一笔、翻刻度时的轻声反馈",
   "set.hapticsSub": "点按时轻轻震一下。iPhone 上装成主屏 App 时可能没有 —— 系统没给网页这个口子。",
   "set.currency": "货币",
   "set.language": "语言",
@@ -2645,7 +2645,7 @@ en: {
   "set.skin": "Style", "skin.pearl": "Pearl", "skin.briefly": "Cream paper",
   "set.skinHint": "Two complete looks. Switching changes nothing but the surface.",
   "set.haptics": "Haptics",
-  "set.sound": "Ruler clicks", "set.soundSub": "A click each time the ruler steps a month",
+  "set.sound": "Sound", "set.soundSub": "Soft clicks on taps, logging and the ruler",
   "set.hapticsSub": "A light tap when you press things. May not fire on iPhone \u2014 the OS doesn\u2019t expose it to web apps.",
   "set.theme": "Appearance", "theme.auto": "System", "theme.light": "Light",
   "theme.dark": "Dark",
@@ -7757,16 +7757,23 @@ function haptics() {
 
    只铺「按一下就完事」的控件：侧滑行、输入框、下拉这些手势和焦点各有归属，
    铺上去只会打架。铺不到的地方在 iOS 上就是没有触感，这是平台的限制。 */
-/* 刻度过一格的那声「嗒」。
-   iOS 的网页拿不到真触感（见 paintHaptics 上面那段），但声音拿得到 ——
-   拖动中唯一能给的反馈就是它，所以这一声挺要紧。
+/* ---- 音效 ---------------------------------------------------------------
+   iOS 的网页拿不到真触感（见 paintHaptics 上面那段），声音是这边唯一
+   给得出的即时反馈，所以这几声挺要紧。
 
-   合成的做法：一小段白噪声过带通，起音 1ms、22ms 衰干净。纯正弦听着像
-   电子音，噪声才有机械刻度盘那种「咔」的质感。噪声缓冲只做一次，之后
-   每一声都是新的 source 节点 —— BufferSource 是一次性的，不能重播。 */
+   全部现场合成，没有外部音频文件：这个 app 是单文件部署的，塞一段
+   base64 的 wav 进来动辄几十 KB；而这几个音的形状简单到合成比采样更
+   好使 —— 音量、音高、长短都能按场合调，还不用等加载。
+
+   tap 和 rustle 是照着参考录屏量出来的（48k 单声道，逐个起音做了频谱）：
+     tap    1ms 的脉冲（衰到 2% 只要 1.1ms），能量全在 3k–20k、峰在
+            9–13k，1k 以下是空的 —— 所以是过了带通的噪声，不是正弦。
+     rustle 1240Hz 上的共振噪声，Q 大约 6–10，衰减 50–120ms。录屏里是
+            每 61ms 一粒、一粒比一粒轻，「沙沙」就是这串颗粒的质感，
+            单独响一声是听不出来的，所以一次给三粒。
+   coin 没有参考，按金属的路子搭：几个不成谐波关系的泛音 + 一点噪声，
+   再补一记更轻的，像两枚碰了一下。 */
 let AC = null, AC_NOISE = null;
-/* 名字别叫 tick —— playCount 里的那个 rAF 步进器就叫 tick，
-   在那个作用域里会把这个函数整个遮掉。 */
 function wakeAudio() {
   if (S.sound === false) return null;
   try {
@@ -7777,27 +7784,114 @@ function wakeAudio() {
     return AC;
   } catch (err) { return null; }
 }
-function clack(vol) {
+/* 噪声缓冲只做一次。BufferSource 是一次性的，每响一声都得新建一个。
+   playbackRate 每次随机，不然连着响几声会听出是同一段循环。 */
+function noiseAt(ac) {
+  if (!AC_NOISE) {
+    AC_NOISE = ac.createBuffer(1, Math.ceil(ac.sampleRate * 0.4), ac.sampleRate);
+    const d = AC_NOISE.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const s2 = ac.createBufferSource();
+  s2.buffer = AC_NOISE; s2.loop = true;
+  s2.playbackRate.value = 0.7 + Math.random() * 0.6;
+  return s2;
+}
+/* 所有音都先汇到这条总线，末端挂一个 tanh 软限幅。
+   噪声那几支的峰值是随机的 —— 离线渲一百次，偶尔会撞出比常态高好几倍
+   的一下。与其逐个去压增益（压狠了平时又太轻），不如在出口兜住：
+   tanh 对小信号几乎是直通（tanh(.15)=.149），大信号平滑地压向 ±1，
+   不会像硬削那样产生刺耳的谐波。压缩器不行 —— 它有起控时间，
+   对 1ms 的咔哒根本来不及反应。 */
+function sfxBus(ac) {
+  if (ac.__bus) return ac.__bus;
+  const g = ac.createGain();
+  g.gain.value = 1;
+  const sh = ac.createWaveShaper();
+  const N = 1024, curve = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const x = (i / (N - 1)) * 2 - 1;
+    /* 就是 tanh，不要归一化。归一化（tanh(kx)/tanh(k)）会把原点的斜率
+       抬到 k/tanh(k) —— k=1.6 时是 1.74，等于把所有音效整体调响 74%，
+       限幅器反倒成了放大器。tanh 本身原点斜率就是 1：
+       x=.15 → .149（听不出差别），x=1 → .76（稳稳压住）。 */
+    curve[i] = Math.tanh(x);
+  }
+  sh.curve = curve;
+  sh.oversample = "2x";
+  g.connect(sh); sh.connect(ac.destination);
+  ac.__bus = g;
+  return g;
+}
+/* 起音 atk、之后指数衰到静音。指数不能真的到 0（Web Audio 会抛），
+   收到 1e-4 就够听不见了。 */
+function envAt(ac, t0, peak, atk, dec) {
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + atk);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + atk + dec);
+  return g;
+}
+function grain(ac, t0, o) {
+  const src = o.freq && o.tone ? ac.createOscillator() : noiseAt(ac);
+  if (o.tone) { src.type = "sine"; src.frequency.value = o.freq; }
+  let node = src;
+  if (o.filter) {
+    const f = ac.createBiquadFilter();
+    f.type = o.filter; f.frequency.value = o.freq; f.Q.value = o.q || 1;
+    src.connect(f); node = f;
+  }
+  const g = envAt(ac, t0, o.peak, o.atk || 0.001, o.dec);
+  node.connect(g); g.connect(sfxBus(ac));
+  src.start(t0); src.stop(t0 + (o.atk || 0.001) + o.dec + 0.02);
+}
+const SFX = {
+  /* 录屏里量的：1ms、3k–20k、峰在 9–13k。带通 Q 压到 0.55 才够宽，
+     Q 再大就从「嗒」变成「叮」了。 */
+  tap:    (ac, t) => grain(ac, t,
+            { filter: "bandpass", freq: 8000, q: 0.55, peak: 0.16, atk: 0.0004, dec: 0.004 }),
+  /* 刻度过一格那声。比 tap 闷、比 tap 长，像机械挡位。 */
+  detent: (ac, t) => grain(ac, t,
+            { filter: "bandpass", freq: 2700, q: 1.3, peak: 0.2, dec: 0.022 }),
+  /* 三粒，一粒比一粒轻，中心频率和 Q 各不相同 —— 录屏里那几粒的
+     Q 从 1.3 到 62 都有，正是这种参差才像「沙沙」而不是三声同样的响。 */
+  /* 这里的 peak 是乘在「已经过完滤波」的信号上的，不是目标幅度。
+     Q=9 的带通会把宽带噪声砍掉十倍以上，所以这几个数看着离谱地大 ——
+     离线渲出来量过，实际峰值 0.11 左右，和录屏里那粒对得上。 */
+  rustle: (ac, t) => {
+    [[0, 1240, 9, 0.9, 0.09], [0.048, 1480, 3, 0.195, 0.075],
+     [0.094, 1260, 6, 0.25, 0.06]].forEach(([dt, f, q, p, d]) =>
+      grain(ac, t + dt, { filter: "bandpass", freq: f, q, peak: p, atk: 0.002, dec: d }));
+  },
+  /* 金属：四个不成谐波关系的泛音（谐波会听成乐音，不像硬币）＋
+     一记高频噪声当撞击的那一下，再在 68ms 后补一记轻的。 */
+  coin: (ac, t) => {
+    const hit = (t0, amp, k) => {
+      /* 基音别给太足、也别拖太长：一拖长，整个音的能量就压在 2.4k 那一支
+         上，听着变成钟。硬币的辨识度在上面那几支泛音和撞击那一下噪声里。 */
+      /* 四支同相起音会叠出一个假的尖峰（听着是「啪」不是「叮」），
+         各自错开零点几毫秒就平了，也更像真撞击那一下的参差。 */
+      [[2410 * k, 0.5, 0.10, 0], [3730 * k, 0.85, 0.095, 0.0004],
+       [5290 * k, 0.7, 0.07, 0.0009], [7120 * k, 0.5, 0.05, 0.0013]]
+        .forEach(([f, a, d, off]) =>
+          grain(ac, t0 + off, { tone: true, freq: f, peak: amp * a * 0.033,
+            atk: 0.0008, dec: d }));
+      grain(ac, t0, { filter: "highpass", freq: 4200, q: 0.7,
+        peak: amp * 0.18, atk: 0.0005, dec: 0.009 });
+    };
+    hit(t, 1, 1);
+    hit(t + 0.068, 0.55, 1.19);
+  },
+};
+function sfx(name) {
   const ac = wakeAudio();
   if (!ac || ac.state !== "running") return;
-  try {
-    if (!AC_NOISE) {
-      AC_NOISE = ac.createBuffer(1, Math.ceil(ac.sampleRate * 0.05), ac.sampleRate);
-      const d = AC_NOISE.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    const t0 = ac.currentTime;
-    const src = ac.createBufferSource(); src.buffer = AC_NOISE;
-    const bp = ac.createBiquadFilter();
-    bp.type = "bandpass"; bp.frequency.value = 2700; bp.Q.value = 1.3;
-    const g = ac.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(vol == null ? 0.2 : vol, t0 + 0.001);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.022);
-    src.connect(bp); bp.connect(g); g.connect(ac.destination);
-    src.start(t0); src.stop(t0 + 0.04);
-  } catch (err) {}
+  const make = SFX[name];
+  if (!make) return;
+  try { make(ac, ac.currentTime); } catch (err) {}
 }
+/* 老名字，刻度那边在用 */
+const clack = () => sfx("detent");
 
 const HAPTIC_SEL = ".mbtn,.navb,.qi,.rnd,.chip[data-a],.seg > span,.toggle," +
   ".adot,.mcell,.gopro,.wishpill,.dash,.avatar,.iconbtn,.eye,.jotmini,.asmini," +
@@ -7847,6 +7941,13 @@ function buzz(kind) {
 const HEAVY = /^(delTx|delFixed|delGoal|delDebt|delAcct|delWish|delBook|doDelBook|delCat|wipeData|dropWish|dropPlan|planAbandon|buyNow|buyWish|buyDuringPlan|tooSoon)/;
 const MEDIUM = /^(commit|submit|parse|confirm|goalDone|debtDone|pickMonth|monthPick|newBook|editBook|useBook|addTx|jot|assistant|cats|detail|startPlan|logSale|retest|wishlist|txFilter|getPro)/;
 const buzzFor = (act) => HEAVY.test(act) ? "heavy" : MEDIUM.test(act) ? "medium" : "light";
+/* 记一笔钱 —— 不管是快捷记账、详情表单，还是「买了」那几条路，
+   只要真的往 S.tx 里塞了东西，就给一声硬币。 */
+const SFX_COIN = /^(commit|submitTx|buyNow|buyWish|doCashBuy)$/;
+/* 金库里点开某个账户 —— 翻存折那种沙沙声 */
+const SFX_RUSTLE = /^openJar$/;
+const sfxFor = (act) => SFX_COIN.test(act) ? "coin"
+  : SFX_RUSTLE.test(act) ? "rustle" : "tap";
 
 app.addEventListener("click", (e) => {
   if (swallowClick) {
@@ -7877,7 +7978,7 @@ app.addEventListener("click", (e) => {
   const raw = el.dataset.a, i = raw.indexOf(":");
   const act = i < 0 ? raw : raw.slice(0, i);
   const arg = i < 0 ? null : raw.slice(i + 1);
-  if (ACT[act]) { buzz(buzzFor(act)); e.stopPropagation(); ACT[act](arg); }
+  if (ACT[act]) { buzz(buzzFor(act)); sfx(sfxFor(act)); e.stopPropagation(); ACT[act](arg); }
 });
 /* 手势：只认横向；纵向一律让给滚动。滑过阈值就吞掉这次 click，避免误触发行内动作 */
 /* 只吞紧跟其后的那一次 click。按下时会清一次，但手势要是没能正常收尾
