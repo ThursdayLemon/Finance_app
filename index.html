@@ -1582,7 +1582,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v135";
+const BUILD = "v136";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -2596,19 +2596,30 @@ en: {
    老档案没有 profile 这个字段，这儿兜一次底，不用写迁移。 */
 const prof = () => S.profile || (S.profile = { name: "", payday: null });
 
-/* 离下次发薪还有几天。没设发薪日就返回 null —— 后面每一处都靠这个 null
-   来决定「装作没这回事」，不能让没填的人凭空多出一条规则。
-   31 号发薪遇到 2 月怎么办：按当月最后一天算。 */
+/* 离下一笔钱进来还有几天。
+
+   不单独设「发薪日」—— 固定收入每一条自己就带着「几号到账」，再让人填一遍
+   是同一件事问两次。问的是「还要撑几天」，所以取所有固定收入里最近的那个，
+   不是最大的那笔。
+
+   一条固定收入都没有就返回 null —— 后面每一处都靠这个 null 决定
+   「装作没这回事」，不能让没填的人凭空多出一条规则。
+   31 号到账遇上 2 月怎么办：按当月最后一天算。 */
 function daysToPayday() {
-  const d = prof().payday;
-  if (!d) return null;
+  const days = (S.fixedIn || []).map((x) => +x.day)
+    .filter((d) => d >= 1 && d <= 31);
+  if (!days.length) return null;
   const iso = today();
   const y = +iso.slice(0, 4), mo = +iso.slice(5, 7), day = +iso.slice(8, 10);
   const dim = new Date(y, mo, 0).getDate();
-  const pay = Math.min(d, dim);
-  if (day <= pay) return pay - day;
   const nextDim = new Date(y, mo + 1, 0).getDate();
-  return (dim - day) + Math.min(d, nextDim);
+  let best = null;
+  days.forEach((d) => {
+    const pay = Math.min(d, dim);
+    const n = day <= pay ? pay - day : (dim - day) + Math.min(d, nextDim);
+    if (best == null || n < best) best = n;
+  });
+  return best;
 }
 
 const FLOOR_RATIO = 0.05;
