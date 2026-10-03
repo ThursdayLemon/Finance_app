@@ -860,7 +860,12 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
 .drow.down .dcall{color:var(--warn)}
 /* 首页左卡（稿子 2150:1925）：只有收入这一排，6 根，当月第 4 根。
    不是分析页那张镜像图的缩小版 —— 那张有上下两排和正负数字，这张都没有。 */
-.gcard.anl{padding:16px 12px;align-items:center;justify-content:space-between;gap:12px}
+.gcard.anl{padding:16px 12px;align-items:center;justify-content:space-between;gap:12px;
+ position:relative}
+/* 稿子量的：距右 12、距顶 13（卡宽 173、图标 18）。颜色走 --ink-faint，
+   和稿子里的 #b9b9b6 是同一个 token —— 它只是个提示，不该抢数字的注意力。 */
+.enl{position:absolute;top:13px;right:12px;display:flex;
+ color:var(--ink-faint);pointer-events:none}
 .mfig{text-align:center}
 .mfig .money{font-family:var(--font-display);font-size:17px;line-height:20px;
  color:var(--ink)}
@@ -1698,7 +1703,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v158";
+const BUILD = "v159";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
@@ -3774,6 +3779,11 @@ const PF = {
   /* ---- 底栏四个分区（Figma 2122:9390 的 Bottom bar，22 的画布）-------- */
   navMoney: ['0 0 22 22', '<path d="M19.25 17.417v-6.172a3.7 3.7 0 0 0-1.141-2.659l-5.846-5.552a1.83 1.83 0 0 0-2.526 0L3.891 8.586a3.7 3.7 0 0 0-1.141 2.659v6.172c0 .486.193.952.537 1.296.344.344.81.537 1.296.537h12.834c.486 0 .952-.193 1.296-.537.344-.344.537-.81.537-1.296Z"/><path d="M8.25 13.75c0-.486.193-.952.537-1.296.344-.344.81-.537 1.296-.537h1.834c.486 0 .952.193 1.296.537.344.344.537.81.537 1.296v5.5h-5.5v-5.5Z"/>', "stroke", 1.5],
   navBills: ['0 0 22 22', '<path d="M10.084 10.083h-2.75M12.834 6.417h-5.5M3.667 17.092V7.383c0-2.616 0-3.923.806-4.736.805-.813 2.102-.813 4.694-.813h3.667c2.592 0 3.889 0 4.694.813.806.812.806 2.12.806 4.736v9.709c0 1.385 0 2.078-.424 2.351-.692.446-1.762-.489-2.3-.828-.444-.281-.666-.42-.914-.428-.265-.01-.492.125-.972.427l-1.752 1.105c-.473.298-.709.447-.972.447s-.498-.149-.971-.447l-1.751-1.105c-.446-.28-.667-.42-.914-.428-.267-.009-.493.126-.974.428-.538.339-1.607 1.274-2.3.828-.423-.273-.423-.965-.423-2.351Z"/>', "stroke", 1.5],
+  /* 稿子 2421:9842（iconoir:enlarge）：两枚向外的斜箭头，告诉人这块能放大。
+     路径是从 Figma 的 vectorPaths 直接抄的 —— 原始坐标在一个 12×12 的
+     子图里、整体内缩 3，所以每个值都 +3 搬进 18×18 的 viewBox。 */
+  enlarge: ['0 0 18 18', '<path d="M11.25 6.75 15 3M15 3v3M15 3h-3' +
+    'M6.75 11.25 3 15M3 15v-3M3 15h3"/>', "stroke", 1],
   /* 稿子里这个是画在 44×28 的框里、偏在中间的。原来直接把 viewBox 卡在
      圆的外接框上（13 5 18 18）—— 那正好等于几何边界，1.5 的描边有一半在框外，
      四周就被裁掉了。改成挪进 22 的方框里，留出 2 的余量。 */
@@ -4777,6 +4787,10 @@ function monthView() {
       /* 左：本月收入 + 近六个月走势，点进去是分析页。右：四项固定承诺。 */
       '<div class="duo">' +
       '<div class="card gcard anl" data-a="analytics">' +
+      /* 右上角那枚放大图标：整张卡本来就能点进分析页，但没有任何记号，
+         没人知道还能点。稿子 2150:1926 加了它。绝对定位 —— 让它脱离
+         这张卡的纵向排布，不然会把上面那个数字挤下去。 */
+      '<span class="enl">' + ic("enlarge", 18) + "</span>" +
       '<div class="mfig"><div class="money">' + withDec(yuan(inc)) + "</div>" +
       '<div class="sub">' + t("mo.totalIn") + "</div></div>" +
       miniIncomeChart(m) + "</div>" +
@@ -6241,8 +6255,6 @@ const PIE_W = 326;                        /* 设计宽；SVG 按百分比缩放 
 /* 稿子 2304:15499 量的：外径 122（R=61），arcData.inner=0.745 →
    内径 45.4，所以环宽 15.6。原来是 21，粗了一圈。 */
 const PIE_H = 196, PIE_R = 61, PIE_TH = 16;
-const PIE_GAP = 4.5 * Math.PI / 180;      /* 段与段之间的缝 */
-const PIE_K = 4;                          /* 段的四个角的圆角 */
 
 /* 每一段都是一条带 round 线帽的描边圆弧，不再是手工算四个角的扇形路径。
    以前躲着不用 round 线帽，是因为它会把两端圆掉半个环宽，比当时的稿子
@@ -6281,27 +6293,33 @@ function labeledDonut(rows, kind) {
   const Ro = PIE_R;
   const Rm = PIE_R - PIE_TH / 2;              /* 描边走中线 */
   const C = 2 * Math.PI * Rm;
-  const gapLen = PIE_GAP * Rm;
+  const ring = (cls, dash, start, op, delay, extra) =>
+    '<circle class="' + cls + '" cx="' + cx + '" cy="' + cy + '" r="' + Rm.toFixed(2) +
+    '" fill="none" stroke="' + hue + '" stroke-width="' + PIE_TH +
+    '" stroke-linecap="round" opacity="' + op.toFixed(3) +
+    '" stroke-dashoffset="' + (-start).toFixed(1) + '" style="--c:' + C.toFixed(1) +
+    ";--dash:" + dash.toFixed(1) + ";--rest:" + Math.max(0, C - dash).toFixed(1) +
+    ";--d:" + delay + 'ms"' + (extra || "") + "/>";
   let off = 0, len = 0;
-  const segs = [], marks = [];
+  const arcs = [], marks = [];
+  /* 底下先铺一整圈淡的（稿子 2304:15501 里那一层 opacity .2）。
+     有了它，环永远是完整的一圈 —— 只有两三块的时候也不会缺一大段。 */
+  const segs = [ring("pietrack", C, 0, 0.2, 0) ];
   rows.forEach(([name, v], i) => {
     const span = (v / total) * Math.PI * 2;
     const arc = (v / total) * C;
-    const one = n === 1;
-    const gap = one ? 0 : Math.min(gapLen, arc * 0.6);
-    /* 扣掉一个环宽给两头的圆帽；小到扣不动就留一个点 */
-    const dash = one ? C : Math.max(0.1, arc - gap - PIE_TH);
-    const start = len + gap / 2 + (one ? 0 : PIE_TH / 2);
-    segs.push('<g opacity="' + alpha(i).toFixed(3) + '">' +
-      '<circle class="pieseg" cx="' + cx + '" cy="' + cy + '" r="' + Rm.toFixed(2) +
-      '" fill="none" stroke="' + hue + '" stroke-width="' + PIE_TH +
-      '" stroke-linecap="' + (one ? "butt" : "round") +
-      '" stroke-dashoffset="' + (-start).toFixed(1) + '" style="--c:' + C.toFixed(1) +
-      ";--dash:" + dash.toFixed(1) + ";--rest:" + (C - dash).toFixed(1) +
-      ";--d:" + (i * 85) + 'ms"/></g>');
+    /* 段与段之间不留缝，圆头是压在邻段上的 —— 稿子里那四条弧的角度本来
+       就互相重叠（171.5° / 182.2° / 168.9° 挤在一个圆里）。
+       上一版按「留 4.5° 的缝、再扣掉一个环宽给圆帽」来画，画出来是一截一截
+       断开的，和稿子完全不是一个东西。 */
+    arcs.push(ring("pieseg", Math.max(0.1, arc), len, alpha(i), i * 85));
     marks.push({ name, v, i, ang: off + span / 2 });
     off += span; len += arc;
   });
+  /* 倒着画：最大、最实的那块最后落笔、压在最上面 —— 就是稿子里
+     opacity:1 那一层的位置。顺着画的话，后面几块淡的会用自己的圆头
+     在它身上啃出豁口。 */
+  for (let i = arcs.length - 1; i >= 0; i--) segs.push(arcs[i]);
 
   /* 稿子 2304:15439 把引线和圆点都去掉了，标签直接浮在环外面，
      靠「离哪一块近」来认。所以摆放也跟着改：不再吸到左右两个固定的
