@@ -181,6 +181,9 @@
   --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
     --page:#1a1a19; --ground:var(--page); --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
     --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
+  /* 输入框：CSS 用的是 --field-bg / --field-edge，不是 --field。
+     这两个以前只在浅色根里有，深色下就一直是近白底配浅字。 */
+  --field-bg:#232322; --field-edge:rgba(255,255,255,.14);
     /* 实心件（主按钮、分段选中、圆形按钮…）走深灰 + 浅字。
      原来是接近白的 #ececeb，在深色页面上一块块白斑太跳。 */
   --accent:#3a3a38; --on-accent:#ececeb;
@@ -241,6 +244,9 @@
   --ink:#ececeb; --ink-muted:#9a9a98; --ink-faint:#6a6a68;
   --page:#1a1a19; --ground:var(--page); --surface:rgba(255,255,255,.07); --sunken:rgba(255,255,255,.05);
   --field:#232322; --edge:rgba(255,255,255,.12); --line:rgba(255,255,255,.09);
+  /* 输入框：CSS 用的是 --field-bg / --field-edge，不是 --field。
+     这两个以前只在浅色根里有，深色下就一直是近白底配浅字。 */
+  --field-bg:#232322; --field-edge:rgba(255,255,255,.14);
   /* 实心件（主按钮、分段选中、圆形按钮…）走深灰 + 浅字。
      原来是接近白的 #ececeb，在深色页面上一块块白斑太跳。 */
   --accent:#3a3a38; --on-accent:#ececeb;
@@ -561,11 +567,15 @@ body{margin:0;background:var(--page);color:var(--ink);line-height:1.5;font-size:
    把这一小块的 token 就地换回浅色那套，整个子树一次翻回来，
    比逐个元素去改色靠谱得多。 */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dock {
+  background:linear-gradient(180deg,
+    rgba(255,255,255,.95) 0%, rgba(237,237,237,.95) 100%);
   --ink:#414140; --ink-muted:#8e8e8c; --ink-faint:#b9b9b6;
   --accent:#414140; --on-accent:#ffffff;
   --icon-edge:#ffffff; --edge:rgba(255,255,255,.95);
   --surface:rgba(255,255,255,.6); --icon-bg:rgba(255,255,255,.4) } }
 :root[data-theme="dark"] .dock {
+  background:linear-gradient(180deg,
+    rgba(255,255,255,.95) 0%, rgba(237,237,237,.95) 100%);
   --ink:#414140; --ink-muted:#8e8e8c; --ink-faint:#b9b9b6;
   --accent:#414140; --on-accent:#ffffff;
   --icon-edge:#ffffff; --edge:rgba(255,255,255,.95);
@@ -1572,7 +1582,7 @@ textarea.fldbox{min-height:72px;padding:11px 12px;resize:none;line-height:1.5;
    这个产品里没有汇率，一个用户就用一种钱。 */
 /* 手机上到底跑的是哪一版 —— 没有这个号，只能靠猜。每次发布手动 +1，
    和 sw.js 里的缓存名一起改。「我」那一页最底下显示。 */
-const BUILD = "v133";
+const BUILD = "v134";
 const CUR = {
   /* 半角 ¥ 不是全角 ￥：拉丁衬线（Caslon 这类）都没有全角那个码位，
      用全角的话币种符号会掉回宋体，和后面的数字明显不是一套字。 */
